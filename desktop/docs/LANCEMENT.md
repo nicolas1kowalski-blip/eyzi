@@ -19,7 +19,7 @@
 ## C. Le serveur Supabase (20 min)
 
 6. **Supabase → le projet déjà utilisé par le site** (celui dont l'URL est dans Vercel → Settings → Environment Variables → `SUPABASE_URL`) → **SQL Editor** → New query → coller tout le fichier `desktop/docs/supabase.sql` → **Run**. Il crée : `licences`, `activations`, `usage`, `licence_requests`, les fonctions, les vues (`tablettes`, `usage_par_famille`, `usage_30_jours`, `usage_resume`) et le bucket `familles`. Vérifier dans Table Editor que les tables sont là.
-7. **Récupérer l'URL et la clé anon** : Supabase → Settings → API → « Project URL » et « anon public ». Me les envoyer : je les embarque dans l'application (`Lib/Cloud.cs`) et une nouvelle version sort. En attendant, elles peuvent être saisies dans l'application : réglages → ☁️ Le nuage → URL et clé.
+7. L'URL du projet et la clé publique (publishable) sont embarquées dans l'application depuis la version 2026.10.22.105 (`Lib/Cloud.cs`). Rien à saisir sur les tablettes ; le réglage ☁️ Le nuage ne sert qu'à les remplacer.
 8. **Créer ta propre licence de famille** (la licence maître ne connaît pas le serveur, donc pas de nuage avec elle) : SQL Editor → `select public.create_licence('Famille Kowalski', 'test', 3);` → noter le numéro EYZ-… → sur chaque tablette, réglages → 🔑 Changer la licence → entrer le numéro et le mot de passe famille (le même partout).
 9. **Vérifier les variables Vercel** : `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` existent déjà pour les livres ; sinon les ajouter (Settings → Environment Variables), puis « Redeploy ».
 10. **Tester le formulaire** : remplir https://eyzi.fr/licence.html avec tes coordonnées → Supabase → Table Editor → `licence_requests` : la ligne est là. Idem pour /retours.html.

@@ -15,11 +15,14 @@ namespace MesPremiersJeux.Lib
     public static class Cloud
     {
         // À remplir avec le projet Supabase de l'application (réglages : SupabaseUrl / SupabaseKey en priorité).
-        public const string DefaultUrl = "";
-        public const string DefaultAnonKey = "";
+        public const string DefaultUrl = "https://qtdyasvrvijesyfiktcc.supabase.co";
+        public const string DefaultAnonKey = "sb_publishable_M3IQlASfAbLHdRN2kbf7rA_1CEitiqv";
 
         public static string Url = DefaultUrl;
         public static string AnonKey = DefaultAnonKey;
+
+        /// <summary>L'adresse du projet, sans le /rest/v1/ qu'on colle parfois avec.</summary>
+        public static string Base => System.Text.RegularExpressions.Regex.Replace((Url ?? "").Trim().TrimEnd('/'), "/rest/v1$", "").TrimEnd('/');
 
         public static bool Configured => !string.IsNullOrWhiteSpace(Url) && !string.IsNullOrWhiteSpace(AnonKey);
 
@@ -28,10 +31,12 @@ namespace MesPremiersJeux.Lib
         /// <summary>Appelle une fonction SQL (rpc) et renvoie le JSON brut.</summary>
         public static async Task<string> RpcAsync(string function, string jsonBody)
         {
-            using (var req = new HttpRequestMessage(HttpMethod.Post, Url.TrimEnd('/') + "/rest/v1/rpc/" + function))
+            using (var req = new HttpRequestMessage(HttpMethod.Post, Base + "/rest/v1/rpc/" + function))
             {
                 req.Headers.TryAddWithoutValidation("apikey", AnonKey);
-                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AnonKey);
+                // Les anciennes clés « anon » sont des JWT et se passent aussi en Bearer ;
+                // les nouvelles clés « publishable » (sb_…) ne vont que dans apikey.
+                if (AnonKey.StartsWith("eyJ")) req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AnonKey);
                 req.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
                 using (var res = await Http.SendAsync(req))
                 {

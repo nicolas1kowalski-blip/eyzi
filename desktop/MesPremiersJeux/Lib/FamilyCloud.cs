@@ -42,7 +42,7 @@ namespace MesPremiersJeux.Lib
         private static async Task SignInAsync(Settings s)
         {
             if (_token != null && (DateTime.UtcNow - _tokenAt).TotalMinutes < 40) return;
-            using (var req = new HttpRequestMessage(HttpMethod.Post, Cloud.Url.TrimEnd('/') + "/auth/v1/token?grant_type=password"))
+            using (var req = new HttpRequestMessage(HttpMethod.Post, Cloud.Base + "/auth/v1/token?grant_type=password"))
             {
                 req.Headers.TryAddWithoutValidation("apikey", Cloud.AnonKey);
                 req.Content = new StringContent("{\"email\":\"" + s.CloudEmail + "\",\"password\":\"" + s.CloudSecret.Replace("\"", "\\\"") + "\"}", Encoding.UTF8, "application/json");
@@ -61,7 +61,7 @@ namespace MesPremiersJeux.Lib
 
         private static HttpRequestMessage Req(HttpMethod m, string objectPath)
         {
-            var req = new HttpRequestMessage(m, Cloud.Url.TrimEnd('/') + "/storage/v1/object/" + Bucket + "/" + _uid + "/" + objectPath);
+            var req = new HttpRequestMessage(m, Cloud.Base + "/storage/v1/object/" + Bucket + "/" + _uid + "/" + objectPath);
             req.Headers.TryAddWithoutValidation("apikey", Cloud.AnonKey);
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
             return req;
