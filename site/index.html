@@ -61,7 +61,8 @@ footer{text-align:center;color:var(--muted);font-size:14px;padding:10px 16px 30p
   <p class="desc">Communication alternative et jeux inclusifs, pilotés par le regard.</p>
   <p class="sig">Facile, avec les yeux.</p>
   <p>Pour les enfants de 4 à 7 ans qui ne peuvent pas utiliser leurs mains : avec la commande oculaire, ils jouent, choisissent, parlent et apprennent.</p>
-  <div><a class="cta" id="telecharger" href="https://github.com/nicolas1kowalski-blip/eyzi/releases/latest/download/Eyzi-Setup.exe">⬇ Télécharger pour Windows</a><a class="cta alt" href="licence.html">🔑 Demander une licence</a></div>
+  <div><a class="cta" id="telecharger" href="https://github.com/nicolas1kowalski-blip/eyzi/releases">⬇ Télécharger pour Windows</a><a class="cta alt" href="licence.html">🔑 Demander une licence</a></div>
+  <div id="version" style="margin-top:10px;font-size:14px;opacity:.85">Recherche de la dernière version…</div>
   <div class="trial">🧪 Bêta gratuite · 10 premières licences, puis d'autres au fil des retours · 10 jours d'essai sans licence</div>
   <small>Windows 10 / 11 · installation sans droits administrateur · mises à jour automatiques · <a href="https://github.com/nicolas1kowalski-blip/eyzi/releases" style="color:inherit">toutes les versions</a></small>
 </div>
@@ -149,5 +150,29 @@ footer{text-align:center;color:var(--muted);font-size:14px;padding:10px 16px 30p
   </section>
 </div>
 <footer>Eyzi · version bêta · communication alternative et jeux inclusifs au regard · <a href="guide.html">guide utilisateur</a> · <a href="licence.html">demander une licence</a> · <a href="retours.html">vos retours</a> · fait avec amour pour Laura</footer>
+<script>
+// Le bouton pointe vers l'installeur de la version la plus récente : la prod si elle
+// existe, sinon la dernière version test (pendant la bêta). Lu sur l'API GitHub.
+(async function(){
+  var btn=document.getElementById('telecharger'), info=document.getElementById('version');
+  function ver(t){ return (t||'').replace(/^v/i,'').split('.').map(function(x){ return parseInt(x,10)||0; }); }
+  function newer(a,b){ for(var i=0;i<4;i++){ if((a[i]||0)!==(b[i]||0)) return (a[i]||0)>(b[i]||0); } return false; }
+  try{
+    var r=await fetch('https://api.github.com/repos/nicolas1kowalski-blip/eyzi/releases?per_page=30',{headers:{'Accept':'application/vnd.github+json'}});
+    var list=await r.json(); var best=null, bestProd=null;
+    list.forEach(function(rel){
+      if(rel.draft) return;
+      var a=(rel.assets||[]).find(function(x){ return /^Eyzi-Setup-.*\.exe$/.test(x.name); });
+      if(!a) return;
+      var c={v:ver(rel.tag_name), tag:rel.tag_name, url:a.browser_download_url, pre:rel.prerelease, size:a.size};
+      if(!best||newer(c.v,best.v)) best=c;
+      if(!c.pre&&(!bestProd||newer(c.v,bestProd.v))) bestProd=c;
+    });
+    var pick=bestProd||best;
+    if(pick){ btn.href=pick.url; info.textContent='Version '+pick.tag.replace(/^v/,'')+(pick.pre?' (bêta, canal test)':'')+' · '+Math.round(pick.size/1048576)+' Mo · Windows 10 / 11'; }
+    else info.textContent='Aucune version publiée pour le moment.';
+  }catch(e){ info.textContent='Toutes les versions sont sur GitHub (bouton ci-dessus).'; }
+})();
+</script>
 </body>
 </html>
