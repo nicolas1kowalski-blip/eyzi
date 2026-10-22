@@ -71,7 +71,7 @@ namespace MesPremiersJeux.Lib
                 sb.Append(SecurityElement.Escape(Fix(raw.Substring(last, m.Index - last))));
                 // Le son seul est dit PLUS FORT et PLUS LENTEMENT, entre deux petites pauses :
                 // c'est lui que l'enfant doit entendre.
-                sb.Append("<break time='250ms'/><prosody rate='-50%' volume='x-loud'>")
+                sb.Append("<break time='250ms'/><prosody rate='-60%' volume='x-loud'>")
                   .Append("<phoneme alphabet='ipa' ph='").Append(SecurityElement.Escape(m.Groups[2].Value)).Append("'>")
                   .Append(SecurityElement.Escape(m.Groups[1].Value)).Append("</phoneme>")
                   .Append("</prosody><break time='300ms'/>");
@@ -137,6 +137,77 @@ namespace MesPremiersJeux.Lib
 
         /// <summary>Une phrase longue est-elle en train d'être dite (et doit finir) ?</summary>
         public static bool IsProtected => MustWait();
+
+        /// <summary>
+        /// Dit des MORCEAUX à la suite : un texte (voix de synthèse) ou, s'il
+        /// commence par « @ », un enregistrement de la famille (VoiceBank,
+        /// ex. « @son-on »). Chaque morceau attend la fin du précédent.
+        /// Un enregistrement absent est simplement sauté.
+        /// </summary>
+        public static void SayParts(params string[] parts)
+        {
+            Stop();
+            SayPartsFrom(parts, 0);
+        }
+
+        private static void SayPartsFrom(string[] parts, int i)
+        {
+            while (i < parts.Length && string.IsNullOrWhiteSpace(parts[i])) i++;
+            if (i >= parts.Length) return;
+            var p = parts[i];
+            if (p.StartsWith("@"))
+            {
+                if (!VoiceBank.Play(p.Substring(1))) { SayPartsFrom(parts, i + 1); return; }
+            }
+            else
+            {
+                _pendingText = null;
+                _currentText = "";
+                Say(p);
+            }
+            // le morceau suivant quand celui-ci est fini (0,3 s de respiration)
+            var start = DateTime.Now;
+            var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+            t.Tick += (s, e) =>
+            {
+                double sec = (DateTime.Now - start).TotalSeconds;
+                if (sec < 0.4 || (IsBusy && sec < 12)) return;
+                t.Stop();
+                SayPartsFrom(parts, i + 1);
+            };
+            t.Start();
+        }
+
+        /// <summary>Un SON isolé (« on », « o »…) : l'enregistrement de la famille
+        /// (Voix\son-on-*.wav) s'il existe, sinon le son exact en phonétique.</summary>
+        public static string SoundPart(string written, string ipa) =>
+            VoiceBank.Has("son-" + written) ? "@son-" + written : "{" + written + "|" + ipa + "}";
+
+        /// <summary>Le son d'un mot connu, pour les jeux de sons : (écrit, phonétique).</summary>
+        public static string SoundIpa(string written)
+        {
+            switch (written)
+            {
+                case "a": return "a";
+                case "e": return "ə";
+                case "é": return "e";
+                case "i": return "i";
+                case "o": return "o";
+                case "u": return "y";
+                case "ou": return "u";
+                case "on": return "ɔ̃";
+                case "an": return "ɑ̃";
+                case "in": return "ɛ̃";
+                case "ette": return "ɛt";
+                case "m": return "m";
+                case "s": return "s";
+                case "f": return "f";
+                case "l": return "l";
+                case "r": return "ʁ";
+                case "ch": return "ʃ";
+                default: return written;
+            }
+        }
 
         /// <summary>
         /// La voix est-elle en train de parler ? Pour la voix WINDOWS, on

@@ -107,7 +107,7 @@ Après 10 minutes de jeu (réglable : jamais, 5, 10, 15, 20), l'application dema
 
 - **🔧 Mode administration** met le regard en pause pour que vous puissiez utiliser la souris, et permet d'ajouter, modifier ou supprimer les livres, coloriages et photos.
 - **👧 Prénom de l'enfant**.
-- **Voix** : voix Windows (hors ligne) avec réglage de hauteur, ou voix naturelle Azure (en ligne, clé à saisir ; repli automatique hors ligne). **🎙 Enregistrer vos voix** : vos « Bravo ! » et « Bonjour ! » remplacent la voix de synthèse aux moments forts.
+- **Voix** : voix Windows (hors ligne) avec réglage de hauteur, ou voix naturelle Azure (en ligne, clé à saisir ; repli automatique hors ligne). **🎙 Enregistrer vos voix** : vos « Bravo ! » et « Bonjour ! » remplacent la voix de synthèse aux moments forts. Dans la même fenêtre, **les sons** (a, o, i, ou, on, ette, u, an, in) : la voix de synthèse dit mal un son tout seul ; enregistrez-les avec votre voix, bien longs, et les jeux de rimes et la maison des sons les joueront à la place.
 - **📊 Bilan** : la semaine, les niveaux, les étoiles, les mots dits.
 - **📁 Le contenu de la famille** : photos, voix, livres, coloriages et images ajoutées vivent dans `%LocalAppData%\MesPremiersJeux\Contenu`. **📦 Exporter** fabrique un seul fichier (sauvegarde ou copie vers une autre tablette avec **📥 Importer**).
 - **☁️ Le nuage** : si l'éditeur a configuré le serveur, le contenu voyage tout seul entre vos tablettes (récupéré au démarrage, envoyé à la fermeture), chiffré avec votre mot de passe famille. Deux boutons pour forcer : **Envoyer maintenant** / **Récupérer maintenant**.

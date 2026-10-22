@@ -368,6 +368,9 @@ namespace MesPremiersJeux.Games
             // mot d'exemple de la même famille, jamais celui qu'il faut trouver.
             var example = family.Members.Where(m => m != good).Select(m => m.Said).DefaultIfEmpty(good.Said).First();
             string sonDit = SoundSaid(family.Sound) + ", comme dans " + example;
+            var sound = family.Sound;
+            // Le son isolé : l'enregistrement de papa/maman s'il existe, sinon la phonétique.
+            string[] Parts(string before, string after) => new[] { before, Speech.SoundPart(sound, Speech.SoundIpa(sound)), Speech.SoundPart(sound, Speech.SoundIpa(sound)), after };
             Question.Text = "👂 Quel mot finit par " + family.Sound.ToUpperInvariant() + " ?";
             _canvas = new Canvas { Width = W, Height = H };
 
@@ -388,14 +391,15 @@ namespace MesPremiersJeux.Games
             var list = choices;
             SetGazePads(pads, i => { if (i >= 0 && _act == 4 && !Locked) Speak(list[i].Said + "..."); });
 
-            var speaker = SpeakerButton(() => "Quel mot finit par " + sonDit + " ? Écoute : " + string.Join("... ", list.Select(x => x.Said)) + ". Lequel finit par " + SoundSaid(family.Sound) + " ?", 96);
+            var speaker = SpeakerButton(() => "", 96); // le clic dit la séquence ci-dessous (son exact ou enregistré)
+            speaker.Click += (o, ev) => { if (_act == 4) Speech.SayParts(Parts("Quel mot finit par le son", "comme dans " + example + " ? Écoute : " + string.Join("... ", list.Select(x => x.Said)) + ". Lequel finit par le son"), Speech.SoundPart(sound, Speech.SoundIpa(sound)), "?"); };
             Canvas.SetLeft(speaker, W - 140);
             Canvas.SetTop(speaker, 20);
             _canvas.Children.Add(speaker);
             SetConsigne(new TextBlock { Text = family.Sound.ToUpperInvariant(), FontSize = 64, FontWeight = FontWeights.ExtraBold, Foreground = new SolidColorBrush(Color.FromRgb(0x7E, 0x3F, 0xF2)) },
                 () => "Quel mot finit par " + sonDit + " ? Regarde une image pour l'entendre !");
             SetBody(_canvas);
-            Schedule(400, () => Speak("Quel mot finit par " + sonDit + " ?"));
+            Schedule(400, () => { if (!Closed) Speech.SayParts(Parts("Quel mot finit par le son", "comme dans " + example + " ?")); });
         }
 
         private void AnswerRhyme(Button btn, Word w, string sound)
@@ -446,12 +450,7 @@ namespace MesPremiersJeux.Games
         {
             switch (sound)
             {
-                case "on": return "le son {on|ɔ̃ːː}, {on|ɔ̃ːː}";
-                case "o": return "le son {o|oːː}, {o|oːː}";
-                case "i": return "le son {i|iːː}, {i|iːː}";
-                case "ou": return "le son {ou|uːː}, {ou|uːː}";
-                case "ette": return "le son {ette|ɛːt}, {ette|ɛːt}";
-                default: return "le son " + sound;
+                default: return "le son " + Speech.SoundPart(sound, Speech.SoundIpa(sound)) + ", " + Speech.SoundPart(sound, Speech.SoundIpa(sound));
             }
         }
     }

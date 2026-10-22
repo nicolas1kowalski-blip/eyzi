@@ -130,7 +130,7 @@ namespace MesPremiersJeux.Games
             }
 
             SetBody(_canvas);
-            SpeakSlow("La maison du son " + r.Sound + " ! " + r.Sound + " ! Trouve les images où tu entends " + r.Sound + " !");
+            Speech.SayParts("La maison du son", SoundPart(r), SoundPart(r), "Trouve les images où tu entends", SoundPart(r), "!");
         }
 
         // La grande maison colorée, avec sa lettre et sa porte ouverte.
@@ -199,7 +199,7 @@ namespace MesPremiersJeux.Games
                 Width = 380,
                 Height = 400,
             };
-            hit.Click += (s, e) => { if (!Locked) SpeakSlow(r.Sound + " ! " + r.Sound + " !"); };
+            hit.Click += (s, e) => { if (!Locked) Speech.SayParts(SoundPart(r), SoundPart(r)); };
             Canvas.SetLeft(hit, W / 2 - 190);
             Canvas.SetTop(hit, 120);
             hit.SetValue(Panel.ZIndexProperty, 31);
@@ -334,7 +334,7 @@ namespace MesPremiersJeux.Games
                 Width = 0.40 * W,
                 Height = 0.50 * ih,
             };
-            hit.Click += (s, e) => { if (!Locked) SpeakSlow(r.Sound + " ! " + r.Sound + " !"); };
+            hit.Click += (s, e) => { if (!Locked) Speech.SayParts(SoundPart(r), SoundPart(r)); };
             Canvas.SetLeft(hit, 0.32 * W);
             Canvas.SetTop(hit, 0.30 * ih);
             hit.SetValue(Panel.ZIndexProperty, 31);
@@ -413,6 +413,13 @@ namespace MesPremiersJeux.Games
         //  FIN du mot ? » (localiser un son — droit du programme MS).
         // ------------------------------------------------------------------
         private int _trainIdx;
+
+        /// <summary>Le son isolé de la maison : enregistrement de la famille s'il existe, sinon phonétique exacte.</summary>
+        private static string SoundPart(Room r)
+        {
+            var written = r.Letter.ToLowerInvariant();
+            return Speech.SoundPart(written, Speech.SoundIpa(written));
+        }
 
         private static readonly (string Emoji, string Word, string Sound, bool AtStart, string Stretched)[] TrainWords =
         {

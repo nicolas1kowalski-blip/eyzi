@@ -50,6 +50,19 @@ namespace MesPremiersJeux.Views
                 "Joué à l'ouverture de l'application.",
                 "bonjour"));
 
+            root.Children.Add(new TextBlock
+            {
+                Text = "🔤  Les SONS (rimes, maison des sons)", FontSize = 19, FontWeight = FontWeights.Bold, Foreground = Dark, Margin = new Thickness(0, 14, 0, 0),
+            });
+            root.Children.Add(new TextBlock
+            {
+                Text = "La voix de synthèse dit mal un son tout seul. Enregistrez chaque son avec votre voix, bien long et bien net " +
+                       "(« onnnn », « ooooo »). S'il existe, l'application le joue à la place de la synthèse.",
+                FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0x8A, 0x7A, 0xA8)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 6),
+            });
+            foreach (var (son, ex) in new[] { ("a", "comme dans chat"), ("o", "comme dans bateau"), ("i", "comme dans souris"), ("ou", "comme dans hibou"), ("on", "comme dans ballon"), ("ette", "comme dans chaussette"), ("u", "comme dans lune"), ("an", "comme dans maman"), ("in", "comme dans lapin") })
+                root.Children.Add(Section("« " + son + " »", "Dites seulement le son, 1 à 2 secondes, " + ex + ".", "son-" + son));
+
             Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         }
 
