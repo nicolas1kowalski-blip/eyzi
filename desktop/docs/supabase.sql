@@ -323,4 +323,7 @@ create table if not exists public.licence_requests (
   licence_key text references public.licences(key),
   note        text
 );
+alter table public.licence_requests add column if not exists topic text not null default 'licence';
+alter table public.licence_requests add column if not exists gear text;
+alter table public.licence_requests add column if not exists recontact boolean not null default false;
 alter table public.licence_requests enable row level security;
