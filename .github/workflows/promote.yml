@@ -33,4 +33,12 @@ jobs:
           [ -n "$TAG" ] || { echo "Aucune version test à promouvoir."; exit 1; }
           echo "Promotion de $TAG"
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest
-          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isPrerelease,isLatest
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isPrerelease
+          # Les versions prod plus anciennes redeviennent des versions test : une seule prod à la fois.
+          V=$(echo "$TAG" | sed 's/^v//')
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName,isPrerelease,isDraft \
+            --jq '.[] | select((.isPrerelease|not) and (.isDraft|not)) | .tagName' | while read -r t; do
+            [ "$t" = "$TAG" ] && continue
+            echo "Ancienne prod $t → test"
+            gh release edit "$t" --repo "$GITHUB_REPOSITORY" --prerelease=true || true
+          done
