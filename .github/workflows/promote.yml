@@ -1,0 +1,36 @@
+# Promotion d'une version test en PROD, d'un clic :
+#   GitHub → Actions → « Promouvoir en prod » → Run workflow → le tag (ex. v2026.10.22.105).
+# Sans tag : la version test la plus récente. Effet : la version n'est plus une
+# pré-version et devient « latest » ; les tablettes en canal prod la reçoivent,
+# et le bouton de téléchargement du site la propose.
+name: Promouvoir en prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version à promouvoir (ex. v2026.10.22.105). Vide = la version test la plus récente."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Promotion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -e
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 --json tagName,isPrerelease,isDraft \
+              --jq '[.[] | select(.isPrerelease and (.isDraft|not))] | sort_by(.tagName | ltrimstr("v") | split(".") | map(tonumber)) | last | .tagName')
+          fi
+          [ -n "$TAG" ] || { echo "Aucune version test à promouvoir."; exit 1; }
+          echo "Promotion de $TAG"
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isPrerelease,isLatest
