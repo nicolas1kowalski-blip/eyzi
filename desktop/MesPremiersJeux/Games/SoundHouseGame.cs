@@ -415,7 +415,7 @@ namespace MesPremiersJeux.Games
         private int _trainIdx;
 
         /// <summary>Le son isolé de la maison : enregistrement de la famille s'il existe, sinon phonétique exacte.</summary>
-        private static string SoundPart(Room r)
+        private static string SoundPart(Round r)
         {
             var written = r.Letter.ToLowerInvariant();
             return Speech.SoundPart(written, Speech.SoundIpa(written));

@@ -392,7 +392,7 @@ namespace MesPremiersJeux.Games
             SetGazePads(pads, i => { if (i >= 0 && _act == 4 && !Locked) Speak(list[i].Said + "..."); });
 
             var speaker = SpeakerButton(() => "", 96); // le clic dit la séquence ci-dessous (son exact ou enregistré)
-            speaker.Click += (o, ev) => { if (_act == 4) Speech.SayParts(Parts("Quel mot finit par le son", "comme dans " + example + " ? Écoute : " + string.Join("... ", list.Select(x => x.Said)) + ". Lequel finit par le son"), Speech.SoundPart(sound, Speech.SoundIpa(sound)), "?"); };
+            speaker.Click += (o, ev) => { if (_act == 4) Speech.SayParts(Parts("Quel mot finit par le son", "comme dans " + example + " ? Écoute : " + string.Join("... ", list.Select(x => x.Said)) + ". Lequel finit par le son").Concat(new[] { Speech.SoundPart(sound, Speech.SoundIpa(sound)), "?" }).ToArray()); };
             Canvas.SetLeft(speaker, W - 140);
             Canvas.SetTop(speaker, 20);
             _canvas.Children.Add(speaker);
