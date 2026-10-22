@@ -7,39 +7,34 @@
 <meta name="description" content="Installer, activer et utiliser Eyzi : commande oculaire, jeux, réglages, mises à jour, licences.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⭐</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
 <style>
-:root{--bg:#F6F0FF;--card:#fff;--ink:#3B2A5A;--muted:#6B5B8A;--line:#E3D8F5;--accent:#7E3FF2;--gold:#F29E00;--code:#F1EBFF}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1B1430;--card:#261C42;--ink:#F1EAFF;--muted:#B9ACD6;--line:#3A2E5C;--accent:#B99CFF;--gold:#FFC54D;--code:#332757}}
-:root[data-theme="dark"]{--bg:#1B1430;--card:#261C42;--ink:#F1EAFF;--muted:#B9ACD6;--line:#3A2E5C;--accent:#B99CFF;--gold:#FFC54D;--code:#332757}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Fredoka,"Segoe UI",system-ui,sans-serif;font-size:17px;line-height:1.55}
-.top{background:linear-gradient(90deg,#B388FF,#8AD6FF);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.top a{color:#2A1B4A;text-decoration:none;font-weight:700;background:rgba(255,255,255,.6);padding:8px 16px;border-radius:999px}
-.top .brand{font-family:"Baloo 2",Fredoka,sans-serif;font-size:22px;background:none;padding:0}
-.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 64px;display:grid;grid-template-columns:240px 1fr;gap:28px}
-@media (max-width:860px){.wrap{grid-template-columns:1fr}}
+
+.wrap.guide{max-width:1100px;margin:0 auto;padding:24px 16px 64px;display:grid;grid-template-columns:240px 1fr;gap:28px}
+@media (max-width:860px){.wrap.guide{grid-template-columns:1fr}}
 nav.toc{position:sticky;top:16px;align-self:start;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:6px;font-size:15px}
 nav.toc a{color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:8px}nav.toc a:hover{background:var(--code);color:var(--ink)}
 @media (max-width:860px){nav.toc{position:static}}
 main{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 32px;min-width:0}
 @media (max-width:600px){main{padding:20px 16px}}
 h1{font-family:"Baloo 2",Fredoka,sans-serif;font-size:34px;margin:0 0 8px;line-height:1.15}
-h2{font-family:"Baloo 2",Fredoka,sans-serif;font-size:26px;margin:40px 0 10px;padding-top:14px;border-top:2px solid var(--line);color:var(--accent)}
+main h2{font-family:"Baloo 2",Fredoka,sans-serif;font-size:26px;margin:40px 0 10px;padding-top:14px;border-top:2px solid var(--line);color:var(--violet)}
 h3{font-size:20px;margin:24px 0 6px}
 p{margin:10px 0}em{color:var(--muted)}
 ul,ol{padding-left:26px;margin:8px 0}li{margin:5px 0}
 code{background:var(--code);padding:2px 6px;border-radius:6px;font-size:.92em;font-family:Consolas,Menlo,monospace;word-break:break-all}
 hr{display:none}
-a{color:var(--accent)}
+a{color:var(--violet)}
 .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:18px 0 6px}
 .shots figure{margin:0}.shots img{width:100%;border-radius:14px;border:1px solid var(--line);display:block}
 .shots figcaption{font-size:14px;color:var(--muted);margin-top:6px;text-align:center}
-.note{background:var(--code);border-left:5px solid var(--gold);border-radius:12px;padding:12px 16px;margin:16px 0}
+.note{background:var(--code);border-left:5px solid var(--yellow);border-radius:12px;padding:12px 16px;margin:16px 0}
 </style>
 </head>
 <body>
-<div class="top"><a class="brand" href="./">⭐ Eyzi</a><div><a href="./">Télécharger</a> <a href="licence.html">Demander une licence</a> <a href="retours.html">Vos retours</a></div></div>
-<div class="wrap">
+<div class="top"><div class="in"><a class="brand" href="./"><img src="img/eyzi-logo-dark.png" alt="Eyzi"></a><nav><a href="./#telecharger">Télécharger</a><a href="./#compatibilite">Compatibilité</a><a href="retours.html">Vos retours</a><a class="hl" href="licence.html">🔑 Licence</a></nav></div></div>
+<div class="wrap guide">
 <nav class="toc"><a href="#1-installer-l-application">1. Installer l&#x27;application</a>
 <a href="#2-le-premier-dmarrage">2. Le premier démarrage</a>
 <a href="#3-la-commande-oculaire">3. La commande oculaire</a>
@@ -52,7 +47,7 @@ a{color:var(--accent)}
 <main>
 <h1>Eyzi — Guide utilisateur</h1>
 <p><em>Une application Windows pour jouer, parler et apprendre avec les yeux, pour les enfants de 4 à 7 ans. Elle se pilote à la commande oculaire (Tobii), au doigt ou à la souris.</em></p>
-<p><em>Eyzi est en <strong>version bêta</strong> : elle marche, elle est utilisée tous les jours, et elle s'améliore avec les retours. La bêta est gratuite et limitée : 10 licences pour commencer, d'autres au fil des retours, jusqu'au 30 juin 2027 ; ceux de la bêta garderont leur licence gratuite si l'application devient payante un jour. Vos remarques : <strong>eyzi.fr/retours.html</strong>.</em></p>
+<p><em>Eyzi est en <strong>version bêta</strong> : elle marche, elle est utilisée tous les jours, et elle s'améliore avec les retours. La bêta est gratuite et limitée : 10 licences pour commencer, d'autres au fil des retours, jusqu'au 30 juin 2027 ; ceux de la bêta garderont leur licence gratuite si l'application devient payante un jour. Vos remarques : <strong>eyzi.fr/retours.html</strong>, ou <strong>contact@eyzi.fr</strong>.</em></p>
 <p>Ce guide s'adresse aux parents et aux accompagnants. La première partie explique l'installation et le premier démarrage, la deuxième ce que l'enfant voit, la troisième les réglages, la dernière ce qu'il faut savoir pour donner l'application à une autre famille.</p>
 <hr>
 <h2 id="1-installer-l-application">1. Installer l'application</h2>
@@ -156,7 +151,7 @@ a{color:var(--accent)}
 <li>Chaque famille a son espace, cloisonné par le serveur : une tablette d'une famille ne peut pas lire une autre famille.</li>
 <li>Le numéro de licence n'est pas un secret absolu (quelqu'un qui l'a peut activer une tablette de votre famille, dans la limite du nombre autorisé) ; le mot de passe famille, lui, protège vos contenus. Ne les écrivez pas au même endroit.</li>
 <li>L'application envoie à l'éditeur, une fois par jour, des <strong>compteurs d'usage</strong> : par jour et par activité, le nombre d'ouvertures, de réussites et de minutes, avec le nom de la tablette. Rien d'autre : ni le prénom, ni les photos, ni les voix, ni ce qui a été dit. Ils servent à savoir ce qui est utilisé et ce qui ne l'est pas, pour améliorer l'application.</li>
-<li>Le journal (<code>%LocalAppData%\MesPremiersJeux\journal.txt</code>) note ce qui se passe (jeux, erreurs). En cas de plantage, un fichier <code>plantage-&lt;tablette&gt;.txt</code> est écrit dans le dossier du contenu : envoyez-le à l'éditeur.</li>
+<li>Le journal (<code>%LocalAppData%\MesPremiersJeux\journal.txt</code>) note ce qui se passe (jeux, erreurs). En cas de plantage, un fichier <code>plantage-&lt;tablette&gt;.txt</code> est écrit dans le dossier du contenu : envoyez-le à contact@eyzi.fr.</li>
 </ul>
 <h2 id="8-problmes-frquents">8. Problèmes fréquents</h2>
 <p><strong>L'écran bleu « Windows a protégé votre ordinateur »</strong> : Informations complémentaires → Exécuter quand même.</p>
@@ -189,6 +184,7 @@ a{color:var(--accent)}
 </div>
 </main>
 </div>
+<footer><img src="img/eyzi-logo-dark.png" alt="Eyzi">Eyzi · version bêta · <a href="mailto:contact@eyzi.fr">contact@eyzi.fr</a> · <a href="./">accueil</a> · <a href="licence.html">demander une licence</a> · <a href="retours.html">vos retours</a></footer>
 </body>
 </html>
 

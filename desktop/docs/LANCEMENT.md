@@ -38,14 +38,14 @@
 
 **Modèle d'e-mail**
 
-> Objet : Votre licence Eyzi
+> De : contact@eyzi.fr · Objet : Votre licence Eyzi
 >
 > Bonjour,
 > voici votre numéro de licence Eyzi : **EYZ-XXXX-XXXX-XXXX-XXXX** (valable pour N tablettes).
 > 1. Téléchargez l'application sur https://eyzi.fr et installez-la (si Windows affiche « Windows a protégé votre ordinateur » : Informations complémentaires → Exécuter quand même).
 > 2. Au premier lancement, entrez ce numéro et choisissez un mot de passe famille, le même sur toutes vos tablettes.
 > 3. Le guide complet : https://eyzi.fr/guide.html
-> Eyzi est en version bêta et gratuite : vos remarques comptent, https://eyzi.fr/retours.html, ou en répondant à cet e-mail.
+> Eyzi est en version bêta et gratuite : vos remarques comptent, https://eyzi.fr/retours.html, ou en répondant à cet e-mail (contact@eyzi.fr).
 > Bonne découverte !
 
 ## F. Chaque semaine (30 min)

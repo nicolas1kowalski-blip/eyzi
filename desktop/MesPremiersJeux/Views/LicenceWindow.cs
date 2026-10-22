@@ -91,7 +91,7 @@ namespace MesPremiersJeux.Views
         private static string TrialIntro(Settings s)
         {
             int left = Licence.TrialDaysLeft(s);
-            string lic = "Entrez le numéro de licence qui vous a été donné (forme EYZ-XXXX-XXXX-XXXX-XXXX). Toutes les tablettes activées avec le même numéro forment une même famille. Pendant la bêta, la licence est gratuite : eyzi.fr/licence.html";
+            string lic = "Entrez le numéro de licence qui vous a été donné (forme EYZ-XXXX-XXXX-XXXX-XXXX). Toutes les tablettes activées avec le même numéro forment une même famille. Pendant la bêta, la licence est gratuite : eyzi.fr/licence.html · contact@eyzi.fr";
             if (s.LicenceOk && !string.IsNullOrWhiteSpace(s.LicenceKey)) return lic;
             if (left < 0) return "Vous pouvez essayer Eyzi " + Licence.TrialDays + " jours sans licence, toutes fonctions ouvertes. " + lic;
             if (left > 0) return "Essai gratuit : il reste " + left + (left > 1 ? " jours." : " jour.") + " " + lic;
