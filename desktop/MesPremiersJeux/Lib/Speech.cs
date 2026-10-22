@@ -49,6 +49,54 @@ namespace MesPremiersJeux.Lib
         //  l'enfant puisse enchaîner les images du regard.
         // ------------------------------------------------------------------
         private const int ProtectedLength = 30;
+
+        // ------------------------------------------------------------------
+        //  SONS EXACTS : dans un texte, « {on|ɔ̃} » veut dire « écris on, dis le
+        //  son ɔ̃ » (alphabet phonétique). Azure et la voix Windows reçoivent
+        //  alors un <phoneme>, au lieu de deviner comment lire « on » tout seul.
+        // ------------------------------------------------------------------
+        private static readonly System.Text.RegularExpressions.Regex PhonTag =
+            new System.Text.RegularExpressions.Regex(@"\{([^|{}]+)\|([^|{}]+)\}");
+
+        private static bool HasPhon(string t) => t != null && PhonTag.IsMatch(t);
+        private static string Plain(string t) => t == null ? "" : PhonTag.Replace(t, m => m.Groups[1].Value);
+
+        /// <summary>Le texte en fragment SSML : phrases échappées + balises phoneme.</summary>
+        private static string InnerSsml(string raw)
+        {
+            var sb = new System.Text.StringBuilder();
+            int last = 0;
+            foreach (System.Text.RegularExpressions.Match m in PhonTag.Matches(raw))
+            {
+                sb.Append(SecurityElement.Escape(Fix(raw.Substring(last, m.Index - last))));
+                sb.Append("<phoneme alphabet='ipa' ph='").Append(SecurityElement.Escape(m.Groups[2].Value)).Append("'>")
+                  .Append(SecurityElement.Escape(m.Groups[1].Value)).Append("</phoneme>");
+                last = m.Index + m.Length;
+            }
+            sb.Append(SecurityElement.Escape(Fix(raw.Substring(last))));
+            return sb.ToString();
+        }
+
+        private static void LocalSayPhon(string raw, int rate)
+        {
+            Ensure();
+            if (_tts == null) return;
+            try
+            {
+                _pageMode = false;
+                _tts.SpeakAsyncCancelAll();
+                ApplyVoice();
+                _tts.Rate = rate;
+                _busyStart = DateTime.Now;
+                var pitch = Math.Max(-20, Math.Min(60, Pitch));
+                var sign = pitch >= 0 ? "+" : "";
+                var ssml = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"fr-FR\">" +
+                           $"<prosody pitch=\"{sign}{pitch.ToString("0", CultureInfo.InvariantCulture)}%\">" + InnerSsml(raw) + "</prosody></speak>";
+                try { _tts.SpeakSsmlAsync(ssml); }
+                catch { _tts.SpeakAsync(Fix(Plain(raw))); }
+            }
+            catch { }
+        }
         private static string _currentText = "";
         private static string _pendingText;
         private static bool _pendingSlow;
@@ -382,7 +430,8 @@ namespace MesPremiersJeux.Lib
         public static void Say(string text)
         {
             if (string.IsNullOrWhiteSpace(text) || Hold) return;
-            text = Fix(text);
+            var raw = text;               // peut contenir des sons exacts {on|ɔ̃}
+            text = Fix(Plain(text));      // le texte « normal », pour tout le reste
 
             // Si la voix de papa/maman est en train de parler (VoiceBank), on
             // attend poliment la fin avant de parler à notre tour.
@@ -390,12 +439,12 @@ namespace MesPremiersJeux.Lib
             if (wait > 0.1)
             {
                 var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(wait + 0.1) };
-                t.Tick += (s, e) => { t.Stop(); Say(text); };
+                t.Tick += (s, e) => { t.Stop(); Say(raw); };
                 t.Start();
                 return;
             }
             // Une phrase longue en cours finit d'abord ; celle-ci attend son tour.
-            if (MustWait()) { Enqueue(text, false); return; }
+            if (MustWait()) { Enqueue(raw, false); return; }
             _pendingText = null;
 
             // Seules les phrases LONGUES (consignes, explications) verrouillent
@@ -405,15 +454,17 @@ namespace MesPremiersJeux.Lib
             _currentText = text;
             _busyStart = DateTime.Now;
 
+            bool phon = HasPhon(raw);
             // Voix naturelle Azure si configurée, sinon voix Windows locale.
             if (AzureTts.Enabled)
             {
                 LocalStop();
                 MarkBusy(2.0); // occupée le temps que l'audio arrive (la durée exacte suivra)
-                AzureTts.Speak(text, Pitch, () => LocalSay(text));
+                if (phon) AzureTts.SpeakSsml(InnerSsml(raw), Pitch, () => LocalSayPhon(raw, 0));
+                else AzureTts.Speak(text, Pitch, () => LocalSay(text));
                 return;
             }
-            LocalSay(text);
+            if (phon) LocalSayPhon(raw, 0); else LocalSay(text);
         }
 
         /// <summary>
@@ -423,28 +474,31 @@ namespace MesPremiersJeux.Lib
         public static void SaySlow(string text)
         {
             if (string.IsNullOrWhiteSpace(text) || Hold) return;
-            text = Fix(text);
+            var raw = text;
+            text = Fix(Plain(text));
             double wait = VoiceBank.RemainingSeconds();
             if (wait > 0.1)
             {
                 var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(wait + 0.1) };
-                t.Tick += (s, e) => { t.Stop(); SaySlow(text); };
+                t.Tick += (s, e) => { t.Stop(); SaySlow(raw); };
                 t.Start();
                 return;
             }
-            if (MustWait()) { Enqueue(text, true); return; }
+            if (MustWait()) { Enqueue(raw, true); return; }
             _pendingText = null;
             _gate = !AlreadyHeard(text); // dit lentement = à écouter jusqu'au bout (la 1re fois)
             _currentText = text;
             _busyStart = DateTime.Now;
+            bool phon = HasPhon(raw);
             if (AzureTts.Enabled)
             {
                 LocalStop();
                 MarkBusy(2.0);
-                AzureTts.SpeakRate(text, Pitch, -35, () => LocalSaySlow(text));
+                if (phon) AzureTts.SpeakSsml("<prosody rate='-35%'>" + InnerSsml(raw) + "</prosody>", Pitch, () => LocalSayPhon(raw, -4));
+                else AzureTts.SpeakRate(text, Pitch, -35, () => LocalSaySlow(text));
                 return;
             }
-            LocalSaySlow(text);
+            if (phon) LocalSayPhon(raw, -4); else LocalSaySlow(text);
         }
 
         private static void LocalSaySlow(string text)
