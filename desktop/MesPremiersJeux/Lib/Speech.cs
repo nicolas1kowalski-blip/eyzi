@@ -69,8 +69,12 @@ namespace MesPremiersJeux.Lib
             foreach (System.Text.RegularExpressions.Match m in PhonTag.Matches(raw))
             {
                 sb.Append(SecurityElement.Escape(Fix(raw.Substring(last, m.Index - last))));
-                sb.Append("<phoneme alphabet='ipa' ph='").Append(SecurityElement.Escape(m.Groups[2].Value)).Append("'>")
-                  .Append(SecurityElement.Escape(m.Groups[1].Value)).Append("</phoneme>");
+                // Le son seul est dit PLUS FORT et PLUS LENTEMENT, entre deux petites pauses :
+                // c'est lui que l'enfant doit entendre.
+                sb.Append("<break time='250ms'/><prosody rate='-50%' volume='x-loud'>")
+                  .Append("<phoneme alphabet='ipa' ph='").Append(SecurityElement.Escape(m.Groups[2].Value)).Append("'>")
+                  .Append(SecurityElement.Escape(m.Groups[1].Value)).Append("</phoneme>")
+                  .Append("</prosody><break time='300ms'/>");
                 last = m.Index + m.Length;
             }
             sb.Append(SecurityElement.Escape(Fix(raw.Substring(last))));

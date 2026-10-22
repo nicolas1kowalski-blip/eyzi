@@ -446,11 +446,11 @@ namespace MesPremiersJeux.Games
         {
             switch (sound)
             {
-                case "on": return "le son {on|ɔ̃ː}";
-                case "o": return "le son {o|oː}";
-                case "i": return "le son {i|iː}";
-                case "ou": return "le son {ou|uː}";
-                case "ette": return "le son {ette|ɛt}";
+                case "on": return "le son {on|ɔ̃ːː}, {on|ɔ̃ːː}";
+                case "o": return "le son {o|oːː}, {o|oːː}";
+                case "i": return "le son {i|iːː}, {i|iːː}";
+                case "ou": return "le son {ou|uːː}, {ou|uːː}";
+                case "ette": return "le son {ette|ɛːt}, {ette|ɛːt}";
                 default: return "le son " + sound;
             }
         }
