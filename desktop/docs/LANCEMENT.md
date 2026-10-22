@@ -4,7 +4,7 @@
 
 ## A. Mettre le code en ligne (10 min)
 
-1. Le code est sur le dépôt privé `eyzi`, branche `main` ; les versions publiées sur le dépôt public `eyzi-releases`. Dans `eyzi` → Settings → Secrets and variables → Actions : ajouter `RELEASES_TOKEN` (jeton fine-grained, « Contents : Read and write » sur `eyzi-releases`).
+1. Le code et les versions publiées sont sur le dépôt public `eyzi`, branche `main`. Chaque poussée touchant `desktop/` compile et publie une version test ; rien à configurer.
 2. Vercel : New Project → importer le dépôt `eyzi` → Root Directory `site` → ajouter les variables `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` (les mêmes que le projet des livres) → Deploy. Vérifier dans Vercel → Deployments que le dernier est « Ready ».
 
 ## B. Le domaine eyzi.fr (10 min, puis attendre jusqu'à 1 h)
@@ -26,7 +26,7 @@
 
 ## D. Publier la version prod (2 min)
 
-11. GitHub → dépôt `eyzi-releases` → Releases → la version test la plus récente (après l'étape 7, pour qu'elle contienne le serveur) → **Edit** → décocher « Set as a pre-release » → cocher « Set as the latest release » → Update. Dès lors : le bouton « Télécharger » du site marche, et les tablettes en canal prod se mettent à jour.
+11. GitHub → dépôt `eyzi` → Releases → la version test la plus récente (après l'étape 7, pour qu'elle contienne le serveur) → **Edit** → décocher « Set as a pre-release » → cocher « Set as the latest release » → Update. Dès lors : le bouton « Télécharger » du site marche, et les tablettes en canal prod se mettent à jour.
 12. Ta licence est en canal `test` : tes tablettes reçoivent toutes les versions. Les familles reçoivent la prod.
 
 ## E. Traiter une demande de licence (5 min par demande)

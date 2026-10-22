@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   windows:
@@ -55,7 +55,7 @@ jobs:
         run: |
           $v = "${{ steps.ver.outputs.version }}"
           Compress-Archive -Path desktop/MesPremiersJeux/bin/x64/Release/net472/* -DestinationPath "desktop/installer/Output/Eyzi-$v.zip"
-          # Copie à nom fixe : https://github.com/nicolas1kowalski-blip/eyzi-releases/releases/latest/download/Eyzi-Setup.exe
+          # Copie à nom fixe : https://github.com/nicolas1kowalski-blip/eyzi/releases/latest/download/Eyzi-Setup.exe
           Copy-Item "desktop/installer/Output/Eyzi-Setup-$v.exe" "desktop/installer/Output/Eyzi-Setup.exe"
           Get-ChildItem desktop/installer/Output/*.exe, desktop/installer/Output/*.zip | ForEach-Object {
             $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
@@ -63,11 +63,9 @@ jobs:
           }
           Get-ChildItem desktop/installer/Output
 
-      - name: Version test (pré-version GitHub, sur le dépôt public eyzi-releases)
+      - name: Version test (pré-version GitHub)
         uses: softprops/action-gh-release@v2
         with:
-          repository: nicolas1kowalski-blip/eyzi-releases
-          token: ${{ secrets.RELEASES_TOKEN }}
           tag_name: v${{ steps.ver.outputs.version }}
           name: Eyzi ${{ steps.ver.outputs.version }}
           prerelease: true
