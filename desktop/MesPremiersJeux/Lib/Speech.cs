@@ -39,6 +39,53 @@ namespace MesPremiersJeux.Lib
         private static DateTime _busyUntil = DateTime.MinValue;
         private static DateTime _busyStart = DateTime.MinValue;
 
+        // ------------------------------------------------------------------
+        //  UNE PHRASE FINIT SA PHRASE. Avant, chaque nouvelle phrase coupait la
+        //  précédente : les derniers mots d'un « Bravo, c'est le ballon ! » ou
+        //  d'une consigne disparaissaient quand l'écran suivant parlait. Désormais,
+        //  une phrase d'au moins ProtectedLength caractères n'est jamais coupée :
+        //  la suivante attend qu'elle finisse (seule la DERNIÈRE demandée est
+        //  gardée). Un mot seul ou un petit retour reste coupable, pour que
+        //  l'enfant puisse enchaîner les images du regard.
+        // ------------------------------------------------------------------
+        private const int ProtectedLength = 30;
+        private static string _currentText = "";
+        private static string _pendingText;
+        private static bool _pendingSlow;
+        private static DateTime _pendingSince;
+        private static System.Windows.Threading.DispatcherTimer _pendingTimer;
+
+        private static bool MustWait()
+        {
+            if (!IsBusy) return false;
+            if ((_currentText ?? "").Length < ProtectedLength) return false;
+            return (DateTime.Now - _busyStart).TotalSeconds < 15; // garde-fou
+        }
+
+        private static void Enqueue(string text, bool slow)
+        {
+            _pendingText = text;
+            _pendingSlow = slow;
+            _pendingSince = DateTime.Now;
+            if (_pendingTimer == null)
+            {
+                _pendingTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+                _pendingTimer.Tick += (s, e) =>
+                {
+                    if (_pendingText == null) { _pendingTimer.Stop(); return; }
+                    if (IsBusy && (DateTime.Now - _pendingSince).TotalSeconds < 12) return;
+                    var t = _pendingText; var sl = _pendingSlow;
+                    _pendingText = null;
+                    _pendingTimer.Stop();
+                    if (sl) SaySlow(t); else Say(t);
+                };
+            }
+            _pendingTimer.Start();
+        }
+
+        /// <summary>Une phrase longue est-elle en train d'être dite (et doit finir) ?</summary>
+        public static bool IsProtected => MustWait();
+
         /// <summary>
         /// La voix est-elle en train de parler ? Pour la voix WINDOWS, on
         /// interroge l'état RÉEL du synthétiseur (aucune estimation — c'était
@@ -76,6 +123,12 @@ namespace MesPremiersJeux.Lib
         public static void ClearGate() => _gate = false;
 
         /// <summary>Déclare la voix occupée pendant « seconds » (0 = libre).</summary>
+        /// <summary>Durée EXACTE connue (Azure) : remplace l'estimation en cours.</summary>
+        public static void MarkBusyExact(double seconds)
+        {
+            _busyUntil = seconds <= 0 ? DateTime.MinValue : DateTime.Now.AddSeconds(seconds);
+        }
+
         public static void MarkBusy(double seconds)
         {
             if (seconds <= 0) { _busyUntil = DateTime.MinValue; return; }
@@ -104,7 +157,7 @@ namespace MesPremiersJeux.Lib
                     // La voix Windows a VRAIMENT fini. (Une annulation — nouvelle
                     // phrase qui en coupe une autre — ne libère pas le verrou :
                     // Azure vient peut-être de le poser pour la suite.)
-                    if (!e.Cancelled) _busyUntil = DateTime.MinValue;
+                    if (!e.Cancelled) { _busyUntil = DateTime.MinValue; _currentText = ""; }
                     if (_pageMode)
                     {
                         _pageMode = false;
@@ -330,10 +383,6 @@ namespace MesPremiersJeux.Lib
         {
             if (string.IsNullOrWhiteSpace(text) || Hold) return;
             text = Fix(text);
-            // Seules les phrases LONGUES (consignes, explications) verrouillent
-            // les clics ; les petits retours laissent l'enfant enchaîner.
-            // Une phrase déjà entendue ne verrouille plus.
-            _gate = text.Length >= 60 && !AlreadyHeard(text);
 
             // Si la voix de papa/maman est en train de parler (VoiceBank), on
             // attend poliment la fin avant de parler à notre tour.
@@ -345,11 +394,22 @@ namespace MesPremiersJeux.Lib
                 t.Start();
                 return;
             }
+            // Une phrase longue en cours finit d'abord ; celle-ci attend son tour.
+            if (MustWait()) { Enqueue(text, false); return; }
+            _pendingText = null;
+
+            // Seules les phrases LONGUES (consignes, explications) verrouillent
+            // les clics ; les petits retours laissent l'enfant enchaîner.
+            // Une phrase déjà entendue ne verrouille plus.
+            _gate = text.Length >= 60 && !AlreadyHeard(text);
+            _currentText = text;
+            _busyStart = DateTime.Now;
 
             // Voix naturelle Azure si configurée, sinon voix Windows locale.
             if (AzureTts.Enabled)
             {
                 LocalStop();
+                MarkBusy(2.0); // occupée le temps que l'audio arrive (la durée exacte suivra)
                 AzureTts.Speak(text, Pitch, () => LocalSay(text));
                 return;
             }
@@ -364,7 +424,6 @@ namespace MesPremiersJeux.Lib
         {
             if (string.IsNullOrWhiteSpace(text) || Hold) return;
             text = Fix(text);
-            _gate = !AlreadyHeard(text); // dit lentement = à écouter jusqu'au bout (la 1re fois)
             double wait = VoiceBank.RemainingSeconds();
             if (wait > 0.1)
             {
@@ -373,9 +432,15 @@ namespace MesPremiersJeux.Lib
                 t.Start();
                 return;
             }
+            if (MustWait()) { Enqueue(text, true); return; }
+            _pendingText = null;
+            _gate = !AlreadyHeard(text); // dit lentement = à écouter jusqu'au bout (la 1re fois)
+            _currentText = text;
+            _busyStart = DateTime.Now;
             if (AzureTts.Enabled)
             {
                 LocalStop();
+                MarkBusy(2.0);
                 AzureTts.SpeakRate(text, Pitch, -35, () => LocalSaySlow(text));
                 return;
             }
@@ -471,6 +536,8 @@ namespace MesPremiersJeux.Lib
 
         public static void Stop()
         {
+            _pendingText = null;
+            _currentText = "";
             AzureTts.StopPlayback();
             LocalStop();
             MarkBusy(0);

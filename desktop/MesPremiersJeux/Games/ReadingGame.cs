@@ -364,6 +364,10 @@ namespace MesPremiersJeux.Games
             int n = Math.Min(4, Level.Choices);
             var choices = GameKit.Shuffle(GameKit.Shuffle(othersPool).Take(n - 1).Concat(new[] { good }));
             _target = good;
+            // Le son seul (« on », « o ») est mal rendu par la voix : on le dit avec un
+            // mot d'exemple de la même famille, jamais celui qu'il faut trouver.
+            var example = family.Members.Where(m => m != good).Select(m => m.Said).DefaultIfEmpty(good.Said).First();
+            string sonDit = SoundSaid(family.Sound) + ", comme dans " + example;
             Question.Text = "👂 Quel mot finit par " + family.Sound.ToUpperInvariant() + " ?";
             _canvas = new Canvas { Width = W, Height = H };
 
@@ -384,14 +388,14 @@ namespace MesPremiersJeux.Games
             var list = choices;
             SetGazePads(pads, i => { if (i >= 0 && _act == 4 && !Locked) Speak(list[i].Said + "..."); });
 
-            var speaker = SpeakerButton(() => "Quel mot finit par " + family.Sound + " ? Écoute : " + string.Join("... ", list.Select(x => x.Said)) + ". Lequel finit par " + family.Sound + " ?", 96);
+            var speaker = SpeakerButton(() => "Quel mot finit par " + sonDit + " ? Écoute : " + string.Join("... ", list.Select(x => x.Said)) + ". Lequel finit par " + SoundSaid(family.Sound) + " ?", 96);
             Canvas.SetLeft(speaker, W - 140);
             Canvas.SetTop(speaker, 20);
             _canvas.Children.Add(speaker);
             SetConsigne(new TextBlock { Text = family.Sound.ToUpperInvariant(), FontSize = 64, FontWeight = FontWeights.ExtraBold, Foreground = new SolidColorBrush(Color.FromRgb(0x7E, 0x3F, 0xF2)) },
-                () => "Quel mot finit par " + family.Sound + " ? Regarde une image pour l'entendre !");
+                () => "Quel mot finit par " + sonDit + " ? Regarde une image pour l'entendre !");
             SetBody(_canvas);
-            Schedule(400, () => Speak("Quel mot finit par " + family.Sound + " ?"));
+            Schedule(400, () => Speak("Quel mot finit par " + sonDit + " ?"));
         }
 
         private void AnswerRhyme(Button btn, Word w, string sound)
@@ -403,7 +407,7 @@ namespace MesPremiersJeux.Games
                 SetGazePads(null, null);
                 GameKit.Success();
                 Pulse(btn);
-                Speak("Oui ! " + Cap(w.Said) + " finit par " + sound + " ! " + GameKit.Praise());
+                Speak("Oui ! " + Cap(w.Said) + " finit par " + SoundSaid(sound) + " ! " + GameKit.Praise());
                 RewardStar();
                 Celebrate();
                 Schedule(3400, StartRhymes);
@@ -411,7 +415,7 @@ namespace MesPremiersJeux.Games
             else
             {
                 Shake(btn);
-                Speak(Cap(w.Said) + "... non, ça ne finit pas par " + sound + ". Écoute encore !");
+                Speak(Cap(w.Said) + "... non, ça ne finit pas par " + SoundSaid(sound) + ". Écoute encore !");
             }
         }
 
@@ -436,5 +440,19 @@ namespace MesPremiersJeux.Games
         }
 
         private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s.Substring(1);
+
+        /// <summary>Le son tel que la voix le dit bien (« on » seul devenait inaudible).</summary>
+        private static string SoundSaid(string sound)
+        {
+            switch (sound)
+            {
+                case "on": return "le son onn";
+                case "o": return "le son ô";
+                case "i": return "le son hi";
+                case "ou": return "le son ou";
+                case "ette": return "le son ette";
+                default: return "le son " + sound;
+            }
+        }
     }
 }
