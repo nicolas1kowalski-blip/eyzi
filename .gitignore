@@ -1,0 +1,10 @@
+node_modules/
+.vercel/
+.DS_Store
+
+# C# / .NET (desktop/)
+[Bb]in/
+[Oo]bj/
+*.user
+.vs/
+desktop/installer/Output/

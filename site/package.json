@@ -1,0 +1,10 @@
+{
+  "name": "eyzi-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "eyzi.fr : présentation, téléchargement, demande de licence, retours, guide.",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
