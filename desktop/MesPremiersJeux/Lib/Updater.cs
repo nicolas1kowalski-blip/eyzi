@@ -148,16 +148,35 @@ namespace MesPremiersJeux.Lib
             return Launch(prev);
         }
 
+        /// <summary>L'installeur à lancer APRÈS la fermeture complète (lu par App.OnExit).</summary>
+        public static string PendingSetup { get; private set; }
+
         private static string Launch(string setupPath)
         {
-            try
-            {
-                Process.Start(new ProcessStartInfo(setupPath, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LAUNCH=1") { UseShellExecute = true });
-            }
-            catch (Exception ex) { return "Impossible de lancer l'installeur : " + ex.Message; }
-            // L'installeur ferme l'application (CloseApplications) ; on part proprement nous-mêmes.
+            if (!File.Exists(setupPath)) return "Installeur introuvable : " + setupPath;
+            // ORDRE IMPORTANT : on se ferme D'ABORD, l'installeur part ENSUITE
+            // (App.OnExit). La fermeture prend quelques secondes (statistiques,
+            // envoi au nuage) ; lancé avant, l'installeur trouvait l'application
+            // encore ouverte (fichiers en cours d'usage → installation abandonnée
+            // en silence) et la relance se heurtait au verrou « instance unique ».
+            PendingSetup = setupPath;
+            Log.Write("maj", "Fermeture de l'application ; l'installeur partira à la sortie : " + setupPath);
             System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => System.Windows.Application.Current.Shutdown()));
             return null;
+        }
+
+        /// <summary>Appelé par App.OnExit, une fois tout fermé et le verrou relâché.</summary>
+        public static void RunPendingSetup()
+        {
+            var path = PendingSetup;
+            PendingSetup = null;
+            if (path == null) return;
+            try
+            {
+                Process.Start(new ProcessStartInfo(path, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LAUNCH=1") { UseShellExecute = true });
+                Log.Write("maj", "Installeur lancé : " + path);
+            }
+            catch (Exception ex) { Log.Write("maj", "Impossible de lancer l'installeur : " + ex.Message); }
         }
 
         private static Version ParseVersion(string path)

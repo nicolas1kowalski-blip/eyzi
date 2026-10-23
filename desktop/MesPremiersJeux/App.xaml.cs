@@ -67,6 +67,10 @@ namespace MesPremiersJeux
         protected override void OnExit(ExitEventArgs e)
         {
             try { _single?.ReleaseMutex(); _single?.Dispose(); } catch { }
+            // Mise à jour en attente : l'installeur part maintenant que tout est
+            // fermé et que le verrou « instance unique » est relâché (sinon la
+            // nouvelle version, relancée par l'installeur, se croyait en double).
+            try { Lib.Updater.RunPendingSetup(); } catch { }
             base.OnExit(e);
         }
     }
