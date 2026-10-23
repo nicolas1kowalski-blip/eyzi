@@ -40,14 +40,20 @@ export async function notifyEditor(r) {
     ['Enfant', r.child || '—'], ['Commande oculaire', r.gear || '—'], ['Tablettes', String(r.tablets)],
     ['Recontact pour avis', r.recontact ? 'oui' : 'non'], ['Message', r.message || '—'],
   ];
+  if (isLic) {
+    rows.push(['Licence', r.licenceKey
+      ? (r.resent ? `${r.licenceKey} (déjà attribuée à cette adresse, renvoyée)` : `${r.licenceKey} — créée et envoyée automatiquement`)
+      : (r.placesLeft === 0 ? "PAS DE PLACE : demande gardée (status new). Pour l'attribuer : augmenter BETA_PLACES dans Vercel, ou créer la licence à la main." : 'non créée (erreur : voir les logs Vercel)')]);
+    if (r.placesLeft != null) rows.push(['Places bêta restantes', String(r.placesLeft)]);
+  }
   const text = rows.map(([k, v]) => `${k} : ${v}`).join('\n') +
-    `\n\nPour créer la licence (Supabase → SQL Editor) :\nselect public.create_licence('${(r.name || '').replace(/'/g, "''")}', 'prod', ${r.tablets}, '2027-06-30');\n` +
-    `Puis répondre à ${r.email || '(pas d\'adresse)'} avec le numéro EYZ-… et le lien https://eyzi.fr`;
+    (isLic && !r.licenceKey ? `\n\nPour créer la licence à la main (Supabase → SQL Editor) :\nselect public.create_licence('${(r.name || '').replace(/'/g, "''")}', 'prod', ${r.tablets}, '2027-06-30');\n` : '') +
+    `\nPour répondre à ${r.email || '(pas d\'adresse)'} : répondez simplement à cet e-mail.`;
   const html = `<h2 style="font-family:sans-serif">${esc(subject)}</h2>` +
     `<table style="font-family:sans-serif;border-collapse:collapse">` +
     rows.map(([k, v]) => `<tr><td style="padding:4px 10px 4px 0;color:#555"><b>${esc(k)}</b></td><td style="padding:4px 0;white-space:pre-wrap">${esc(v)}</td></tr>`).join('') +
     `</table>` +
-    (isLic ? `<p style="font-family:sans-serif">Créer la licence (Supabase → SQL Editor) :<br><code>select public.create_licence('${esc((r.name || '').replace(/'/g, "''"))}', 'prod', ${r.tablets}, '2027-06-30');</code></p>` : '') +
+    (isLic && !r.licenceKey ? `<p style="font-family:sans-serif">Créer la licence à la main (Supabase → SQL Editor) :<br><code>select public.create_licence('${esc((r.name || '').replace(/'/g, "''"))}', 'prod', ${r.tablets}, '2027-06-30');</code></p>` : '') +
     (r.email ? `<p style="font-family:sans-serif">Répondre : <a href="mailto:${esc(r.email)}">${esc(r.email)}</a></p>` : '');
   await transport().sendMail({
     from: `"Eyzi — site" <${process.env.SMTP_USER}>`, to, subject, text, html,
@@ -75,5 +81,32 @@ L'équipe Eyzi
 contact@eyzi.fr`;
   await transport().sendMail({
     from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: 'Votre demande de licence Eyzi est bien reçue', text,
+  });
+}
+
+/// La famille reçoit son numéro de licence et la marche à suivre.
+export async function sendLicence(r) {
+  if (!r.email || !r.licenceKey) return;
+  const first = (r.name || '').trim().split(/\s+/)[0] || '';
+  const text =
+`Bonjour${first ? ' ' + first : ''},
+
+Bienvenue dans la bêta d'Eyzi ! Voici votre numéro de licence :
+
+    ${r.licenceKey}
+
+Pour l'installer :
+1. Téléchargez l'application sur https://eyzi.fr (bouton « Télécharger ») et installez-la sur la tablette de l'enfant.
+2. Au premier démarrage, entrez ce numéro, puis choisissez un mot de passe famille : il protège vos photos et vos voix, et il doit être le même sur chaque tablette (${r.tablets > 1 ? r.tablets + ' tablettes' : '1 tablette'} avec cette licence).
+3. Le guide pas à pas : https://eyzi.fr/guide.html
+
+La licence est gratuite pendant toute la bêta (jusqu'au 30 juin 2027). Si Eyzi devenait payant un jour, les familles de la bêta garderaient leur licence gratuitement.
+
+Un problème, une idée ? Répondez simplement à ce message, ou passez par https://eyzi.fr/retours.html. Vos retours font l'application.
+
+L'équipe Eyzi
+contact@eyzi.fr`;
+  await transport().sendMail({
+    from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: 'Votre licence Eyzi : ' + r.licenceKey, text,
   });
 }
