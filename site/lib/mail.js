@@ -40,20 +40,21 @@ export async function notifyEditor(r) {
     ['Enfant', r.child || '—'], ['Commande oculaire', r.gear || '—'], ['Tablettes', String(r.tablets)],
     ['Recontact pour avis', r.recontact ? 'oui' : 'non'], ['Message', r.message || '—'],
   ];
+  const admin = 'https://eyzi.fr/admin.html';
   if (isLic) {
     rows.push(['Licence', r.licenceKey
       ? (r.resent ? `${r.licenceKey} (déjà attribuée à cette adresse, renvoyée)` : `${r.licenceKey} — créée et envoyée automatiquement`)
-      : (r.placesLeft === 0 ? "PAS DE PLACE : demande gardée (status new). Pour l'attribuer : augmenter BETA_PLACES dans Vercel, ou créer la licence à la main." : 'non créée (erreur : voir les logs Vercel)')]);
+      : 'EN ATTENTE de votre validation']);
     if (r.placesLeft != null) rows.push(['Places bêta restantes', String(r.placesLeft)]);
   }
   const text = rows.map(([k, v]) => `${k} : ${v}`).join('\n') +
-    (isLic && !r.licenceKey ? `\n\nPour créer la licence à la main (Supabase → SQL Editor) :\nselect public.create_licence('${(r.name || '').replace(/'/g, "''")}', 'prod', ${r.tablets}, '2027-06-30');\n` : '') +
+    (isLic && !r.licenceKey ? `\n\nValider ou refuser : ${admin}\n(« Valider » crée la licence et l'envoie à la famille.)\n` : '') +
     `\nPour répondre à ${r.email || '(pas d\'adresse)'} : répondez simplement à cet e-mail.`;
   const html = `<h2 style="font-family:sans-serif">${esc(subject)}</h2>` +
     `<table style="font-family:sans-serif;border-collapse:collapse">` +
     rows.map(([k, v]) => `<tr><td style="padding:4px 10px 4px 0;color:#555"><b>${esc(k)}</b></td><td style="padding:4px 0;white-space:pre-wrap">${esc(v)}</td></tr>`).join('') +
     `</table>` +
-    (isLic && !r.licenceKey ? `<p style="font-family:sans-serif">Créer la licence à la main (Supabase → SQL Editor) :<br><code>select public.create_licence('${esc((r.name || '').replace(/'/g, "''"))}', 'prod', ${r.tablets}, '2027-06-30');</code></p>` : '') +
+    (isLic && !r.licenceKey ? `<p style="font-family:sans-serif"><a href="${admin}" style="display:inline-block;background:#1F5EFF;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:bold">Valider ou refuser la demande</a><br><small>« Valider » crée la licence et l'envoie à la famille.</small></p>` : '') +
     (r.email ? `<p style="font-family:sans-serif">Répondre : <a href="mailto:${esc(r.email)}">${esc(r.email)}</a></p>` : '');
   await transport().sendMail({
     from: `"Eyzi — site" <${process.env.SMTP_USER}>`, to, subject, text, html,
@@ -108,5 +109,24 @@ L'équipe Eyzi
 contact@eyzi.fr`;
   await transport().sendMail({
     from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: 'Votre licence Eyzi : ' + r.licenceKey, text,
+  });
+}
+
+/// Réponse polie quand l'éditeur refuse (ou n'a pas de place) — texte libre ajouté.
+export async function refuse(r, note) {
+  if (!r.email) return;
+  const first = (r.name || '').trim().split(/\s+/)[0] || '';
+  const text =
+`Bonjour${first ? ' ' + first : ''},
+
+Merci pour votre demande de licence Eyzi. Nous ne pouvons malheureusement pas vous attribuer de licence pour le moment : la bêta est limitée à un petit nombre de familles, pour pouvoir accompagner chacune.
+${note ? '\n' + note.trim() + '\n' : ''}
+Vous pouvez toujours installer l'application et l'essayer 10 jours sans licence : https://eyzi.fr
+Si une place se libère ou si la bêta s'élargit, nous vous recontacterons à cette adresse.
+
+L'équipe Eyzi
+contact@eyzi.fr`;
+  await transport().sendMail({
+    from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: 'Votre demande de licence Eyzi', text,
   });
 }

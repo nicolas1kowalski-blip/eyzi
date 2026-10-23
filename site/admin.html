@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Eyzi · demandes</title>
+<link rel="icon" href="img/favicon.png">
+<link rel="stylesheet" href="site.css">
+<style>
+  .wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px}
+  h1{font-size:28px;margin:0 0 6px}
+  .sub{color:var(--muted);margin:0 0 18px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px}
+  .tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:15px}
+  .tabs button.on{background:var(--dark);color:#fff;border-color:var(--dark)}
+  .places{display:inline-block;background:#FFF4D6;border:1px solid #F3D98C;border-radius:999px;padding:8px 14px;font-weight:700;margin-left:auto}
+  .req{margin-bottom:14px}
+  .req h3{margin:0 0 4px;font-size:19px}
+  .req .meta{color:var(--muted);font-size:14px;margin-bottom:8px}
+  .req dl{display:grid;grid-template-columns:170px 1fr;gap:4px 12px;margin:0 0 10px;font-size:15px}
+  .req dt{color:var(--muted)}
+  .req dd{margin:0;white-space:pre-wrap}
+  .req .key{font-family:ui-monospace,Consolas,monospace;font-size:17px;background:var(--code);padding:4px 10px;border-radius:8px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap}
+  .acts button{border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:15px}
+  .ok{background:var(--ok);color:#fff}.no{background:#F3F6FC;color:var(--ink);border:1px solid var(--line)!important}.warn{background:#FDE8E6;color:var(--err)}
+  .login{max-width:460px}
+  .login input{width:100%;padding:14px;border:1px solid var(--line);border-radius:12px;font-size:16px;margin:8px 0 12px;box-sizing:border-box}
+  .msg{padding:12px 14px;border-radius:12px;margin:10px 0;font-size:15px}
+  .msg.err{background:#FDE8E6;color:#7F1D1D}.msg.ok{background:#E3F6E8;color:#14532D}
+  .empty{color:var(--muted);padding:30px 0;text-align:center}
+</style>
+</head>
+<body>
+<div class="top"><div class="in"><a class="brand" href="./"><img src="img/eyzi-logo-dark.png" alt="Eyzi"></a><nav><a href="licence.html">Formulaire</a><a class="hl" href="admin.html">🔒 Demandes</a></nav></div></div>
+
+<div class="wrap">
+  <h1>Demandes de licence</h1>
+  <p class="sub">Page privée de l'éditeur. Valider crée la licence et l'envoie à la famille par e-mail ; refuser garde la trace.</p>
+
+  <div id="login" class="card login">
+    <b>Jeton d'accès</b>
+    <p class="sub" style="margin:4px 0 0">La valeur de ADMIN_TOKEN dans Vercel. Gardée dans ce navigateur seulement.</p>
+    <input id="token" type="password" placeholder="jeton secret" autocomplete="current-password">
+    <button class="btn violet" id="enter" style="font-size:16px;padding:12px 22px">Entrer</button>
+    <div id="lmsg"></div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="tabs">
+      <button data-s="new" class="on">⏳ En attente</button>
+      <button data-s="done">✅ Validées</button>
+      <button data-s="refused">✕ Refusées</button>
+      <span class="places" id="places">…</span>
+      <button id="logout" style="margin-left:6px">Quitter</button>
+    </div>
+    <div id="gmsg"></div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var token = ''; try { token = localStorage.getItem('eyzi_admin') || ''; } catch(e){}
+  var status = 'new';
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function show(el, cls, text){ el.innerHTML = text ? '<div class="msg '+cls+'">'+esc(text)+'</div>' : ''; }
+  async function api(method, body, qs){
+    var r = await fetch('/api/admin'+(qs||''), { method: method, headers: {'Content-Type':'application/json','x-admin-token': token}, body: body ? JSON.stringify(body) : undefined });
+    var j = {}; try { j = await r.json(); } catch(e){}
+    if (r.status === 401) { throw new Error('Jeton incorrect.'); }
+    if (!r.ok || !j.ok) throw new Error(j.message || ('Erreur '+r.status));
+    return j;
+  }
+  function fmt(d){ try { return new Date(d).toLocaleString('fr-FR',{dateStyle:'medium',timeStyle:'short'}); } catch(e){ return d; } }
+  function kindName(k){ return {famille:'Famille',etablissement:'Établissement',professionnel:'Professionnel'}[k]||k; }
+  function render(j){
+    $('places').textContent = 'Places bêta : '+j.places.used+' / '+j.places.total+' utilisées · '+j.places.left+' restante'+(j.places.left>1?'s':'')+(j.mail?'':' · ⚠ e-mails non configurés');
+    var list = $('list'); list.innerHTML = '';
+    if (!j.requests.length) { list.innerHTML = '<div class="empty">Rien ici pour le moment.</div>'; return; }
+    j.requests.forEach(function(q){
+      var isLic = q.topic === 'licence';
+      var el = document.createElement('div'); el.className = 'card req';
+      var rows = [
+        ['E-mail', q.email ? '<a href="mailto:'+esc(q.email)+'">'+esc(q.email)+'</a>' : '—'],
+        ['Profil', esc(kindName(q.kind)) + (q.org ? ' · '+esc(q.org) : '')],
+        ['Enfant', esc(q.child||'—')], ['Commande oculaire', esc(q.gear||'—')],
+        ['Tablettes', esc(q.tablets)], ['Recontact', q.recontact ? 'oui' : 'non'],
+        ['Message', esc(q.message||'—')],
+      ];
+      if (q.licence_key) rows.push(['Licence', '<span class="key">'+esc(q.licence_key)+'</span>']);
+      if (q.note) rows.push(['Note', esc(q.note)]);
+      el.innerHTML = '<h3>'+(isLic?'🔑 ':'💬 ')+esc(q.name)+'</h3>'
+        + '<div class="meta">'+(isLic?'Demande de licence':'Retour')+' · '+esc(fmt(q.created_at))+' · n° '+q.id+'</div>'
+        + '<dl>'+rows.map(function(r){return '<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>';}).join('')+'</dl>'
+        + '<div class="acts"></div><div class="rmsg"></div>';
+      var acts = el.querySelector('.acts'), rmsg = el.querySelector('.rmsg');
+      function btn(label, cls, fn){ var b=document.createElement('button'); b.className=cls; b.textContent=label; b.onclick=async function(){ b.disabled=true; try { await fn(); } catch(e){ show(rmsg,'err',e.message); } b.disabled=false; }; acts.appendChild(b); }
+      if (q.status === 'new') {
+        if (isLic) btn('✅ Valider : créer la licence et l\'envoyer', 'ok', async function(){
+          var r = await api('POST', {action:'approve', id:q.id});
+          show(rmsg,'ok','Licence '+r.licence+(r.resent?' (déjà attribuée à cette adresse, renvoyée)':' créée')+(r.mailed?' et envoyée par e-mail.':'. E-mail NON envoyé : à transmettre à la main.'));
+          setTimeout(load, 1200);
+        });
+        btn(isLic ? '✕ Refuser (e-mail poli à la famille)' : '✓ Traité', isLic ? 'warn' : 'no', async function(){
+          var note = isLic ? (prompt('Un mot pour la famille (facultatif, ajouté à l\'e-mail) :', '') || '') : '';
+          if (note === null) return;
+          await api('POST', {action:'refuse', id:q.id, note:note, notify:isLic});
+          load();
+        });
+        if (isLic) btn('✕ Refuser sans e-mail', 'no', async function(){ await api('POST', {action:'refuse', id:q.id, notify:false}); load(); });
+      } else {
+        if (q.licence_key) btn('📧 Renvoyer le numéro', 'no', async function(){ var r = await api('POST',{action:'resend', id:q.id}); show(rmsg, r.mailed?'ok':'err', r.mailed?'Numéro renvoyé à '+q.email:'E-mail non envoyé (SMTP non configuré ?)'); });
+        btn('↩ Remettre en attente', 'no', async function(){ await api('POST',{action:'reopen', id:q.id}); load(); });
+      }
+      list.appendChild(el);
+    });
+  }
+  async function load(){
+    show($('gmsg'),'',''); $('list').innerHTML = '<div class="empty">Chargement…</div>';
+    try { render(await api('GET', null, '?status='+status)); }
+    catch(e){ show($('gmsg'),'err',e.message); $('list').innerHTML=''; if (/Jeton/.test(e.message)) logout(); }
+  }
+  function enter(){
+    token = $('token').value.trim(); if (!token) return;
+    try { localStorage.setItem('eyzi_admin', token); } catch(e){}
+    $('login').hidden = true; $('app').hidden = false; load();
+  }
+  function logout(){ token=''; try{ localStorage.removeItem('eyzi_admin'); }catch(e){} $('app').hidden=true; $('login').hidden=false; }
+  $('enter').onclick = enter;
+  $('token').addEventListener('keydown', function(e){ if (e.key==='Enter') enter(); });
+  $('logout').onclick = logout;
+  document.querySelectorAll('.tabs button[data-s]').forEach(function(b){ b.onclick=function(){ document.querySelectorAll('.tabs button[data-s]').forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); status=b.dataset.s; load(); }; });
+  if (token) { $('login').hidden = true; $('app').hidden = false; load(); }
+})();
+</script>
+</body>
+</html>
