@@ -290,11 +290,28 @@ namespace MesPremiersJeux.Games
         // avec de longues pauses, puis relié à un mot (« beuh… comme ballon ! »).
         // Sans Azure, repli sur la voix Windows ralentie.
         // ------------------------------------------------------------------
+        /// <summary>Catégorie VoiceBank du son d'une lettre : fichier livré
+        /// Sons\lettre-b-1.wav, ou enregistrement de la famille Voix\lettre-b-*.wav.</summary>
+        public static string SoundCategory(string letter) => "lettre-" + letter.ToLowerInvariant();
+
+        /// <summary>Pour la fenêtre d'enregistrement : chaque lettre et son premier mot.</summary>
+        public static (string L, string Phon, string Word)[] SoundSlots
+            => Book.Where(p => p.L != "H").Select(p => (p.L, p.Phon, p.Words[0].Word)).ToArray();
+
         private static void SpeakSound(Page page)
         {
             if (page.L == "H")
             {
                 Speech.SaySlow("Écoute bien ! Le H ne fait pas de bruit : il est muet ! Chut !");
+                return;
+            }
+            // Son enregistré (livré avec l'application, ou la voix de la famille) :
+            // le même son exact quelle que soit la voix de synthèse choisie.
+            var cat = SoundCategory(page.L);
+            if (VoiceBank.Has(cat))
+            {
+                Speech.SayParts("Écoute bien ! Le " + page.L + " fait...", "@" + cat, "@" + cat, "@" + cat,
+                                "Comme " + page.Words[0].Word + " !");
                 return;
             }
             if (AzureTts.Enabled)

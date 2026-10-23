@@ -63,6 +63,19 @@ namespace MesPremiersJeux.Views
             foreach (var (son, ex) in new[] { ("a", "comme dans chat"), ("o", "comme dans bateau"), ("i", "comme dans souris"), ("ou", "comme dans hibou"), ("on", "comme dans ballon"), ("ette", "comme dans chaussette"), ("u", "comme dans lune"), ("an", "comme dans maman"), ("in", "comme dans lapin") })
                 root.Children.Add(Section("« " + son + " »", "Dites seulement le son, 1 à 2 secondes, " + ex + ".", "son-" + son));
 
+            root.Children.Add(new TextBlock
+            {
+                Text = "🔠  Les LETTRES (abécédaire)", FontSize = 19, FontWeight = FontWeights.Bold, Foreground = Dark, Margin = new Thickness(0, 14, 0, 0),
+            });
+            root.Children.Add(new TextBlock
+            {
+                Text = "Le bruit de chaque lettre (« a », « beuh », « ffff »…) est livré avec l'application. Enregistrez-le avec votre voix " +
+                       "pour le remplacer dans l'abécédaire.",
+                FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0x8A, 0x7A, 0xA8)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 6),
+            });
+            foreach (var (l, phon, word) in Games.AlphabetBookGame.SoundSlots)
+                root.Children.Add(Section("Lettre " + l + "  (« " + phon + " »)", "Dites seulement le bruit de la lettre, comme au début de « " + word + " ».", Games.AlphabetBookGame.SoundCategory(l)));
+
             Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         }
 
