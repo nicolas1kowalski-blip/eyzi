@@ -90,21 +90,42 @@ namespace MesPremiersJeux.Lib
 
         /// <summary>Télécharge l'installeur, vérifie l'empreinte, l'installe en silence et relance l'application.
         /// Renvoie null si l'installation a démarré, sinon le message d'erreur.</summary>
-        public static async Task<string> InstallAsync(Info info, Action<string> status)
+        /// <param name="status">(texte, avancement 0..1, ou -1 si inconnu)</param>
+        public static async Task<string> InstallAsync(Info info, Action<string, double> status)
         {
             try
             {
                 var path = Path.Combine(UpdatesDir, info.SetupName);
-                status?.Invoke("Téléchargement de la version " + info.Version + "…");
+                status?.Invoke("Téléchargement de la version " + info.Version + "…", 0);
                 using (var res = await Http.GetAsync(info.SetupUrl, HttpCompletionOption.ResponseHeadersRead))
                 {
                     res.EnsureSuccessStatusCode();
+                    long total = res.Content.Headers.ContentLength ?? -1;
+                    using (var src = await res.Content.ReadAsStreamAsync())
                     using (var fs = File.Create(path))
-                        await res.Content.CopyToAsync(fs);
+                    {
+                        var buf = new byte[256 * 1024];
+                        long done = 0; int lastPct = -1; int n;
+                        while ((n = await src.ReadAsync(buf, 0, buf.Length)) > 0)
+                        {
+                            await fs.WriteAsync(buf, 0, n);
+                            done += n;
+                            if (total > 0)
+                            {
+                                int pct = (int)(done * 100 / total);
+                                if (pct != lastPct)
+                                {
+                                    lastPct = pct;
+                                    status?.Invoke("Téléchargement de la version " + info.Version + " : " + pct + " % (" + (done / 1048576) + " / " + (total / 1048576) + " Mo)", pct / 100.0);
+                                }
+                            }
+                            else status?.Invoke("Téléchargement de la version " + info.Version + " : " + (done / 1048576) + " Mo", -1);
+                        }
+                    }
                 }
                 if (info.ShaUrl != null)
                 {
-                    status?.Invoke("Vérification…");
+                    status?.Invoke("Vérification du fichier…", -1);
                     var expected = (await Http.GetStringAsync(info.ShaUrl)).Trim().Split(' ')[0].ToLowerInvariant();
                     var actual = Sha256(path);
                     if (expected != actual)
@@ -115,6 +136,7 @@ namespace MesPremiersJeux.Lib
                     }
                 }
                 Log.Write("maj", "Installation de " + info.Version + " depuis " + path);
+                status?.Invoke("Installation : l'application se ferme et se relance toute seule…", 1);
                 Settings.Load().Save(); // rien à changer, mais on s'assure que tout est écrit avant de quitter
                 return Launch(path);
             }

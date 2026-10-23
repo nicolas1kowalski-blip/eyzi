@@ -46,8 +46,11 @@ namespace MesPremiersJeux
             {
                 try { System.IO.File.Delete(CrashFlag); } catch { } // fermeture normale : pas un plantage
                 StopGazeSources();
-                Usage.AtExit(_settings);
-                CloudSyncAtExit();
+                // Mise à jour en cours : fermeture RAPIDE (l'envoi au nuage attendra
+                // la prochaine fermeture ; les statistiques ont 3 s au plus).
+                bool updating = Updater.PendingSetup != null;
+                Usage.AtExit(_settings, updating ? 3 : 8);
+                if (!updating) CloudSyncAtExit();
             };
         }
 
@@ -1077,9 +1080,36 @@ namespace MesPremiersJeux
             _settings.LastUpdateSeen = info.Version.ToString();
             _settings.Save();
             if (r != MessageBoxResult.Yes) return;
-            ShowParentNotice("🔄 Mise à jour vers " + info.Version + " : téléchargement…");
-            var err = await Updater.InstallAsync(info, s => ShowParentNotice("🔄 " + s));
-            if (err != null) MessageBox.Show(this, err, "Mise à jour");
+
+            // Écran de progression plein écran : l'enfant et le parent voient ce
+            // qui se passe (téléchargement en %, vérification, installation).
+            CloseAdmin();
+            GazeGate.Push();
+            var text = new TextBlock { Text = "Mise à jour vers " + info.Version, FontSize = 30, FontWeight = FontWeights.Bold, Foreground = Brushes.White, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap };
+            var detail = new TextBlock { Text = "Téléchargement…", FontSize = 20, Foreground = new SolidColorBrush(Color.FromRgb(0xC9, 0xD6, 0xF2)), TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 22) };
+            var bar = new ProgressBar { Height = 26, Minimum = 0, Maximum = 1, Value = 0, Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xC8, 0x3D)), Background = new SolidColorBrush(Color.FromRgb(0x0B, 0x1A, 0x33)), BorderThickness = new Thickness(0) };
+            var panel = new StackPanel { Width = 620, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+            panel.Children.Add(new TextBlock { Text = "🔄", FontSize = 64, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 0, 0, 12) });
+            panel.Children.Add(text); panel.Children.Add(detail); panel.Children.Add(bar);
+            panel.Children.Add(new TextBlock { Text = "Ne pas éteindre la tablette. L'application se ferme puis se relance toute seule.", FontSize = 15, Foreground = new SolidColorBrush(Color.FromRgb(0xC9, 0xD6, 0xF2)), TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 16, 0, 0) });
+            var overlay = new Grid { Background = new SolidColorBrush(Color.FromRgb(0x13, 0x30, 0x6B)) };
+            overlay.Children.Add(panel);
+            int gi = RootGrid.Children.IndexOf(GazeLayer);
+            RootGrid.Children.Insert(gi, overlay);
+
+            var err = await Updater.InstallAsync(info, (s, frac) =>
+            {
+                detail.Text = s;
+                if (frac < 0) bar.IsIndeterminate = true;
+                else { bar.IsIndeterminate = false; bar.Value = frac; }
+            });
+            if (err != null)
+            {
+                RootGrid.Children.Remove(overlay);
+                GazeGate.Pop();
+                MessageBox.Show(this, err, "Mise à jour");
+            }
+            // sinon : l'application se ferme (Updater.Launch) et l'écran reste affiché jusqu'au bout.
         }
 
         private void Rollback_Click(object sender, RoutedEventArgs e)

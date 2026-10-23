@@ -152,11 +152,11 @@ namespace MesPremiersJeux.Lib
         }
 
         /// <summary>À la fermeture : on solde le temps, on sauve, on envoie (quelques secondes au plus).</summary>
-        public static void AtExit(Settings s)
+        public static void AtExit(Settings s, int maxSeconds = 8)
         {
             lock (Rows) { Flush(); _dirty = true; }
             Save();
-            try { SendAsync(s).Wait(TimeSpan.FromSeconds(8)); } catch { }
+            try { SendAsync(s).Wait(TimeSpan.FromSeconds(maxSeconds)); } catch { }
         }
 
         private static string Esc(string v) => (v ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
