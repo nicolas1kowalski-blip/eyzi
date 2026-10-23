@@ -120,15 +120,13 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Halo lumineux quand le pointeur (souris ou regard-
-                                 curseur) est sur le bouton. -->
+                            <!-- Liseré quand le pointeur (souris ou regard-curseur)
+                                 est sur le bouton : un simple tracé, pas de halo
+                                 flouté (coûteux sur tablette). -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect BlurRadius="34" ShadowDepth="0"
-                                                          Color="#FFB388FF" Opacity="0.9" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FFB388FF" />
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="5" />
+                                <Setter TargetName="Bd" Property="Padding" Value="3" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -173,12 +171,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect BlurRadius="30" ShadowDepth="0"
-                                                          Color="#FFFFC107" Opacity="0.85" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FFFFC107" />
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="5" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

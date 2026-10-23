@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
@@ -53,18 +54,19 @@ namespace MesPremiersJeux.Games
             // phrase) et VISIBLE : une petite oreille 👂 apparaît là où l'enfant
             // a cliqué, pour dire « écoute d'abord ! » — fini les clics avalés
             // mystérieusement. Un clic repousse aussi le coup de pouce.
+            // L'ENFANT A LE DERNIER MOT : un clic sur un bouton (souris, doigt ou
+            // regard) COUPE la voix en cours — consigne comprise — et agit tout
+            // de suite. Plus de clic « pris » qui ne fait rien pendant que la
+            // voix finit sa phrase. (Les transitions automatiques entre deux
+            // écrans, elles, continuent d'attendre la fin de la consigne.)
             PreviewMouseLeftButtonDown += (s, e) =>
             {
                 if (_hint != null) { _hint.Stop(); _hint.Start(); }
                 var under = ButtonUnder(e.OriginalSource as DependencyObject);
-                if (GateVoice && Speech.IsGating && Speech.BusyElapsedSeconds < GateSeconds)
-                {
-                    e.Handled = true;
-                    if (under != null) HoldClick(under);
-                    else ShowListenCue(e.GetPosition(this));
-                }
+                if (under == null) return;
+                if (Speech.IsBusy) Speech.Stop();
                 // Ce dont la voix parle reste EN SURBRILLANCE tant qu'elle parle.
-                else if (under != null) Highlight(under);
+                Highlight(under);
             };
 
             // VRAI PLEIN ÉCRAN : une seule couche — le jeu occupe TOUT l'écran,
@@ -459,6 +461,7 @@ namespace MesPremiersJeux.Games
         //  qu'elle parle (puis il s'éteint tout seul).
         // ------------------------------------------------------------------
         private FrameworkElement _lit;
+        private GlowAdorner _litAdorner;
         private DispatcherTimer _litWatch;
 
         protected void Highlight(FrameworkElement el, bool untilQuiet = true)
@@ -466,7 +469,14 @@ namespace MesPremiersJeux.Games
             Unlight();
             if (el == null) return;
             _lit = el;
-            el.Effect = new DropShadowEffect { BlurRadius = 46, ShadowDepth = 0, Color = Color.FromRgb(0xFF, 0xB3, 0x00), Opacity = 0.95 };
+            // Un liseré doré dessiné par-dessus (adorner) : aucun effet bitmap,
+            // donc rien à recalculer à chaque image — fluide même sur tablette.
+            try
+            {
+                var layer = AdornerLayer.GetAdornerLayer(el);
+                if (layer != null) { _litAdorner = new GlowAdorner(el); layer.Add(_litAdorner); }
+            }
+            catch { }
             if (!untilQuiet) return;
             var start = DateTime.Now;
             _litWatch = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
@@ -485,8 +495,28 @@ namespace MesPremiersJeux.Games
         {
             try { _litWatch?.Stop(); } catch { }
             _litWatch = null;
-            if (_lit != null) _lit.Effect = null;
+            if (_lit != null && _litAdorner != null)
+            {
+                try { AdornerLayer.GetAdornerLayer(_lit)?.Remove(_litAdorner); } catch { }
+            }
+            _litAdorner = null;
             _lit = null;
+        }
+
+        /// <summary>Liseré doré arrondi autour d'un élément (léger : un simple tracé).</summary>
+        private sealed class GlowAdorner : Adorner
+        {
+            private static readonly Pen Outer = new Pen(new SolidColorBrush(Color.FromArgb(0x70, 0xFF, 0xB3, 0x00)), 14);
+            private static readonly Pen Inner = new Pen(new SolidColorBrush(Color.FromRgb(0xFF, 0xB3, 0x00)), 6);
+            static GlowAdorner() { Outer.Freeze(); Inner.Freeze(); }
+            public GlowAdorner(UIElement el) : base(el) { IsHitTestVisible = false; }
+            protected override void OnRender(DrawingContext dc)
+            {
+                var r = new Rect(AdornedElement.RenderSize);
+                r.Inflate(6, 6);
+                dc.DrawRoundedRectangle(null, Outer, r, 22, 22);
+                dc.DrawRoundedRectangle(null, Inner, r, 22, 22);
+            }
         }
 
         // ------------------------------------------------------------------

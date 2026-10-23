@@ -146,12 +146,17 @@ namespace MesPremiersJeux.Lib
         /// </summary>
         public static void SayParts(params string[] parts)
         {
-            Stop();
+            Stop();           // invalide la séquence précédente
             SayPartsFrom(parts, 0);
         }
 
+        // Jeton de la séquence en cours : Stop() l'invalide, et les morceaux
+        // restants d'une séquence coupée ne sont jamais joués.
+        private static int _partsToken;
+
         private static void SayPartsFrom(string[] parts, int i)
         {
+            int token = _partsToken;
             while (i < parts.Length && string.IsNullOrWhiteSpace(parts[i])) i++;
             if (i >= parts.Length) return;
             var p = parts[i];
@@ -171,6 +176,7 @@ namespace MesPremiersJeux.Lib
             t.Tick += (s, e) =>
             {
                 double sec = (DateTime.Now - start).TotalSeconds;
+                if (token != _partsToken) { t.Stop(); return; } // séquence coupée par un clic
                 if (sec < 0.4 || (IsBusy && sec < 12)) return;
                 t.Stop();
                 SayPartsFrom(parts, i + 1);
@@ -665,10 +671,12 @@ namespace MesPremiersJeux.Lib
 
         public static void Stop()
         {
+            _partsToken++;
             _pendingText = null;
             _currentText = "";
             AzureTts.StopPlayback();
             LocalStop();
+            VoiceBank.Stop();
             MarkBusy(0);
         }
 

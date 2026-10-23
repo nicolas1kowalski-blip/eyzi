@@ -85,6 +85,13 @@ namespace MesPremiersJeux.Lib
             return Play(category);
         }
 
+        /// <summary>Coupe le clip en cours (un clic de l'enfant a le dernier mot).</summary>
+        public static void Stop()
+        {
+            try { _player?.Stop(); } catch { }
+            _clipUntil = DateTime.MinValue;
+        }
+
         public static bool PlayFile(string path)
         {
             try
