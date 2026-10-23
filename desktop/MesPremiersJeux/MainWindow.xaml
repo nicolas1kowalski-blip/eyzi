@@ -84,7 +84,7 @@
              rangée par pages. Ouverte par un appui LONG sur ⚙ (souris ou doigt),
              jamais par le regard ; le pilotage au regard est coupé tant qu'elle
              est ouverte (GazeGate). -->
-        <Grid x:Name="AdminHost" Visibility="Collapsed" Background="#D90B1A33">
+        <Grid x:Name="AdminHost" Visibility="Collapsed" Background="#FFF4F6FB">
             <Grid.Resources>
                 <Style x:Key="AdminNav" TargetType="Button">
                     <Setter Property="FontSize" Value="17" />
@@ -194,14 +194,10 @@
                 </Style>
             </Grid.Resources>
 
-            <Border Background="#FFF4F6FB" CornerRadius="22" Margin="40,28" MaxWidth="1240"
-                    BorderBrush="#FFFFC83D" BorderThickness="3">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="30" ShadowDepth="4" Opacity="0.35" />
-                </Border.Effect>
+            <Border Background="#FFF4F6FB">
                 <DockPanel>
                     <!-- En-tête -->
-                    <Border DockPanel.Dock="Top" Background="#FF13306B" CornerRadius="19,19,0,0" Padding="24,16">
+                    <Border DockPanel.Dock="Top" Background="#FF13306B" Padding="24,14">
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Content="✕  Fermer" FontSize="18" FontWeight="Bold" Padding="18,10"
                                     Background="#FFFFC83D" Foreground="#FF0B1A33" BorderThickness="0" Cursor="Hand"
@@ -215,7 +211,7 @@
                     </Border>
 
                     <!-- Pied : fenêtre -->
-                    <Border DockPanel.Dock="Bottom" Background="#FFE9EEF8" CornerRadius="0,0,19,19" Padding="24,12">
+                    <Border DockPanel.Dock="Bottom" Background="#FFE9EEF8" Padding="24,10">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                 <Button Content="⛶  Plein écran" Style="{StaticResource AdminBtn}" Margin="8,0,0,0" Click="Fullscreen_Click" />
@@ -235,6 +231,7 @@
                             <Button Tag="contenu" Content="📁   Contenu"           Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="nuage"   Content="☁️   Licence &amp; nuage" Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="suivi"   Content="📊   Suivi"             Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
+                            <Button Tag="avance"  x:Name="NavAvance" Content="🛠   Avancé"  Style="{StaticResource AdminNav}" Click="AdminNav_Click" Visibility="Collapsed" />
                         </StackPanel>
                     </Border>
 
@@ -260,7 +257,6 @@
                                         <ComboBoxItem Tag="pro" Content="🔬 Pro SDK (Tobii.Research)" />
                                         <ComboBoxItem Tag="curseur" Content="🖱 Curseur (TD Control — tout appareil)" />
                                     </ComboBox>
-                                    <TextBlock x:Name="DriverStatus" Text="…" Style="{StaticResource Hint}" />
                                     <TextBlock Style="{StaticResource Hint}"
                                                Text="Le pilote change à chaud, sans redémarrer. « Curseur » marche avec toute commande oculaire qui déplace la souris." />
                                 </StackPanel>
@@ -430,15 +426,6 @@
                                         <Button x:Name="CloudDownBtn" Content="☁️⬇  Récupérer maintenant" Style="{StaticResource AdminBtn}" Margin="4,8,0,0" Click="CloudDown_Click" />
                                     </UniformGrid>
                                     <TextBlock x:Name="CloudStatusText" Style="{StaticResource Hint}" FontWeight="Bold" Foreground="#FF13306B" />
-                                    <Expander Header="Réglages avancés du serveur" FontSize="14" Foreground="#FF5B6B8A" Margin="0,10,0,0">
-                                        <StackPanel Margin="0,4,0,0">
-                                            <TextBlock Text="URL du projet" Style="{StaticResource Label}" />
-                                            <TextBox x:Name="SupabaseUrlBox" Style="{StaticResource Field}" LostFocus="Supabase_Changed" />
-                                            <TextBlock Text="Clé" Style="{StaticResource Label}" />
-                                            <TextBox x:Name="SupabaseKeyBox" Style="{StaticResource Field}" LostFocus="Supabase_Changed" />
-                                            <TextBlock Style="{StaticResource Hint}" Text="À ne modifier que sur demande de l'éditeur." />
-                                        </StackPanel>
-                                    </Expander>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -455,10 +442,30 @@
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="Diagnostic" Style="{StaticResource CardTitle}" />
-                                    <Button Content="🔎  Rapport du regard (comparer deux tablettes)" Style="{StaticResource AdminBtn}" Click="GazeReport_Click" />
-                                    <Button Content="🧾  Ouvrir le journal" Style="{StaticResource AdminBtn}" Click="OpenLog_Click" />
+                                    <Button Content="🔎  Rapport du regard (à envoyer à l'éditeur)" Style="{StaticResource AdminBtn}" Click="GazeReport_Click" />
                                     <TextBlock Style="{StaticResource Hint}"
-                                               Text="Le rapport du regard teste les deux moteurs Tobii l'un après l'autre (~15 s) et écrit un fichier dans le dossier de la famille, utile pour comparer deux tablettes ou l'envoyer à l'éditeur." />
+                                               Text="Le rapport teste les deux moteurs Tobii l'un après l'autre (~15 s) et écrit un fichier dans le dossier de la famille." />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- 🛠 AVANCÉ (versions de test seulement) -->
+                        <StackPanel x:Name="PageAvance" Style="{StaticResource Page}">
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="État du pilote" Style="{StaticResource CardTitle}" />
+                                    <TextBlock x:Name="DriverStatus" Text="…" Style="{StaticResource Hint}" Margin="0" />
+                                    <Button Content="🧾  Ouvrir le journal" Style="{StaticResource AdminBtn}" Click="OpenLog_Click" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="Serveur de l'application" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="URL du projet" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="SupabaseUrlBox" Style="{StaticResource Field}" LostFocus="Supabase_Changed" />
+                                    <TextBlock Text="Clé" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="SupabaseKeyBox" Style="{StaticResource Field}" LostFocus="Supabase_Changed" />
+                                    <TextBlock Style="{StaticResource Hint}" Text="À ne modifier que sur demande de l'éditeur." />
                                 </StackPanel>
                             </Border>
                         </StackPanel>

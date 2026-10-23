@@ -114,7 +114,8 @@ Le panneau est rangé en six pages (menu à gauche) :
 - **🔊 Voix** : voix Windows et hauteur, voix naturelle Azure, écouter un exemple, **🎙 Enregistrer vos voix**.
 - **📁 Contenu** : **🔧 outils d'édition** (une fois le panneau fermé, les outils pour ajouter, modifier ou supprimer les livres, coloriages et photos apparaissent dans les activités ; le regard reste en pause tant que la case est cochée), photos de famille, dossier du contenu, exporter / importer.
 - **☁️ Licence & nuage** : licence, mises à jour, version précédente, libérer la tablette, synchronisation entre tablettes.
-- **📊 Suivi** : bilan de la semaine, bilan de la session, rapport du regard, journal.
+- **📊 Suivi** : bilan de la semaine, bilan de la session, rapport du regard.
+- **🛠 Avancé** (versions de test seulement) : état technique du pilote, journal, réglages du serveur.
 
 En bas du panneau : plein écran, réduire, quitter Eyzi.
 

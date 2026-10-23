@@ -276,7 +276,7 @@ namespace MesPremiersJeux
             statusTimer.Tick += (s2, e2) =>
             {
                 // État détaillé des sources, visible dans le panneau de réglages.
-                if (AdminHost.Visibility == Visibility.Visible && DriverStatus != null)
+                if (AdminHost.Visibility == Visibility.Visible && PageAvance.Visibility == Visibility.Visible && DriverStatus != null)
                     DriverStatus.Text =
                         "Pro : " + (_pro?.IsAvailable == true ? _pro.Stats : "—")
                         + " · Direct : " + (_gaze?.IsAvailable == true ? _gaze.Samples + " pts" : "—")
@@ -806,6 +806,10 @@ namespace MesPremiersJeux
             GazeGate.Push();                      // regard en pause tant que c'est ouvert
             _modalBeforeAdmin = GazeTargets.ModalRoot;
             GazeTargets.ModalRoot = AdminHost;    // aucune cible du jeu derrière
+            // La page « Avancé » (état technique, serveur, journal) n'existe
+            // que sur le canal de test : en prod, l'écran reste simple.
+            NavAvance.Visibility = string.Equals(_settings?.LicenceChannel ?? "prod", "prod", StringComparison.OrdinalIgnoreCase)
+                ? Visibility.Collapsed : Visibility.Visible;
             ShowAdminPage("regard");
             AdminHost.Visibility = Visibility.Visible;
             Lib.Log.Write("app", "Administration ouverte (appui long)");
@@ -831,7 +835,7 @@ namespace MesPremiersJeux
             var pages = new Dictionary<string, StackPanel>
             {
                 ["regard"] = PageRegard, ["enfant"] = PageEnfant, ["voix"] = PageVoix,
-                ["contenu"] = PageContenu, ["nuage"] = PageNuage, ["suivi"] = PageSuivi,
+                ["contenu"] = PageContenu, ["nuage"] = PageNuage, ["suivi"] = PageSuivi, ["avance"] = PageAvance,
             };
             foreach (var kv in pages)
                 kv.Value.Visibility = kv.Key == key ? Visibility.Visible : Visibility.Collapsed;
