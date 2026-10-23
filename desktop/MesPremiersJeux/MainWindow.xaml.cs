@@ -210,6 +210,10 @@ namespace MesPremiersJeux
         {
             _settings = Settings.Load();
 
+            // Les tuiles Oui/Non et Parler se déplacent à la souris ou au doigt.
+            Draggable.Attach(_yesNo, "ouinon", _settings);
+            Draggable.Attach(_commBtn, "parler", _settings);
+
             // Réglages partagés entre tablettes (clé de la voix, prénom…) :
             // appliqués depuis le dossier synchronisé, puis gardés en local.
             _accueil?.RefreshName();

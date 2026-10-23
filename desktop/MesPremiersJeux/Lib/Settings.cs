@@ -33,6 +33,7 @@ namespace MesPremiersJeux.Lib
         public bool CommButton = true;   // bouton « Parler » (grille de communication) toujours visible
         public string StreamEngine = ""; // moteur Tobii direct qui a déjà marché : streamT (tablette) | stream (application)
         public bool YesNoButtons = true; // les boutons « Oui / Non » toujours visibles
+        public string TilePositions = ""; // où la famille a glissé les tuiles Oui/Non et Parler ("ouinon=x,y;parler=x,y")
         public string Level = "auto";    // niveau : auto | 1 | 2 | 3
         public int SessionMinutes = 10;  // au bout de N minutes de jeu, on propose une pause (0 = jamais)
         public bool NameAsked = false;   // le prénom a été demandé au premier démarrage sur cette tablette
@@ -88,6 +89,7 @@ namespace MesPremiersJeux.Lib
                         case "AutoDwell": s.AutoDwell = val != "0"; break;
                         case "StreamEngine": s.StreamEngine = val; break;
                         case "YesNoButtons": s.YesNoButtons = val != "0"; break;
+                        case "TilePositions": s.TilePositions = val; break;
                         case "Level": s.Level = val; break;
                         case "SessionMinutes": int.TryParse(val, out s.SessionMinutes); break;
                         case "NameAsked": s.NameAsked = val != "0"; break;
@@ -147,6 +149,7 @@ namespace MesPremiersJeux.Lib
                     "AutoDwell=" + (AutoDwell ? "1" : "0"),
                     "StreamEngine=" + (StreamEngine ?? ""),
                     "YesNoButtons=" + (YesNoButtons ? "1" : "0"),
+                    "TilePositions=" + (TilePositions ?? ""),
                     "Level=" + (Level ?? "auto"),
                     "SessionMinutes=" + SessionMinutes,
                     "NameAsked=" + (NameAsked ? "1" : "0"),
