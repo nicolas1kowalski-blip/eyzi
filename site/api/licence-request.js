@@ -44,8 +44,10 @@ export default async function handler(req, res) {
     return;
   }
 
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // L'URL du projet, SANS le chemin /rest/v1/ (on tolère qu'il ait été collé :
+  // supabase-js l'ajoute lui-même, sinon PostgREST répond PGRST125).
+  const url = String(process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+  const key = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   if (!url || !key) {
     res.status(503).json({ ok: false, message: "Le serveur n'est pas encore configuré. Écrivez-nous directement par e-mail." });
     return;
@@ -75,7 +77,9 @@ function explain(error) {
     return "Le serveur n'est pas à jour (colonne manquante : relancer supabase.sql)." + mail;
   if (code === '42501' || msg.includes('row-level security') || msg.includes('permission denied'))
     return "Le serveur refuse l'écriture (clé serveur incorrecte : il faut la clé service_role, pas la clé publique)." + mail;
-  if (code === 'PGRST301' || msg.includes('jwt') || msg.includes('api key') || msg.includes('apikey') || msg.includes('invalid'))
+  if (code === 'PGRST125' || msg.includes('invalid path'))
+    return "L'adresse du serveur est mal réglée (SUPABASE_URL doit être https://<projet>.supabase.co, sans /rest/v1/)." + mail;
+  if (code === 'PGRST301' || msg.includes('jwt') || msg.includes('api key') || msg.includes('apikey'))
     return "Le serveur refuse la connexion (clé serveur invalide)." + mail;
   if (msg.includes('fetch failed') || msg.includes('enotfound') || msg.includes('network'))
     return "Le serveur de données est injoignable (adresse SUPABASE_URL incorrecte ?)." + mail;
