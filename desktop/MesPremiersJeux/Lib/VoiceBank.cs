@@ -23,6 +23,12 @@ namespace MesPremiersJeux.Lib
 
         public static string Dir => Path.Combine(UserContent.RootDir, "Voix");
 
+        /// <summary>Sons livrés avec l'application (Sons\son-on-1.wav…) : voix
+        /// française enregistrée, utilisée quand la famille n'a pas enregistré
+        /// la sienne. Les sons isolés (« on », « o », « i »…) sont ainsi
+        /// toujours exacts, sans dépendre de la synthèse vocale.</summary>
+        public static string BundledDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Sons");
+
         private static MediaPlayer _player;
         private static DateTime _clipUntil = DateTime.MinValue;
         private static readonly Random Rng = new Random();
@@ -42,10 +48,20 @@ namespace MesPremiersJeux.Lib
 
         public static string[] Files(string category)
         {
+            var own = FilesIn(Dir, category);
+            return own.Length > 0 ? own : FilesIn(BundledDir, category);
+        }
+
+        /// <summary>Seulement les enregistrements de la famille (sans les sons livrés).</summary>
+        public static bool HasOwn(string category) => FilesIn(Dir, category).Length > 0;
+        public static string[] OwnFiles(string category) => FilesIn(Dir, category);
+
+        private static string[] FilesIn(string dir, string category)
+        {
             try
             {
-                if (!Directory.Exists(Dir)) return Array.Empty<string>();
-                return Directory.GetFiles(Dir, category + "-*.wav").OrderBy(f => f).ToArray();
+                if (!Directory.Exists(dir)) return Array.Empty<string>();
+                return Directory.GetFiles(dir, category + "-*.wav").OrderBy(f => f).ToArray();
             }
             catch { return Array.Empty<string>(); }
         }

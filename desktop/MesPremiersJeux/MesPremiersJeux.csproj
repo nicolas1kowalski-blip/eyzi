@@ -32,6 +32,7 @@
          compilation. Les jeux les trouvent tout seuls ; une image du parent
          dans Contenu\Images garde la priorité. -->
     <None Update="Images\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Sons\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

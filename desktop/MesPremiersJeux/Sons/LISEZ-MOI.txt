@@ -1,0 +1,10 @@
+Sons isolés livrés avec Eyzi (son-on-1.wav, son-o-1.wav, …).
+
+Voix française de synthèse neuronale « siwis » (Piper, MIT), entraînée sur la
+base SIWIS French Speech Synthesis Database (CC BY 4.0,
+https://datashare.is.ed.ac.uk/handle/10283/2353). Les fichiers ont été
+générés hors ligne à partir des phonèmes exacts de chaque son (ex. « on » = /ɔ̃/).
+
+Pour remplacer un son par votre propre voix : Réglages → 🎙 Enregistrer vos
+voix → « Les sons ». Vos enregistrements (Contenu\Voix\son-on-*.wav) passent
+avant ces fichiers.

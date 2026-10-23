@@ -56,8 +56,8 @@ namespace MesPremiersJeux.Views
             });
             root.Children.Add(new TextBlock
             {
-                Text = "La voix de synthèse dit mal un son tout seul. Enregistrez chaque son avec votre voix, bien long et bien net " +
-                       "(« onnnn », « ooooo »). S'il existe, l'application le joue à la place de la synthèse.",
+                Text = "Chaque son est livré avec une voix française enregistrée (pas la synthèse). Si vous préférez votre propre voix, " +
+                       "enregistrez-le ici, bien long et bien net (« onnnn », « ooooo ») : votre enregistrement sera joué à la place.",
                 FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0x8A, 0x7A, 0xA8)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 6),
             });
             foreach (var (son, ex) in new[] { ("a", "comme dans chat"), ("o", "comme dans bateau"), ("i", "comme dans souris"), ("ou", "comme dans hibou"), ("on", "comme dans ballon"), ("ette", "comme dans chaussette"), ("u", "comme dans lune"), ("an", "comme dans maman"), ("in", "comme dans lapin") })
@@ -73,7 +73,7 @@ namespace MesPremiersJeux.Views
             panel.Children.Add(new TextBlock { Text = hint, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0x8A, 0x7A, 0xA8)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 6) });
 
             var count = new TextBlock { FontSize = 14, Foreground = Dark, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) };
-            void Refresh() => count.Text = VoiceBank.Files(cat).Length + " enregistrement(s)";
+            void Refresh() => count.Text = VoiceBank.OwnFiles(cat).Length + " enregistrement(s)";
             Refresh();
 
             var rec = new Button { Content = "🔴  Enregistrer", FontSize = 15, Padding = new Thickness(12, 8, 12, 8), Margin = new Thickness(0, 0, 8, 0) };
@@ -106,7 +106,7 @@ namespace MesPremiersJeux.Views
             };
             play.Click += (s, e) =>
             {
-                var files = VoiceBank.Files(cat);
+                var files = VoiceBank.OwnFiles(cat);
                 if (files.Length > 0) VoiceBank.PlayFile(files[files.Length - 1]);
             };
             del.Click += (s, e) => { VoiceBank.DeleteLast(cat); Refresh(); };
