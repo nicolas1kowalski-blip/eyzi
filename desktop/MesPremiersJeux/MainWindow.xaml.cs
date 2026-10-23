@@ -214,6 +214,7 @@ namespace MesPremiersJeux
             // Les tuiles Oui/Non et Parler se déplacent à la souris ou au doigt.
             Draggable.Attach(_yesNo, "ouinon", _settings);
             Draggable.Attach(_commBtn, "parler", _settings);
+            ShowAdminHint(8);
 
             // Réglages partagés entre tablettes (clé de la voix, prénom…) :
             // appliqués depuis le dossier synchronisé, puis gardés en local.
@@ -776,6 +777,8 @@ namespace MesPremiersJeux
                 _adminHold.Stop();
                 _adminHoldFired = true;
                 SettingsBtn.Opacity = 1;
+                if (SettingsBtn.IsMouseCaptured) SettingsBtn.ReleaseMouseCapture();
+                AdminHint.Visibility = Visibility.Collapsed;
                 OpenAdmin();
             };
             SettingsBtn.PreviewMouseLeftButtonDown += (s, e) =>
@@ -793,11 +796,34 @@ namespace MesPremiersJeux
                 {
                     // Clic bref (souris, doigt… ou regard) : on explique, sans ouvrir.
                     FlashStatus("⚙  Maintenez appuyé 1 seconde pour l'administration");
+                    ShowAdminHint(4);
                 }
             }
-            SettingsBtn.PreviewMouseLeftButtonUp += (s, e) => { Cancel(s, e); e.Handled = true; };
+            // Le relâchement n'est PAS marqué « traité » : le bouton termine son
+            // clic normalement (il n'a plus de gestionnaire Click) et surtout il
+            // RELÂCHE la capture de la souris — sinon plus aucun clic n'arrive au
+            // panneau ni au reste de l'application.
+            SettingsBtn.PreviewMouseLeftButtonUp += (s, e) => { Cancel(s, e); if (SettingsBtn.IsMouseCaptured) SettingsBtn.ReleaseMouseCapture(); };
             SettingsBtn.MouseLeave += Cancel;
             SettingsBtn.LostMouseCapture += Cancel;
+        }
+
+        private System.Windows.Threading.DispatcherTimer _adminHintTimer;
+
+        /// <summary>Bulle sous le bouton ⚙ : « restez appuyé 1 s ». Montrée au
+        /// démarrage, puis à chaque clic bref sur ⚙.</summary>
+        private void ShowAdminHint(double seconds)
+        {
+            if (AdminHint == null) return;
+            AdminHint.Visibility = Visibility.Visible;
+            if (_adminHintTimer == null)
+            {
+                _adminHintTimer = new System.Windows.Threading.DispatcherTimer();
+                _adminHintTimer.Tick += (s, e) => { _adminHintTimer.Stop(); AdminHint.Visibility = Visibility.Collapsed; };
+            }
+            _adminHintTimer.Stop();
+            _adminHintTimer.Interval = TimeSpan.FromSeconds(seconds);
+            _adminHintTimer.Start();
         }
 
         private void OpenAdmin()

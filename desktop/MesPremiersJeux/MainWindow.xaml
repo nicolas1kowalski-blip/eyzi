@@ -80,6 +80,32 @@
             <Grid x:Name="ContentHost" />
         </DockPanel>
 
+        <!-- La boutique de récompenses (surcouche plein écran, remplie en code) -->
+        <Grid x:Name="ShopHost" Visibility="Collapsed" />
+
+        <!-- 📒 Mon carnet (surcouche plein écran, remplie en code) -->
+        <Grid x:Name="BookHost" Visibility="Collapsed" />
+
+        <!-- 🙋 Je choisis (surcouche plein écran, remplie en code) -->
+        <Grid x:Name="ChoiceHost" Visibility="Collapsed" />
+
+        <!-- ⏱ La pause proposée (surcouche, remplie en code) -->
+        <Grid x:Name="PauseHost" Visibility="Collapsed" />
+
+        <!-- Cercle de progression du dwell (au-dessus de tout, non cliquable) -->
+        <!-- Bulle d'aide sous le bouton ⚙ : il faut RESTER APPUYÉ pour ouvrir. -->
+        <StackPanel x:Name="AdminHint" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Margin="0,66,16,0" IsHitTestVisible="False">
+            <Path Data="M 0,12 L 12,0 L 24,12 Z" Fill="#FF13306B" HorizontalAlignment="Right" Margin="0,0,18,0" />
+            <Border Background="#FF13306B" CornerRadius="12" Padding="16,12" MaxWidth="340">
+                <StackPanel>
+                    <TextBlock Text="☝  Administration" FontSize="17" FontWeight="Bold" Foreground="#FFFFC83D" />
+                    <TextBlock Text="Restez appuyé 1 seconde sur ⚙ (souris ou doigt) pour ouvrir. Un clic bref ou le regard ne l'ouvrent pas."
+                               FontSize="14.5" Foreground="White" TextWrapping="Wrap" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
         <!-- ⚙ ADMINISTRATION (accompagnant) : surcouche plein écran, lisible,
              rangée par pages. Ouverte par un appui LONG sur ⚙ (souris ou doigt),
              jamais par le regard ; le pilotage au regard est coupé tant qu'elle
@@ -476,19 +502,6 @@
             </Border>
         </Grid>
 
-        <!-- La boutique de récompenses (surcouche plein écran, remplie en code) -->
-        <Grid x:Name="ShopHost" Visibility="Collapsed" />
-
-        <!-- 📒 Mon carnet (surcouche plein écran, remplie en code) -->
-        <Grid x:Name="BookHost" Visibility="Collapsed" />
-
-        <!-- 🙋 Je choisis (surcouche plein écran, remplie en code) -->
-        <Grid x:Name="ChoiceHost" Visibility="Collapsed" />
-
-        <!-- ⏱ La pause proposée (surcouche, remplie en code) -->
-        <Grid x:Name="PauseHost" Visibility="Collapsed" />
-
-        <!-- Cercle de progression du dwell (au-dessus de tout, non cliquable) -->
         <Canvas x:Name="GazeLayer" IsHitTestVisible="False">
             <!-- Point de regard toujours visible : l'enfant voit où il regarde. -->
             <Ellipse x:Name="GazeDot" Width="38" Height="38" Visibility="Collapsed"
