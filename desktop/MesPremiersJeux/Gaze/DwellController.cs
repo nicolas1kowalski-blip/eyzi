@@ -685,6 +685,9 @@ namespace MesPremiersJeux.Gaze
             // Jeux d'exploration : pas de sélection en dehors des cibles.
             if (TargetsOnly) { ResetHold(); return; }
 
+            // Zone réservée à l'accompagnant (bouton ⚙) : le regard n'y clique jamais.
+            if (GazeTargets.IsForbidden(screen)) { ResetHold(); return; }
+
             // 8) DWELL LIBRE (coloriage, zones sans cible…) : fenêtre de stabilité
             //    avec accumulation + grâce, comme pour les cibles.
             if (!_holdActive)

@@ -58,7 +58,7 @@ Pendant que l'application parle, un bouton regardé est quand même pris en comp
 Ce qui est en train d'être lu reste **surligné en doré** jusqu'à la fin de la phrase.
 
 ### Les pilotes
-Dans les réglages (bouton **⚙** en haut à droite), « Source du regard » propose :
+Dans l'administration (appui long sur **⚙**, page « Regard »), « Source du regard » propose :
 
 - **Auto** : l'application choisit le meilleur pilote disponible (conseillé).
 - **Moteur Tobii direct** : le même moteur que Grid 3 ; c'est celui qui marche le mieux sur les tablettes TD I-13 et PCEye 5.
@@ -103,9 +103,23 @@ Trois niveaux : 🌱 Petite section (2 choix, nombres jusqu'à 5), 🌿 Moyenne 
 ### La pause
 Après 10 minutes de jeu (réglable : jamais, 5, 10, 15, 20), l'application demande « on continue encore un peu, ou on fait une petite pause ? ». La pause joue un peu de musique, et on reprend quand on veut.
 
-## 5. Les réglages des parents (bouton ⚙)
+## 5. L'administration (bouton ⚙, réservée à l'accompagnant)
 
-- **🔧 Mode administration** met le regard en pause pour que vous puissiez utiliser la souris, et permet d'ajouter, modifier ou supprimer les livres, coloriages et photos.
+**Ouvrir** : maintenez le bouton **⚙** (en haut à droite) **appuyé une seconde**, à la souris ou avec le doigt sur l'écran tactile. Un clic bref ne l'ouvre pas, et le regard ne peut jamais l'ouvrir : la commande oculaire ignore ce bouton, et un clic injecté par une commande oculaire (TD Control compris) est toujours trop court. Tant que le panneau est ouvert, **le regard est en pause** : seuls la souris et le doigt agissent. **✕ Fermer** (en haut à droite du panneau) rend la main à l'enfant.
+
+Le panneau est rangé en six pages (menu à gauche) :
+
+- **👁 Regard** : piloter au regard, ajustement automatique de la fixation, source du regard (pilote), durée de fixation, lissage, taille du cercle, vérification des yeux, calibrage Tobii, réglage éclair et réglage de la précision.
+- **🧒 Enfant & jeux** : prénom, niveau des jeux, pause après N minutes, tuiles « Parler » et « Oui / Non » (visibles ou non, bouton pour les remettre à leur place), « Je choisis ».
+- **🔊 Voix** : voix Windows et hauteur, voix naturelle Azure, écouter un exemple, **🎙 Enregistrer vos voix**.
+- **📁 Contenu** : **🔧 outils d'édition** (une fois le panneau fermé, les outils pour ajouter, modifier ou supprimer les livres, coloriages et photos apparaissent dans les activités ; le regard reste en pause tant que la case est cochée), photos de famille, dossier du contenu, exporter / importer.
+- **☁️ Licence & nuage** : licence, mises à jour, version précédente, libérer la tablette, synchronisation entre tablettes.
+- **📊 Suivi** : bilan de la semaine, bilan de la session, rapport du regard, journal.
+
+En bas du panneau : plein écran, réduire, quitter Eyzi.
+
+Dans le détail :
+
 - **👧 Prénom de l'enfant**.
 - **Voix** : voix Windows (hors ligne) avec réglage de hauteur, ou voix naturelle Azure (en ligne, clé à saisir ; repli automatique hors ligne). **🎙 Enregistrer vos voix** : vos « Bravo ! » et « Bonjour ! » remplacent la voix de synthèse aux moments forts. Dans la même fenêtre, **les sons** (a, o, i, ou, on, ette, u, an, in) : chaque son est livré avec une voix française enregistrée (les jeux de rimes et la maison des sons ne passent plus par la synthèse pour un son isolé) ; si vous préférez votre propre voix, enregistrez-le ici et il sera joué à la place. Même chose pour **les lettres** de l'abécédaire (le bruit de chaque lettre, « beuh », « ffff »…) : livrées enregistrées, remplaçables par votre voix.
 - **📊 Bilan** : la semaine, les niveaux, les étoiles, les mots dits.

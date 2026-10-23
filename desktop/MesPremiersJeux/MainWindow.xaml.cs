@@ -36,6 +36,7 @@ namespace MesPremiersJeux
         public MainWindow()
         {
             InitializeComponent();
+            WireAdminButton();
             // Mode immersif : masque/affiche la barre du haut pendant une activité.
             Chrome.Changed += () => Dispatcher.Invoke(() =>
                 TopBar.Visibility = Chrome.Immersive ? Visibility.Collapsed : Visibility.Visible);
@@ -179,7 +180,7 @@ namespace MesPremiersJeux
 
         private void Choice_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             ChoiceHost.Visibility = Visibility.Visible;
             _choice.Open();
         }
@@ -275,7 +276,7 @@ namespace MesPremiersJeux
             statusTimer.Tick += (s2, e2) =>
             {
                 // État détaillé des sources, visible dans le panneau de réglages.
-                if (SettingsPopup.IsOpen && DriverStatus != null)
+                if (AdminHost.Visibility == Visibility.Visible && DriverStatus != null)
                     DriverStatus.Text =
                         "Pro : " + (_pro?.IsAvailable == true ? _pro.Stats : "—")
                         + " · Direct : " + (_gaze?.IsAvailable == true ? _gaze.Samples + " pts" : "—")
@@ -283,6 +284,7 @@ namespace MesPremiersJeux
                         + "\n" + _dwell.PrecisionInfo;
 
                 if (AdminCheck?.IsChecked == true || GazeGate.IsPaused) return; // texte « pause » prioritaire
+                if (DateTime.Now < _statusHoldUntil) return;                    // message bref en cours
                 // La vérité vient du moteur : quelle source pilote le point, là,
                 // maintenant (« Regard direct » via SDK, ou « Curseur »). Le 🧭
                 // signale une tête loin de la position de calibration.
@@ -745,9 +747,120 @@ namespace MesPremiersJeux
             _dwell.SetStability(minCutoff, beta, deadZone);
         }
 
-        private void Settings_Click(object sender, RoutedEventArgs e)
+        // ------------------------------------------------------------------
+        //  ⚙ ADMINISTRATION — réservée à l'accompagnant.
+        //  Ouverture par APPUI LONG sur ⚙ (souris ou doigt) : un clic injecté
+        //  par une commande oculaire (le dwell de l'application, ou TD Control)
+        //  est toujours bref, il ne peut donc pas l'ouvrir. De plus, le bouton
+        //  est marqué ParentOnly : notre dwell l'ignore complètement.
+        //  Tant que le panneau est ouvert, le regard est en pause (GazeGate).
+        // ------------------------------------------------------------------
+        private const int AdminHoldMs = 900;
+        private System.Windows.Threading.DispatcherTimer _adminHold;
+        private bool _adminHoldFired;
+        private FrameworkElement _modalBeforeAdmin;
+        private DateTime _statusHoldUntil = DateTime.MinValue;
+
+        /// <summary>Message bref dans la barre d'état (gardé 3 s avant le texte habituel).</summary>
+        private void FlashStatus(string text)
         {
-            SettingsPopup.IsOpen = !SettingsPopup.IsOpen;
+            GazeStatus.Text = text;
+            _statusHoldUntil = DateTime.Now.AddSeconds(3);
+        }
+
+        private void WireAdminButton()
+        {
+            _adminHold = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(AdminHoldMs) };
+            _adminHold.Tick += (s, e) =>
+            {
+                _adminHold.Stop();
+                _adminHoldFired = true;
+                SettingsBtn.Opacity = 1;
+                OpenAdmin();
+            };
+            SettingsBtn.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                _adminHoldFired = false;
+                SettingsBtn.Opacity = 0.6; // « je sens l'appui »
+                _adminHold.Start();
+            };
+            void Cancel(object s, EventArgs e)
+            {
+                bool wasHolding = _adminHold.IsEnabled;
+                _adminHold.Stop();
+                SettingsBtn.Opacity = 1;
+                if (wasHolding && !_adminHoldFired)
+                {
+                    // Clic bref (souris, doigt… ou regard) : on explique, sans ouvrir.
+                    FlashStatus("⚙  Maintenez appuyé 1 seconde pour l'administration");
+                }
+            }
+            SettingsBtn.PreviewMouseLeftButtonUp += (s, e) => { Cancel(s, e); e.Handled = true; };
+            SettingsBtn.MouseLeave += Cancel;
+            SettingsBtn.LostMouseCapture += Cancel;
+        }
+
+        private void OpenAdmin()
+        {
+            if (AdminHost.Visibility == Visibility.Visible) return;
+            GazeGate.Push();                      // regard en pause tant que c'est ouvert
+            _modalBeforeAdmin = GazeTargets.ModalRoot;
+            GazeTargets.ModalRoot = AdminHost;    // aucune cible du jeu derrière
+            ShowAdminPage("regard");
+            AdminHost.Visibility = Visibility.Visible;
+            Lib.Log.Write("app", "Administration ouverte (appui long)");
+        }
+
+        private void CloseAdmin()
+        {
+            if (AdminHost == null || AdminHost.Visibility != Visibility.Visible) return;
+            AdminHost.Visibility = Visibility.Collapsed;
+            if (ReferenceEquals(GazeTargets.ModalRoot, AdminHost)) GazeTargets.ModalRoot = _modalBeforeAdmin;
+            _modalBeforeAdmin = null;
+            GazeGate.Pop();
+            Lib.Log.Write("app", "Administration fermée");
+        }
+
+        private void AdminClose_Click(object sender, RoutedEventArgs e) => CloseAdmin();
+
+        private void AdminNav_Click(object sender, RoutedEventArgs e)
+            => ShowAdminPage((sender as FrameworkElement)?.Tag as string ?? "regard");
+
+        private void ShowAdminPage(string key)
+        {
+            var pages = new Dictionary<string, StackPanel>
+            {
+                ["regard"] = PageRegard, ["enfant"] = PageEnfant, ["voix"] = PageVoix,
+                ["contenu"] = PageContenu, ["nuage"] = PageNuage, ["suivi"] = PageSuivi,
+            };
+            foreach (var kv in pages)
+                kv.Value.Visibility = kv.Key == key ? Visibility.Visible : Visibility.Collapsed;
+            // le bouton du menu sélectionné se distingue
+            foreach (var b in FindVisualChildren<Button>(AdminHost))
+            {
+                if (!(b.Tag is string t) || !pages.ContainsKey(t)) continue;
+                bool on = t == key;
+                b.Background = on ? new SolidColorBrush(Color.FromRgb(0x13, 0x30, 0x6B)) : Brushes.Transparent;
+                b.Foreground = on ? Brushes.White : new SolidColorBrush(Color.FromRgb(0x13, 0x30, 0x6B));
+            }
+        }
+
+        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject d) where T : DependencyObject
+        {
+            if (d == null) yield break;
+            int n = VisualTreeHelper.GetChildrenCount(d);
+            for (int i = 0; i < n; i++)
+            {
+                var c = VisualTreeHelper.GetChild(d, i);
+                if (c is T t) yield return t;
+                foreach (var x in FindVisualChildren<T>(c)) yield return x;
+            }
+        }
+
+        private void ResetTiles_Click(object sender, RoutedEventArgs e)
+        {
+            Draggable.Reset(_settings, _yesNo, _commBtn);
+            FlashStatus("↺  Tuiles remises en place");
         }
 
         // 🔎 Rapport du regard : teste les DEUX moteurs Tobii l'un après l'autre
@@ -755,7 +868,7 @@ namespace MesPremiersJeux
         // dans le dossier Contenu, puis relance le pilote habituel.
         private void GazeReport_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             string driver = string.IsNullOrWhiteSpace(_settings?.GazeDriver) ? "auto" : _settings.GazeDriver;
             string before = _dwell.ActiveSource;
             ShowParentNotice("🔎 Test du regard (20 s) : regarde l'écran tranquillement, sans bouger…");
@@ -811,7 +924,7 @@ namespace MesPremiersJeux
 
         private void OpenLog_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             Lib.Log.Write("app", "Journal ouvert par l'utilisateur");
             Lib.Log.Open();
         }
@@ -819,7 +932,7 @@ namespace MesPremiersJeux
         // « Suis l'étoile » : mesure le décalage du regard et applique la correction.
         private void Calibrate_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             var win = new CalibrationWindow { Owner = this };
             if (win.ShowDialog() == true && win.Result.Count > 0)
             {
@@ -841,7 +954,7 @@ namespace MesPremiersJeux
 
         private void Session_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             new SessionWindow { Owner = this }.ShowDialog();
         }
 
@@ -861,7 +974,7 @@ namespace MesPremiersJeux
 
         private async void ReleaseTablet_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             GazeGate.Push();
             try
             {
@@ -881,7 +994,7 @@ namespace MesPremiersJeux
 
         private void Licence_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             GazeGate.Push();
             var lw = new LicenceWindow(_settings) { Owner = this };
             lw.ShowDialog();
@@ -891,7 +1004,7 @@ namespace MesPremiersJeux
 
         private async void CheckUpdate_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             if (Updater.IsDevBuild)
             {
                 MessageBox.Show(this, "Cette version a été compilée à la main (Visual Studio) : les mises à jour automatiques ne s'appliquent qu'aux versions installées avec l'installeur.", "Mises à jour");
@@ -941,7 +1054,7 @@ namespace MesPremiersJeux
 
         private void Rollback_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             var prev = Updater.PreviousSetup();
             if (prev == null) { MessageBox.Show(this, "Aucune version précédente n'est disponible sur cette tablette.", "Version précédente"); return; }
             GazeGate.Push();
@@ -1114,7 +1227,7 @@ namespace MesPremiersJeux
 
         // « Réglage éclair » : une étoile, 3 secondes, recale tout le regard.
         private void QuickFix_Click(object sender, RoutedEventArgs e)        {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             var win = new QuickFixWindow { Owner = this };
             if (win.ShowDialog() == true && win.Measured)
             {
@@ -1126,7 +1239,7 @@ namespace MesPremiersJeux
 
         private void EyeTrack_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             // La fenêtre des yeux utilise la meilleure source disponible, et affiche
             // la fiche technique du tracker (diagnostic licence/capacités).
             // Moteur Tobii direct (PCEye 5…) d'abord, puis Pro SDK, puis grand public.
@@ -1150,7 +1263,7 @@ namespace MesPremiersJeux
 
         private void DeviceCalib_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             CalibrateDevice();
         }
 
@@ -1278,7 +1391,7 @@ namespace MesPremiersJeux
 
         private void FamilyManager_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             new FamilyManagerWindow { Owner = this }.ShowDialog();
         }
 
@@ -1398,13 +1511,13 @@ namespace MesPremiersJeux
 
         private void RecordVoices_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             new VoiceRecorderWindow { Owner = this }.ShowDialog();
         }
 
         private void Bilan_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             new BilanWindow { Owner = this }.ShowDialog();
         }
 
@@ -1422,7 +1535,7 @@ namespace MesPremiersJeux
 
         private async void CloudUp_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             if (!FamilyCloud.Available(_settings))
             {
                 MessageBox.Show(this, "Le nuage de la famille n'est pas prêt : il faut une licence activée en ligne et un mot de passe famille (bouton « Changer la licence »).", "Nuage");
@@ -1437,7 +1550,7 @@ namespace MesPremiersJeux
 
         private async void CloudDown_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             if (!FamilyCloud.Available(_settings))
             {
                 MessageBox.Show(this, "Le nuage de la famille n'est pas prêt : il faut une licence activée en ligne et un mot de passe famille (bouton « Changer la licence »).", "Nuage");
@@ -1518,13 +1631,13 @@ namespace MesPremiersJeux
 
         private void Fullscreen_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             ToggleFullscreen();
         }
 
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {
-            SettingsPopup.IsOpen = false;
+            CloseAdmin();
             WindowState = WindowState.Minimized;
         }
 

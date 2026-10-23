@@ -20,6 +20,26 @@ namespace MesPremiersJeux.Gaze
         public static void SetIsTarget(DependencyObject el, bool value) => el.SetValue(IsTargetProperty, value);
         public static bool GetIsTarget(DependencyObject el) => (bool)el.GetValue(IsTargetProperty);
 
+        /// <summary>Élément réservé à l'accompagnant (bouton ⚙) : jamais une
+        /// cible du regard, et le dwell libre n'y clique pas non plus.</summary>
+        public static readonly DependencyProperty ParentOnlyProperty =
+            DependencyProperty.RegisterAttached("ParentOnly", typeof(bool), typeof(GazeTargets),
+                new PropertyMetadata(false));
+
+        public static void SetParentOnly(DependencyObject el, bool value) => el.SetValue(ParentOnlyProperty, value);
+        public static bool GetParentOnly(DependencyObject el) => (bool)el.GetValue(ParentOnlyProperty);
+
+        /// <summary>Zones écran interdites au regard (recensées à chaque Collect).</summary>
+        private static readonly List<Rect> _forbidden = new List<Rect>();
+
+        public static bool IsForbidden(Point screen)
+        {
+            lock (_forbidden)
+                foreach (var r in _forbidden)
+                    if (r.Contains(screen)) return true;
+            return false;
+        }
+
         public sealed class Target
         {
             public FrameworkElement Element;
@@ -37,6 +57,7 @@ namespace MesPremiersJeux.Gaze
         public static List<Target> Collect(Visual root)
         {
             var list = new List<Target>();
+            lock (_forbidden) _forbidden.Clear();
             if (ModalRoot != null && ModalRoot.IsVisible) root = ModalRoot;
             Walk(root, list);
             return list;
@@ -49,6 +70,20 @@ namespace MesPremiersJeux.Gaze
             if (d is FrameworkElement fe)
             {
                 if (!fe.IsVisible) return; // sous-arbre invisible : inutile de descendre
+
+                if (GetParentOnly(fe))
+                {
+                    // Réservé à l'accompagnant : pas une cible, et zone interdite au dwell libre.
+                    try
+                    {
+                        var tl = fe.PointToScreen(new Point(0, 0));
+                        var br = fe.PointToScreen(new Point(fe.ActualWidth, fe.ActualHeight));
+                        var r = new Rect(tl, br); r.Inflate(12, 12);
+                        lock (_forbidden) _forbidden.Add(r);
+                    }
+                    catch { }
+                    return;
+                }
 
                 bool isButton = fe is ButtonBase b && b.IsEnabled;
                 if ((isButton || GetIsTarget(fe)) && fe.IsHitTestVisible)
