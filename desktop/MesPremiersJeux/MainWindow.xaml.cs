@@ -39,7 +39,10 @@ namespace MesPremiersJeux
             WireAdminButton();
             // Mode immersif : masque/affiche la barre du haut pendant une activité.
             Chrome.Changed += () => Dispatcher.Invoke(() =>
-                TopBar.Visibility = Chrome.Immersive ? Visibility.Collapsed : Visibility.Visible);
+            {
+                TopBar.Visibility = Chrome.Immersive ? Visibility.Collapsed : Visibility.Visible;
+                ApplyTiles(); // pendant une activité : Oui/Non cachés, Parler réduit
+            });
             BuildViews();
             Loaded += OnLoaded;
             Closed += (s, e) =>
@@ -133,8 +136,44 @@ namespace MesPremiersJeux
             if (_settings == null) return;
             _settings.YesNoButtons = YesNoCheck.IsChecked == true;
             _settings.Save();
-            if (_yesNo != null && !CommBoard.IsOpen)
-                _yesNo.Visibility = _settings.YesNoButtons ? Visibility.Visible : Visibility.Collapsed;
+            ApplyTiles();
+        }
+
+        private void TilesInGames_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null) return;
+            _settings.HideYesNoInGames = HideYesNoCheck.IsChecked == true;
+            _settings.HideTalkInGames = HideTalkCheck.IsChecked == true;
+            _settings.Save();
+            ApplyTiles();
+        }
+
+        /// <summary>
+        /// Les tuiles Oui/Non et Parler selon le moment : cachées quand le tableau
+        /// de communication est ouvert ; pendant une activité (mode immersif),
+        /// Oui/Non disparaissent (les jeux ont leurs propres réponses) et Parler
+        /// reste, réduit et discret — c'est le canal d'urgence de l'enfant.
+        /// </summary>
+        private void ApplyTiles()
+        {
+            if (_commBtn == null || _yesNo == null) return;
+            if (CommBoard.IsOpen)
+            {
+                _commBtn.Visibility = Visibility.Collapsed;
+                _yesNo.Visibility = Visibility.Collapsed;
+                return;
+            }
+            bool inGame = Chrome.Immersive;
+            bool yesOn = _settings == null || _settings.YesNoButtons;
+            bool talkOn = _settings == null || _settings.CommButton;
+            bool hideYes = inGame && (_settings == null || _settings.HideYesNoInGames);
+            bool hideTalk = inGame && _settings != null && _settings.HideTalkInGames;
+            _yesNo.Visibility = yesOn && !hideYes ? Visibility.Visible : Visibility.Collapsed;
+            _commBtn.Visibility = talkOn && !hideTalk ? Visibility.Visible : Visibility.Collapsed;
+            double k = inGame ? 0.6 : 1.0; // Parler réduit pendant le jeu (LayoutTransform : le glisser-déposer garde son RenderTransform)
+            if (!(_commBtn.LayoutTransform is ScaleTransform sc) || Math.Abs(sc.ScaleX - k) > 0.01)
+                _commBtn.LayoutTransform = new ScaleTransform(k, k);
+            _commBtn.Opacity = inGame ? 0.82 : 1.0;
         }
 
         private void OpenComm()
@@ -142,10 +181,9 @@ namespace MesPremiersJeux
             Speech.Stop();
             Speech.Hold = true;              // les jeux se taisent, la grille parle
             GazeTargets.ModalRoot = _comm;   // le regard ne vise que la grille
-            _commBtn.Visibility = Visibility.Collapsed;
-            _yesNo.Visibility = Visibility.Collapsed;
             _comm.Visibility = Visibility.Visible;
             _comm.Open();
+            ApplyTiles();
         }
 
         private void CloseComm()
@@ -154,8 +192,7 @@ namespace MesPremiersJeux
             _comm.MarkClosed();
             GazeTargets.ModalRoot = null;
             Speech.Hold = false;
-            _commBtn.Visibility = _settings == null || _settings.CommButton ? Visibility.Visible : Visibility.Collapsed;
-            _yesNo.Visibility = _settings == null || _settings.YesNoButtons ? Visibility.Visible : Visibility.Collapsed;
+            ApplyTiles();
             Speech.Say("On reprend !");
         }
 
@@ -164,8 +201,7 @@ namespace MesPremiersJeux
             if (_settings == null) return;
             _settings.CommButton = CommBtnCheck.IsChecked == true;
             _settings.Save();
-            if (_commBtn != null && !CommBoard.IsOpen)
-                _commBtn.Visibility = _settings.CommButton ? Visibility.Visible : Visibility.Collapsed;
+            ApplyTiles();
         }
 
         private void AutoDwell_Changed(object sender, RoutedEventArgs e)
@@ -393,9 +429,10 @@ namespace MesPremiersJeux
             };
             CommBtnCheck.IsChecked = _settings.CommButton;
             YesNoCheck.IsChecked = _settings.YesNoButtons;
+            HideYesNoCheck.IsChecked = _settings.HideYesNoInGames;
+            HideTalkCheck.IsChecked = _settings.HideTalkInGames;
             AutoDwellCheck.IsChecked = _settings.AutoDwell;
-            _commBtn.Visibility = _settings.CommButton ? Visibility.Visible : Visibility.Collapsed;
-            _yesNo.Visibility = _settings.YesNoButtons ? Visibility.Visible : Visibility.Collapsed;
+            ApplyTiles();
 
             // Bilan de session (carte de chaleur + compteurs).
             SessionLog.Init();

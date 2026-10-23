@@ -354,8 +354,13 @@
                                               Checked="CommBtn_Changed" Unchecked="CommBtn_Changed" />
                                     <CheckBox x:Name="YesNoCheck" Content="✅ Tuiles « Oui / Non » toujours visibles" Style="{StaticResource Check}"
                                               Checked="YesNo_Changed" Unchecked="YesNo_Changed" />
+                                    <TextBlock Text="Pendant une activité (jeu, histoire, coloriage)" Style="{StaticResource Label}" />
+                                    <CheckBox x:Name="HideYesNoCheck" Content="Cacher « Oui / Non » (les jeux ont leurs propres réponses)" Style="{StaticResource Check}" Margin="0,4,0,0"
+                                              Checked="TilesInGames_Changed" Unchecked="TilesInGames_Changed" />
+                                    <CheckBox x:Name="HideTalkCheck" Content="Cacher aussi « Parler » (sinon il reste, en plus petit)" Style="{StaticResource Check}" Margin="0,4,0,0"
+                                              Checked="TilesInGames_Changed" Unchecked="TilesInGames_Changed" />
                                     <TextBlock Style="{StaticResource Hint}"
-                                               Text="Les tuiles se déplacent à la souris ou au doigt : attrapez-les et glissez-les où vous voulez." />
+                                               Text="« Parler » est le canal d'urgence de l'enfant (j'ai mal, stop, fini) : nous conseillons de le garder. Les tuiles se déplacent à la souris ou au doigt : attrapez-les et glissez-les où vous voulez." />
                                     <Button Content="↺  Remettre les tuiles à leur place" Style="{StaticResource AdminBtn}" Click="ResetTiles_Click" />
                                     <Button Content="🙋  Je choisis (2 à 4 images, elle regarde celle qu'elle veut)" Style="{StaticResource AdminBtn}" Click="Choice_Click" />
                                 </StackPanel>
