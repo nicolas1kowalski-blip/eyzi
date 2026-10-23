@@ -22,6 +22,7 @@
 7. L'URL du projet et la clé publique (publishable) sont embarquées dans l'application depuis la version 2026.10.22.105 (`Lib/Cloud.cs`). Rien à saisir sur les tablettes ; le réglage ☁️ Le nuage ne sert qu'à les remplacer.
 8. **Créer ta propre licence de famille** (la licence maître ne connaît pas le serveur, donc pas de nuage avec elle) : SQL Editor → `select public.create_licence('Famille Kowalski', 'test', 3);` → noter le numéro EYZ-… → sur chaque tablette, réglages → 🔑 Changer la licence → entrer le numéro et le mot de passe famille (le même partout).
 9. **Vérifier les variables Vercel** : `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` existent déjà pour les livres ; sinon les ajouter (Settings → Environment Variables), puis « Redeploy ».
+   **E-mails du formulaire** : ajouter `SMTP_USER` = `contact@eyzi.fr` et `SMTP_PASS` = le mot de passe de la boîte (OVH, serveur `ssl0.ovh.net` port 465 par défaut ; `SMTP_HOST`/`SMTP_PORT`/`NOTIFY_TO` facultatifs), puis « Redeploy ». À chaque demande : un e-mail à contact@eyzi.fr avec le détail et la commande SQL prête à coller, et un accusé de réception à la famille. Sans ces variables, la demande est quand même enregistrée dans Supabase, simplement sans e-mail.
 10. **Tester le formulaire** : remplir https://eyzi.fr/licence.html avec tes coordonnées → Supabase → Table Editor → `licence_requests` : la ligne est là. Idem pour /retours.html.
 
 ## D. Publier la version prod (2 min)

@@ -7,6 +7,7 @@
 // Variables d'environnement (Vercel → Settings → Environment Variables) :
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY   (déjà utilisées par api/books.js)
 import { createClient } from '@supabase/supabase-js';
+import { mailConfigured, notifyEditor, acknowledge } from '../lib/mail.js';
 
 const MAX = { name: 120, email: 160, org: 160, message: 2000, child: 40, gear: 80 };
 
@@ -62,7 +63,15 @@ export default async function handler(req, res) {
     res.status(500).json({ ok: false, message: explain(error), code: error.code || '', detail: String(error.message || '').slice(0, 200) });
     return;
   }
-  res.status(200).json({ ok: true });
+  // E-mails : l'éditeur est prévenu, la famille reçoit un accusé de réception.
+  // Un échec d'envoi n'annule pas la demande (elle est déjà enregistrée).
+  let mailed = false;
+  if (mailConfigured()) {
+    const r = { topic, name, email, kind, org, child, gear, tablets, message, recontact };
+    try { await notifyEditor(r); mailed = true; } catch (e) { console.error('mail éditeur', e?.message || e); }
+    if (topic === 'licence') { try { await acknowledge(r); } catch (e) { console.error('mail famille', e?.message || e); } }
+  }
+  res.status(200).json({ ok: true, mailed });
 }
 
 // Message précis selon la cause (affiché dans le formulaire, pour que la

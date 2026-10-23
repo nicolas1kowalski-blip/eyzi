@@ -47,7 +47,7 @@
     try{
       var r=await fetch('/api/licence-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
       var j={}; try{ j=await r.json(); }catch(e){}
-      if(r.ok && j.ok){ msg.className='msg ok'; msg.textContent='Merci ! Votre demande est enregistrée. Vous recevrez votre numéro de licence par e-mail.'; f.reset(); }
+      if(r.ok && j.ok){ msg.className='msg ok'; msg.textContent=j.mailed ? 'Merci ! Votre demande est enregistrée, un accusé de réception vient de vous être envoyé. Vous recevrez votre numéro de licence par e-mail.' : 'Merci ! Votre demande est enregistrée. Vous recevrez votre numéro de licence par e-mail.'; f.reset(); }
       else { msg.className='msg err'; msg.textContent=(j && j.message) || 'Envoi impossible pour le moment. Réessayez un peu plus tard.'; if(j && (j.code||j.detail)){ var sm=document.createElement('small'); sm.style.display='block'; sm.style.opacity='.7'; sm.style.marginTop='6px'; sm.textContent='Détail technique : '+[j.code,j.detail].filter(Boolean).join(' · '); msg.appendChild(sm); } }
     }catch(e){ msg.className='msg err'; msg.textContent='Pas de réseau. Réessayez un peu plus tard.'; }
     btn.disabled=false; btn.textContent='Envoyer la demande';
