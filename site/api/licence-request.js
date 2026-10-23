@@ -57,8 +57,27 @@ export default async function handler(req, res) {
   });
   if (error) {
     console.error('licence_requests insert', error);
-    res.status(500).json({ ok: false, message: "Impossible d'enregistrer la demande pour le moment. Réessayez dans quelques minutes." });
+    res.status(500).json({ ok: false, message: explain(error), code: error.code || '', detail: String(error.message || '').slice(0, 200) });
     return;
   }
   res.status(200).json({ ok: true });
+}
+
+// Message précis selon la cause (affiché dans le formulaire, pour que la
+// famille — ou l'éditeur — sache quoi faire).
+function explain(error) {
+  const code = String(error.code || '');
+  const msg = String(error.message || '').toLowerCase();
+  const mail = ' Écrivez-nous directement : contact@eyzi.fr';
+  if (code === '42P01' || msg.includes('does not exist') && msg.includes('licence_requests'))
+    return "Le serveur n'est pas encore prêt (table des demandes absente : exécuter supabase.sql)." + mail;
+  if (code === '42703' || code === 'PGRST204' || msg.includes('column'))
+    return "Le serveur n'est pas à jour (colonne manquante : relancer supabase.sql)." + mail;
+  if (code === '42501' || msg.includes('row-level security') || msg.includes('permission denied'))
+    return "Le serveur refuse l'écriture (clé serveur incorrecte : il faut la clé service_role, pas la clé publique)." + mail;
+  if (code === 'PGRST301' || msg.includes('jwt') || msg.includes('api key') || msg.includes('apikey') || msg.includes('invalid'))
+    return "Le serveur refuse la connexion (clé serveur invalide)." + mail;
+  if (msg.includes('fetch failed') || msg.includes('enotfound') || msg.includes('network'))
+    return "Le serveur de données est injoignable (adresse SUPABASE_URL incorrecte ?)." + mail;
+  return "Impossible d'enregistrer la demande pour le moment (" + (code || 'erreur') + ")." + mail;
 }
