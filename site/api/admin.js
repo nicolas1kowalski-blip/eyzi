@@ -30,15 +30,37 @@ export default async function handler(req, res) {
       // Statistiques d'usage (ce que les familles utilisent, pas plus) : les
       // vues SQL de supabase.sql, plus le catalogue des activités de l'app
       // pour repérer ce qui n'est jamais ouvert.
-      const [resume, total, trente, lic, act] = await Promise.all([
+      const TRIAL = 'EYZ-ESSAI-0000-0000-0000'; // pseudo-licence des essais de 10 jours (usage anonyme)
+      const [resume, total, trente, lic, act, trialUse] = await Promise.all([
         supabase.from('usage_resume').select('*'),
         supabase.from('usage_par_famille').select('*'),
         supabase.from('usage_30_jours').select('*'),
         supabase.from('licences').select('key, family, channel, max_tablets, enabled, expires_at, created_at'),
         supabase.from('activations').select('licence_key, machine, app_version, first_seen, last_seen, enabled'),
+        supabase.from('usage').select('machine, activity, label, launches, seconds, day').eq('licence_key', TRIAL).order('day', { ascending: false }).limit(5000),
       ]);
-      const err = resume.error || total.error || trente.error || lic.error || act.error;
+      const err = resume.error || total.error || trente.error || lic.error || act.error || trialUse.error;
       if (err) throw err;
+      // Essais sans licence : une ligne par tablette (identifiant haché), avec ses activités.
+      const trialName = ((lic.data || []).find(l => l.key === TRIAL) || {}).family || 'Essais sans licence';
+      const perMachine = {};
+      (act.data || []).filter(a => a.licence_key === TRIAL).forEach(a => {
+        perMachine[a.machine] = { machine: a.machine, version: a.app_version, depuis: a.first_seen, vue: a.last_seen, minutes: 0, jours: new Set(), activites: {} };
+      });
+      (trialUse.data || []).forEach(u => {
+        const m = perMachine[u.machine] = perMachine[u.machine] || { machine: u.machine, version: null, depuis: null, vue: null, minutes: 0, jours: new Set(), activites: {} };
+        m.minutes += (u.seconds || 0) / 60; m.jours.add(u.day);
+        const a = m.activites[u.activity] = m.activites[u.activity] || { nom: u.label || u.activity, minutes: 0, ouvertures: 0 };
+        a.minutes += (u.seconds || 0) / 60; a.ouvertures += u.launches || 0;
+      });
+      const essais = Object.values(perMachine).map(m => ({
+        machine: m.machine, version: m.version, depuis: m.depuis, vue: m.vue, minutes: Math.round(m.minutes), jours: m.jours.size,
+        top: Object.values(m.activites).sort((a, b) => b.minutes - a.minutes).slice(0, 5).map(a => ({ nom: a.nom, minutes: Math.round(a.minutes), ouvertures: a.ouvertures })),
+      })).sort((a, b) => String(b.vue || '').localeCompare(String(a.vue || '')));
+      lic.data = (lic.data || []).filter(l => l.key !== TRIAL);
+      resume.data = (resume.data || []).filter(r => r.licence !== TRIAL);
+      total.data = (total.data || []).filter(r => r.famille !== trialName);
+      trente.data = (trente.data || []).filter(r => r.famille !== trialName);
       // Installée ou pas : une activation = l'application a été installée et la licence saisie.
       const tablets = {};
       (act.data || []).forEach(a => { (tablets[a.licence_key] = tablets[a.licence_key] || []).push(a); });
@@ -54,7 +76,7 @@ export default async function handler(req, res) {
           tablettes: t.map(x => ({ machine: x.machine, version: x.app_version, depuis: x.first_seen, vue: x.last_seen, active: x.enabled })),
         };
       });
-      res.status(200).json({ ok: true, resume: resume.data || [], total: total.data || [], trente: trente.data || [], familles, catalogue });
+      res.status(200).json({ ok: true, resume: resume.data || [], total: total.data || [], trente: trente.data || [], familles, essais, catalogue });
       return;
     }
     if (req.method === 'GET') {

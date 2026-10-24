@@ -93,8 +93,9 @@ namespace MesPremiersJeux.Views
             int left = Licence.TrialDaysLeft(s);
             string lic = "Entrez le numéro de licence qui vous a été donné (forme EYZ-XXXX-XXXX-XXXX-XXXX). Toutes les tablettes activées avec le même numéro forment une même famille. Pendant la bêta, la licence est gratuite : eyzi.fr/licence.html · contact@eyzi.fr";
             if (s.LicenceOk && !string.IsNullOrWhiteSpace(s.LicenceKey)) return lic;
-            if (left < 0) return "Vous pouvez essayer Eyzi " + Licence.TrialDays + " jours sans licence, toutes fonctions ouvertes. " + lic;
-            if (left > 0) return "Essai gratuit : il reste " + left + (left > 1 ? " jours." : " jour.") + " " + lic;
+            string anon = " Pendant l'essai, seuls des compteurs d'usage anonymes sont envoyés (quelles activités, combien de temps), jamais de contenu ni de nom.";
+            if (left < 0) return "Vous pouvez essayer Eyzi " + Licence.TrialDays + " jours sans licence, toutes fonctions ouvertes." + anon + " " + lic;
+            if (left > 0) return "Essai gratuit : il reste " + left + (left > 1 ? " jours." : " jour.") + anon + " " + lic;
             return "L'essai gratuit de " + Licence.TrialDays + " jours est terminé. " + lic;
         }
 

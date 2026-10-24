@@ -148,7 +148,7 @@ Le canal est porté par la licence. **↩ Version précédente** réinstalle la 
 
 ## 7. Les données et la sécurité
 
-- Tout est sur la tablette : réglages, contenu, journal, progrès. Rien ne part sans licence activée.
+- Tout est sur la tablette : réglages, contenu, journal, progrès. Sans licence activée, rien ne part, à une exception près : pendant l'essai de 10 jours, les compteurs d'usage décrits plus bas sont envoyés sous un identifiant de tablette haché (pas de nom de machine, pas de nom de famille), pour savoir ce que les essais utilisent.
 - Vers le nuage ne partent que des fichiers **chiffrés** (AES-256) avec votre mot de passe famille. Le serveur, et l'éditeur, voient un fichier illisible.
 - Chaque famille a son espace, cloisonné par le serveur : une tablette d'une famille ne peut pas lire une autre famille.
 - Le numéro de licence n'est pas un secret absolu (quelqu'un qui l'a peut activer une tablette de votre famille, dans la limite du nombre autorisé) ; le mot de passe famille, lui, protège vos contenus. Ne les écrivez pas au même endroit.

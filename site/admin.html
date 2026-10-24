@@ -137,6 +137,15 @@
           return '<dt>'+esc(f.famille)+(f.canal==='test'?' <small>(test)</small>':'')+'</dt><dd>'+s+'</dd>';
         }).join('') + '</dl>';
     list.appendChild(tbl);
+    // Essais sans licence (10 jours) : tablettes anonymes, identifiant haché.
+    var es = j.essais || [];
+    var te = document.createElement('div'); te.className = 'card req';
+    te.innerHTML = '<h3>🧪 Essais sans licence</h3><div class="meta">Tablettes qui utilisent l\'essai de 10 jours. Identifiant haché : on ne sait pas qui, seulement quoi et combien.</div>'
+      + (es.length ? '<dl>' + es.map(function(m){
+          return '<dt>'+esc(m.machine)+'</dt><dd>'+(m.depuis ? 'installé '+daysAgo(m.depuis)+' · ' : '')+'vu '+daysAgo(m.vue)+' · version '+esc(m.version||'?')+' · '+mins(m.minutes)+' sur '+m.jours+' jour'+(m.jours>1?'s':'')
+            + (m.top.length ? '<br><small>'+m.top.map(function(a){ return esc(a.nom)+' ('+mins(a.minutes)+')'; }).join(', ')+'</small>' : '')+'</dd>';
+        }).join('') + '</dl>' : '<div class="meta">Aucun essai remonté pour le moment (nécessite une version 2026.10.24.141 ou plus sur la tablette).</div>');
+    list.appendChild(te);
     if (!j.resume.length) { list.innerHTML += '<div class="empty">Aucune donnée d\'usage pour le moment.</div>'; return; }
     // Vue d'ensemble, toutes familles : 30 derniers jours par activité.
     var agg = {}, aggAll = {};

@@ -112,9 +112,28 @@ namespace MesPremiersJeux.Lib
         }
 
         /// <summary>Envoie au serveur ce qui n'a pas encore été envoyé. Renvoie null si OK (ou rien à faire), sinon l'erreur.</summary>
+        /// <summary>Pendant l'essai de 10 jours (sans licence), les compteurs partent
+        /// sous une pseudo-licence « Essais sans licence », avec un identifiant de
+        /// tablette haché (pas de nom de machine) : l'éditeur voit ce que les
+        /// essais utilisent, sans savoir qui.</summary>
+        private static string TrialMachine()
+        {
+            try
+            {
+                using (var sha = System.Security.Cryptography.SHA1.Create())
+                {
+                    var h = sha.ComputeHash(Encoding.UTF8.GetBytes(Environment.MachineName + "|" + Environment.UserName));
+                    return "essai-" + BitConverter.ToString(h).Replace("-", "").Substring(0, 10).ToLowerInvariant();
+                }
+            }
+            catch { return "essai-inconnu"; }
+        }
+
         public static async Task<string> SendAsync(Settings s)
         {
-            if (s == null || !s.LicenceOk || Licence.IsMaster(s.LicenceKey) || !Cloud.Configured) return null;
+            if (s == null || !Cloud.Configured) return null;
+            bool trial = (!s.LicenceOk || string.IsNullOrWhiteSpace(s.LicenceKey)) && Licence.TrialActive(s);
+            if (!trial && (!s.LicenceOk || Licence.IsMaster(s.LicenceKey))) return null;
             List<Row> pending;
             lock (Rows) { Flush(); Load(); pending = Rows.Values.Where(r => !r.Sent && (r.Launches > 0 || r.Successes > 0 || r.Seconds >= 1)).ToList(); }
             if (pending.Count == 0) return null;
@@ -130,8 +149,10 @@ namespace MesPremiersJeux.Lib
             sb.Append(']');
             try
             {
-                var body = "{\"p_key\":\"" + Esc(s.LicenceKey) + "\",\"p_machine\":\"" + Esc(Environment.MachineName) + "\",\"p_rows\":" + sb + "}";
-                var json = await Cloud.RpcAsync("report_usage", body);
+                var body = trial
+                    ? "{\"p_machine\":\"" + TrialMachine() + "\",\"p_version\":\"" + Esc(Updater.Current.ToString()) + "\",\"p_rows\":" + sb + "}"
+                    : "{\"p_key\":\"" + Esc(s.LicenceKey) + "\",\"p_machine\":\"" + Esc(Environment.MachineName) + "\",\"p_rows\":" + sb + "}";
+                var json = await Cloud.RpcAsync(trial ? "report_trial_usage" : "report_usage", body);
                 if (!string.Equals(Cloud.JsonGet(json, "ok"), "true", StringComparison.OrdinalIgnoreCase))
                     return Cloud.JsonGet(json, "message") ?? "refusé";
                 var today = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);

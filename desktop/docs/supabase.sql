@@ -264,6 +264,37 @@ begin
 end $$;
 grant execute on function public.report_usage(text, text, json) to anon, authenticated;
 
+-- ESSAIS SANS LICENCE (10 jours) : les compteurs d'usage arrivent sous une
+-- pseudo-licence, avec un identifiant de tablette haché. max_tablets = 0 et
+-- activations désactivées : ce numéro ne peut PAS servir de licence.
+insert into public.licences(key, family, channel, max_tablets, enabled, note)
+  values ('EYZ-ESSAI-0000-0000-0000', 'Essais sans licence', 'prod', 0, true, 'pseudo-licence : usage anonyme des essais de 10 jours')
+  on conflict (key) do nothing;
+
+create or replace function public.report_trial_usage(p_machine text, p_version text, p_rows json)
+returns json language plpgsql security definer as $$
+declare k text := 'EYZ-ESSAI-0000-0000-0000'; r json; n int := 0;
+begin
+  if p_machine is null or length(p_machine) < 6 or length(p_machine) > 60 or p_machine !~ '^essai-[0-9a-f]+$' then
+    return json_build_object('ok', false, 'message', 'tablette invalide');
+  end if;
+  insert into public.activations(licence_key, machine, app_version, enabled) values (k, p_machine, left(p_version, 40), false)
+    on conflict (licence_key, machine) do update set last_seen = now(), app_version = excluded.app_version;
+  for r in select * from json_array_elements(coalesce(p_rows, '[]'::json)) loop
+    insert into public.usage(licence_key, machine, day, activity, label, launches, successes, seconds)
+      values (k, p_machine, (r->>'day')::date, left(r->>'activity', 80), left(r->>'label', 120),
+              greatest(0, least(100000, coalesce((r->>'launches')::int, 0))),
+              greatest(0, least(100000, coalesce((r->>'successes')::int, 0))),
+              greatest(0, least(86400, coalesce((r->>'seconds')::int, 0))))
+      on conflict (licence_key, machine, day, activity) do update
+        set label = excluded.label, launches = excluded.launches, successes = excluded.successes,
+            seconds = excluded.seconds, updated_at = now();
+    n := n + 1;
+  end loop;
+  return json_build_object('ok', true, 'rows', n);
+end $$;
+grant execute on function public.report_trial_usage(text, text, json) to anon, authenticated;
+
 -- Vue : par famille et par activité, du plus utilisé au moins utilisé (toutes dates).
 create or replace view public.usage_par_famille as
   select l.family as famille, u.activity as activite, max(u.label) as nom,
