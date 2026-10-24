@@ -599,6 +599,16 @@ namespace MesPremiersJeux.Gaze
 
             var tgt = FindTarget(screen);
 
+            // « On écoute d'abord » : le jeu n'accepte pas de sélection (consigne
+            // en cours, tour verrouillé) → le cercle ne se remplit pas sur ses
+            // boutons. Rien ne fait semblant de cliquer.
+            if (tgt != null && Lib.InputGate.Blocks(tgt.Element))
+            {
+                if (_curTargetEl != null) ClearTarget();
+                ResetHold();
+                return;
+            }
+
             // Hystérésis entre voisins : quand une cible est déjà engagée, la
             // voisine ne la « vole » que si le regard est clairement DANS la
             // voisine ET nettement plus près de son centre. Sinon, à la frontière,
@@ -687,6 +697,9 @@ namespace MesPremiersJeux.Gaze
 
             // Zone réservée à l'accompagnant (bouton ⚙) : le regard n'y clique jamais.
             if (GazeTargets.IsForbidden(screen)) { ResetHold(); return; }
+
+            // Le jeu n'écoute pas pour l'instant : pas de clic « dans le vide » non plus.
+            if (Lib.InputGate.BlocksPoint(screen)) { ResetHold(); return; }
 
             // 8) DWELL LIBRE (coloriage, zones sans cible…) : fenêtre de stabilité
             //    avec accumulation + grâce, comme pour les cibles.

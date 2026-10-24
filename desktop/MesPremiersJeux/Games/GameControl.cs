@@ -34,11 +34,13 @@ namespace MesPremiersJeux.Games
         /// </summary>
         protected bool GateVoice = true;
 
-        // La consigne n'est protégée que ses PREMIÈRES secondes : passé ce
-        // délai, un clic agit tout de suite et coupe la voix. Un clic fait plus
-        // tôt part au bout de ce délai (jamais plus tard) — le retour de
-        // l'enfant ne doit jamais arriver « en retard » sur sa sélection.
-        private const double GateSeconds = 2.0;
+        // Une consigne n'est jamais protégée plus de 12 s (sécurité).
+        private const double GateSeconds = 12.0;
+
+        /// <summary>Le jeu n'accepte pas de sélection pour l'instant : tour
+        /// verrouillé, ou consigne en train d'être dite (jusqu'au bout).</summary>
+        private bool InputBlocked()
+            => Locked || (GateVoice && Speech.IsGating && Speech.BusyElapsedSeconds < GateSeconds);
 
         // Le clic EN ATTENTE de la fin de la consigne (le dernier bouton visé).
         private Button _pendingClick;
@@ -54,20 +56,33 @@ namespace MesPremiersJeux.Games
             // phrase) et VISIBLE : une petite oreille 👂 apparaît là où l'enfant
             // a cliqué, pour dire « écoute d'abord ! » — fini les clics avalés
             // mystérieusement. Un clic repousse aussi le coup de pouce.
-            // L'ENFANT A LE DERNIER MOT : un clic sur un bouton (souris, doigt ou
-            // regard) COUPE la voix en cours — consigne comprise — et agit tout
-            // de suite. Plus de clic « pris » qui ne fait rien pendant que la
-            // voix finit sa phrase. (Les transitions automatiques entre deux
-            // écrans, elles, continuent d'attendre la fin de la consigne.)
+            // TROIS CAS, dans l'ordre :
+            //  1. Le jeu est VERROUILLÉ (fin de tour, animation, épellation…) : le
+            //     clic est ignoré SANS faire semblant (pas de bouton enfoncé, pas
+            //     de surbrillance) et surtout sans couper la voix — c'était ça qui
+            //     coupait « Ça fait… Laura ! » quand l'enfant regardait encore
+            //     les lettres. Une petite oreille 👂 si la voix parle.
+            //  2. La CONSIGNE est en cours (phrase à écouter) : on la laisse finir.
+            //     Le clic est ignoré, avec l'oreille 👂 ; le regard, lui, ne
+            //     remplit même pas le cercle (InputGate). Jamais plus de 12 s.
+            //  3. Sinon (retour, bravo, phrase courte) : le clic a le dernier mot,
+            //     il coupe la voix et agit tout de suite.
             PreviewMouseLeftButtonDown += (s, e) =>
             {
                 if (_hint != null) { _hint.Stop(); _hint.Start(); }
                 var under = ButtonUnder(e.OriginalSource as DependencyObject);
                 if (under == null) return;
+                if (InputBlocked())
+                {
+                    e.Handled = true;
+                    if (Speech.IsBusy) ShowListenCue(e.GetPosition(this));
+                    return;
+                }
                 if (Speech.IsBusy) Speech.Stop();
                 // Ce dont la voix parle reste EN SURBRILLANCE tant qu'elle parle.
                 Highlight(under);
             };
+            Loaded += (s, e) => InputGate.Set(this, InputBlocked);
 
             // VRAI PLEIN ÉCRAN : une seule couche — le jeu occupe TOUT l'écran,
             // et la consigne flotte par-dessus le décor dans une petite bulle.
@@ -148,6 +163,7 @@ namespace MesPremiersJeux.Games
             {
                 // Retour au menu : le jeu s'arrête VRAIMENT (voix, suites programmées).
                 Closed = true;
+                InputGate.Clear(this);
                 if (_gazeHooked) { _gazeHooked = false; GazeFeed.Sample -= OnGazeSample; }
                 Unlight();
                 _pendingClick = null;
