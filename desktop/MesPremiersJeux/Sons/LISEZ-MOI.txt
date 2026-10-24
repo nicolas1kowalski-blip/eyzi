@@ -1,4 +1,6 @@
-Sons isolés livrés avec Eyzi (son-on-1.wav, son-o-1.wav, …).
+Sons livrés avec Eyzi : sons isolés (son-on-1.wav…), bruits des lettres
+(lettre-b-1.wav…) et syllabes des mots du jeu des syllabes (syl-panda-0-1.wav :
+nom de l'image + numéro de la syllabe).
 
 Voix française de synthèse neuronale « siwis » (Piper, MIT), entraînée sur la
 base SIWIS French Speech Synthesis Database (CC BY 4.0,

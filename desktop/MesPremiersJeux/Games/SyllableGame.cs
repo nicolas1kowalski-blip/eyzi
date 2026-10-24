@@ -232,6 +232,21 @@ namespace MesPremiersJeux.Games
 
         private static readonly string Vowels = "aeiouyàâäéèêëîïôöùûü";
 
+        /// <summary>
+        /// Chaque syllabe des mots du jeu est livrée en FICHIER AUDIO (Sons\syl-panda-0-1.wav :
+        /// nom de l'image + numéro de syllabe), généré hors ligne à partir de la prononciation
+        /// exacte — la synthèse lisait « pan » comme « penne ». Le prénom de l'enfant, lui,
+        /// n'a pas de fichier : la voix le dit.
+        /// </summary>
+        private void SpeakSyllable(int k)
+        {
+            if (Closed || _cur == null || k < 0 || k >= _cur.S.Length) return;
+            var slug = (_cur.Emoji ?? "").Split('|')[0].Trim();
+            var cat = "syl-" + slug + "-" + k;
+            if (slug.Length > 0 && VoiceBank.Has(cat)) { Speech.Stop(); VoiceBank.Play(cat); return; }
+            SpeakSlow(_cur.S[k]);
+        }
+
         private static string[] Syllabify(string w)
         {
             try
@@ -570,7 +585,7 @@ namespace MesPremiersJeux.Games
             ay.Completed += (s, e) =>
             {
                 SoundFx.Note(k); // la syllabe a SA note : le mot devient mélodie
-                if (speak) SpeakSlow(_cur.S[k]);
+                if (speak) SpeakSyllable(k);
                 // Une note de musique s'envole du nénuphar.
                 var mus = new TextBlock
                 {
