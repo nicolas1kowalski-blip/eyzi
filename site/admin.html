@@ -52,6 +52,7 @@
       <button data-s="new" class="on">⏳ En attente</button>
       <button data-s="done">✅ Validées</button>
       <button data-s="refused">✕ Refusées</button>
+      <button data-s="stats">📊 Statistiques</button>
       <span class="places" id="places">…</span>
       <button id="logout" style="margin-left:6px">Quitter</button>
     </div>
@@ -118,9 +119,45 @@
       list.appendChild(el);
     });
   }
+  function mins(m){ m = Math.round(m||0); return m >= 90 ? (Math.round(m/6)/10)+' h' : m+' min'; }
+  function renderStats(j){
+    $('places').textContent = j.resume.length + ' famille' + (j.resume.length>1?'s':'') + ' avec licence';
+    var list = $('list'); list.innerHTML = '';
+    if (!j.resume.length) { list.innerHTML = '<div class="empty">Aucune donnée d\'usage pour le moment.</div>'; return; }
+    // Vue d'ensemble, toutes familles : 30 derniers jours par activité.
+    var agg = {}, aggAll = {};
+    j.trente.forEach(function(r){ var a = agg[r.activite] = agg[r.activite] || {nom:r.nom||r.activite, minutes:0, ouvertures:0, familles:0}; a.minutes += +r.minutes||0; a.ouvertures += +r.ouvertures||0; a.familles++; });
+    j.total.forEach(function(r){ var a = aggAll[r.activite] = aggAll[r.activite] || {nom:r.nom||r.activite, minutes:0, ouvertures:0, familles:0}; a.minutes += +r.minutes||0; a.ouvertures += +r.ouvertures||0; a.familles++; });
+    var top = Object.keys(agg).map(function(k){ return agg[k]; }).sort(function(a,b){ return b.minutes-a.minutes; });
+    var used = {}; j.total.forEach(function(r){ used[r.activite] = true; });
+    var never = Object.keys(j.catalogue).filter(function(k){ return !used[k] && k.indexOf('onglet:') !== 0; }).map(function(k){ return j.catalogue[k]; }).sort();
+    var rare = Object.keys(aggAll).map(function(k){ return aggAll[k]; }).filter(function(a){ return a.minutes < 10; }).sort(function(a,b){ return a.minutes-b.minutes; });
+    var g = document.createElement('div'); g.className = 'card req';
+    g.innerHTML = '<h3>🌍 Toutes les familles</h3><div class="meta">30 derniers jours · minutes cumulées, nombre d\'ouvertures, nombre de familles</div>'
+      + '<dl>' + top.slice(0, 15).map(function(a){ return '<dt>'+esc(a.nom)+'</dt><dd>'+mins(a.minutes)+' · '+a.ouvertures+' ouverture'+(a.ouvertures>1?'s':'')+' · '+a.familles+' famille'+(a.familles>1?'s':'')+'</dd>'; }).join('') + '</dl>'
+      + '<div class="meta" style="margin-top:10px"><b>Peu utilisées</b> (moins de 10 min au total, toutes familles) : ' + (rare.length ? rare.map(function(a){ return esc(a.nom)+' ('+mins(a.minutes)+')'; }).join(', ') : 'aucune') + '</div>'
+      + '<div class="meta"><b>Jamais ouvertes</b> par aucune famille : ' + (never.length ? never.map(esc).join(', ') : 'aucune') + '</div>';
+    list.appendChild(g);
+    // Par famille.
+    j.resume.forEach(function(f){
+      var mine30 = j.trente.filter(function(r){ return r.famille === f.famille; }).sort(function(a,b){ return b.minutes-a.minutes; });
+      var mineAll = j.total.filter(function(r){ return r.famille === f.famille; });
+      var usedMine = {}; mineAll.forEach(function(r){ usedMine[r.activite] = true; });
+      var neverMine = Object.keys(j.catalogue).filter(function(k){ return !usedMine[k] && k.indexOf('onglet:') !== 0; }).length;
+      var el = document.createElement('div'); el.className = 'card req';
+      el.innerHTML = '<h3>👨‍👩‍👧 '+esc(f.famille)+'</h3>'
+        + '<div class="meta">'+mins(f.minutes_total)+' au total · '+f.jours_utilises+' jour'+(f.jours_utilises>1?'s':'')+' d\'utilisation · dernière fois : '+(f.dernier_jour ? esc(fmt(f.dernier_jour).split(' ')[0]) : 'jamais')+' · tablettes : '+f.tablettes_actives+' / '+f.max_tablettes+'</div>'
+        + (mine30.length ? '<dl>' + mine30.slice(0, 10).map(function(r){ return '<dt>'+esc(r.nom||r.activite)+'</dt><dd>'+mins(r.minutes)+' · '+r.ouvertures+' ouverture'+(r.ouvertures>1?'s':'')+(r.reussites ? ' · '+r.reussites+' réussite'+(r.reussites>1?'s':'') : '')+' · '+r.jours+' jour'+(r.jours>1?'s':'')+'</dd>'; }).join('') + '</dl>' : '<div class="meta">Rien ces 30 derniers jours.</div>')
+        + '<div class="meta">Activités jamais ouvertes par cette famille : '+neverMine+' sur '+Object.keys(j.catalogue).filter(function(k){ return k.indexOf('onglet:') !== 0; }).length+'</div>';
+      list.appendChild(el);
+    });
+  }
   async function load(){
     show($('gmsg'),'',''); $('list').innerHTML = '<div class="empty">Chargement…</div>';
-    try { render(await api('GET', null, '?status='+status)); }
+    try {
+      if (status === 'stats') renderStats(await api('GET', null, '?view=stats'));
+      else render(await api('GET', null, '?status='+status));
+    }
     catch(e){ show($('gmsg'),'err',e.message); $('list').innerHTML=''; if (/Jeton/.test(e.message)) logout(); }
   }
   function enter(){

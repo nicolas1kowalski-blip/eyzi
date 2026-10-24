@@ -4,6 +4,7 @@
 // envoyé par le navigateur dans l'en-tête x-admin-token.
 import { supabaseAdmin, issueLicence, places } from '../lib/licences.js';
 import { mailConfigured, sendLicence, refuse } from '../lib/mail.js';
+import catalogue from '../lib/activities.js';
 
 function authorized(req) {
   const want = String(process.env.ADMIN_TOKEN || '');
@@ -25,6 +26,20 @@ export default async function handler(req, res) {
   if (!supabase) { res.status(503).json({ ok: false, message: 'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquants.' }); return; }
 
   try {
+    if (req.method === 'GET' && req.query.view === 'stats') {
+      // Statistiques d'usage (ce que les familles utilisent, pas plus) : les
+      // vues SQL de supabase.sql, plus le catalogue des activités de l'app
+      // pour repérer ce qui n'est jamais ouvert.
+      const [resume, total, trente] = await Promise.all([
+        supabase.from('usage_resume').select('*'),
+        supabase.from('usage_par_famille').select('*'),
+        supabase.from('usage_30_jours').select('*'),
+      ]);
+      const err = resume.error || total.error || trente.error;
+      if (err) throw err;
+      res.status(200).json({ ok: true, resume: resume.data || [], total: total.data || [], trente: trente.data || [], catalogue });
+      return;
+    }
     if (req.method === 'GET') {
       const status = ['new', 'done', 'refused'].includes(req.query.status) ? req.query.status : 'new';
       const { data, error } = await supabase.from('licence_requests')
