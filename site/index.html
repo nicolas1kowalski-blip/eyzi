@@ -136,7 +136,7 @@
       if(!c.pre&&(!bestProd||newer(c.v,bestProd.v))) bestProd=c;
     });
     var pick=bestProd||best;
-    if(pick){ btn.href=pick.url; info.textContent='Version '+pick.tag.replace(/^v/,'')+(pick.pre?' (bêta, canal test)':'')+' · '+Math.round(pick.size/1048576)+' Mo'; }
+    if(pick){ btn.href=pick.url; info.textContent='Version '+pick.tag.replace(/^v/,'')+(pick.pre?' (bêta, canal test)':'')+' · '+Math.round(pick.size/1048576)+' Mo · attendez la fin du téléchargement avant d\'ouvrir le fichier (un fichier « .crdownload » est un téléchargement pas terminé)'; }
     else info.textContent='Aucune version publiée pour le moment.';
   }catch(e){ info.textContent='Toutes les versions sont sur GitHub (bouton ci-dessus).'; }
 })();
