@@ -367,7 +367,6 @@ namespace MesPremiersJeux.Games
             // Le son seul (« on », « o ») est mal rendu par la voix : on le dit avec un
             // mot d'exemple de la même famille, jamais celui qu'il faut trouver.
             var example = family.Members.Where(m => m != good).Select(m => m.Said).DefaultIfEmpty(good.Said).First();
-            string sonDit = SoundSaid(family.Sound) + ", comme dans " + example;
             var sound = family.Sound;
             // Le son isolé : l'enregistrement de papa/maman s'il existe, sinon la phonétique.
             string[] Parts(string before, string after) => new[] { before, Speech.SoundPart(sound, Speech.SoundIpa(sound)), Speech.SoundPart(sound, Speech.SoundIpa(sound)), after };
@@ -397,7 +396,7 @@ namespace MesPremiersJeux.Games
             Canvas.SetTop(speaker, 20);
             _canvas.Children.Add(speaker);
             SetConsigne(new TextBlock { Text = family.Sound.ToUpperInvariant(), FontSize = 64, FontWeight = FontWeights.ExtraBold, Foreground = new SolidColorBrush(Color.FromRgb(0x7E, 0x3F, 0xF2)) },
-                () => "Quel mot finit par " + sonDit + " ? Regarde une image pour l'entendre !");
+                () => "Quel mot finit comme « " + example + " » ? Regarde une image pour l'entendre !");
             SetBody(_canvas);
             Schedule(400, () => { if (!Closed) Speech.SayParts(Parts("Quel mot finit par le son", "comme dans " + example + " ?")); });
         }
@@ -411,7 +410,9 @@ namespace MesPremiersJeux.Games
                 SetGazePads(null, null);
                 GameKit.Success();
                 Pulse(btn);
-                Speak("Oui ! " + Cap(w.Said) + " finit par " + SoundSaid(sound) + " ! " + GameKit.Praise());
+                // Le son isolé passe par SayParts (fichier enregistré) : jamais dans une phrase lue par la voix.
+                var sp = Speech.SoundPart(sound, Speech.SoundIpa(sound));
+                Speech.SayParts("Oui ! " + Cap(w.Said) + " finit par le son", sp, sp, GameKit.Praise());
                 RewardStar();
                 Celebrate();
                 Schedule(3400, StartRhymes);
@@ -419,7 +420,8 @@ namespace MesPremiersJeux.Games
             else
             {
                 Shake(btn);
-                Speak(Cap(w.Said) + "... non, ça ne finit pas par " + SoundSaid(sound) + ". Écoute encore !");
+                var sp = Speech.SoundPart(sound, Speech.SoundIpa(sound));
+                Speech.SayParts(Cap(w.Said) + "... non, ça ne finit pas par le son", sp, "Écoute encore !");
             }
         }
 
@@ -444,14 +446,5 @@ namespace MesPremiersJeux.Games
         }
 
         private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s.Substring(1);
-
-        /// <summary>Le son tel que la voix le dit bien (« on » seul devenait inaudible).</summary>
-        private static string SoundSaid(string sound)
-        {
-            switch (sound)
-            {
-                default: return "le son " + Speech.SoundPart(sound, Speech.SoundIpa(sound)) + ", " + Speech.SoundPart(sound, Speech.SoundIpa(sound));
-            }
-        }
     }
 }
