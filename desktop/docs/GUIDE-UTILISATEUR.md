@@ -18,7 +18,9 @@ Ce guide s'adresse aux parents et aux accompagnants. La première partie expliqu
 
 ### Les étapes
 1. Téléchargez **Eyzi-Setup.exe** sur **eyzi.fr** (ou la page des versions : github.com/nicolas1kowalski-blip/eyzi/releases). Le fichier fait environ 150 Mo : **attendez que le téléchargement soit terminé** avant de l'ouvrir. Tant qu'il est en cours, le navigateur affiche un fichier « .crdownload » (Chrome, Edge) ou « .part » (Firefox) ; s'il reste ainsi, le téléchargement a été interrompu : relancez-le.
-2. Ouvrez le fichier. Windows peut afficher un écran bleu « Windows a protégé votre ordinateur » : cliquez sur **Informations complémentaires**, puis **Exécuter quand même**. C'est normal pour une application qui n'est pas encore signée par un certificat payant.
+2. Deux avertissements sont normaux pour une application récente, pas encore signée par un certificat payant :
+   - **Dans le navigateur** (Edge : « n'est pas fréquemment téléchargé », Chrome : « fichier inhabituel ») : ouvrez la liste des téléchargements, passez la souris sur le fichier → menu **…** → **Conserver** → **Afficher plus** → **Conserver quand même**.
+   - **En ouvrant le fichier**, l'écran bleu « Windows a protégé votre ordinateur » : cliquez sur **Informations complémentaires**, puis **Exécuter quand même**.
 3. L'installeur est en français et ne demande **aucun droit administrateur** : il installe l'application dans le profil de l'utilisateur. Cochez « Lancer au démarrage de Windows » si la tablette est dédiée à l'enfant.
 4. À la fin, l'application se lance toute seule. Un raccourci « Eyzi » est sur le bureau et dans le menu Démarrer.
 
