@@ -24,18 +24,47 @@ namespace MesPremiersJeux.Lib
     {
         public static string Dir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Voix", "piper");
         private static string Exe => Path.Combine(Dir, "piper.exe");
-        private static string Model => Directory.Exists(Dir)
-            ? Directory.GetFiles(Dir, "*.onnx").OrderBy(f => f).FirstOrDefault() ?? Path.Combine(Dir, "fr_FR-siwis-medium.onnx")
-            : Path.Combine(Dir, "fr_FR-siwis-medium.onnx");
 
-        /// <summary>Les fichiers du moteur et de la voix sont là.</summary>
+        /// <summary>Les voix livrées : nom affiché → (fichier du modèle, numéro de locuteur dans ce modèle).</summary>
+        public static readonly (string Id, string Label, string File, int? Speaker)[] Voices =
+        {
+            ("siwis",   "Siwis — claire et posée (voix des sons et des syllabes)", "fr_FR-siwis-medium.onnx", null),
+            ("jessica", "Jessica — plus ronde, plus chaleureuse",                  "fr_FR-upmc-medium.onnx",  0),
+        };
+
+        private static string _voice = "siwis";
+        /// <summary>La voix choisie (siwis par défaut). Changer de voix redémarre le moteur.</summary>
+        public static string Voice
+        {
+            get => _voice;
+            set { var v = Voices.Any(x => x.Id == value) ? value : "siwis"; if (v != _voice) { _voice = v; Shutdown(); } }
+        }
+
+        private static (string File, int? Speaker) Current()
+        {
+            var v = Voices.First(x => x.Id == _voice);
+            var path = Path.Combine(Dir, v.File);
+            if (File.Exists(path)) return (path, v.Speaker);
+            // Voix demandée absente : la première voix disponible.
+            foreach (var o in Voices) { var p = Path.Combine(Dir, o.File); if (File.Exists(p)) return (p, o.Speaker); }
+            return (path, v.Speaker);
+        }
+        private static string Model => Current().File;
+
+        /// <summary>Les fichiers du moteur et d'au moins une voix sont là.</summary>
         public static bool Available
         {
             get { try { return File.Exists(Exe) && File.Exists(Model) && File.Exists(Model + ".json"); } catch { return false; } }
         }
 
-        /// <summary>Nom de la voix livrée (pour l'écran d'administration).</summary>
-        public static string VoiceLabel => Available ? Path.GetFileNameWithoutExtension(Model) : "";
+        /// <summary>Cette voix précise est livrée.</summary>
+        public static bool HasVoice(string id)
+        {
+            try { var v = Voices.FirstOrDefault(x => x.Id == id); return v.File != null && File.Exists(Path.Combine(Dir, v.File)); } catch { return false; }
+        }
+
+        /// <summary>Nom de la voix en service (pour l'écran d'administration).</summary>
+        public static string VoiceLabel => Available ? Voices.First(x => Path.Combine(Dir, x.File) == Model).Id : "";
 
         private static string CacheDir => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MesPremiersJeux", "voix-piper");
@@ -112,7 +141,7 @@ namespace MesPremiersJeux.Lib
         {
             string hash;
             using (var sha = SHA1.Create())
-                hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(Path.GetFileName(Model) + "|" + text))).Replace("-", "");
+                hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(Path.GetFileName(Model) + "|" + (Current().Speaker?.ToString() ?? "") + "|" + text))).Replace("-", "");
             return Path.Combine(CacheDir, hash + ".wav");
         }
 
@@ -130,7 +159,8 @@ namespace MesPremiersJeux.Lib
                 lock (Gate)
                 {
                     if (_proc == null || _proc.HasExited) return null;
-                    var json = "{\"text\":\"" + Esc(text) + "\"}";
+                    var spk = Current().Speaker;
+                    var json = "{\"text\":\"" + Esc(text) + "\"" + (spk.HasValue ? ",\"speaker_id\":" + spk.Value : "") + "}";
                     _in.WriteLine(json);
                     // piper écrit le WAV dans output_dir et affiche son chemin.
                     string line = null;

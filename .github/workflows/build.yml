@@ -52,7 +52,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: voix-cache
-          key: piper-2023.11.14-2-fr_FR-siwis-medium-v1
+          key: piper-2023.11.14-2-fr_FR-siwis-upmc-medium-v2
 
       - name: Voix naturelle hors ligne (téléchargement)
         if: steps.voix.outputs.cache-hit != 'true'
@@ -62,6 +62,9 @@ jobs:
           Invoke-WebRequest -MaximumRetryCount 3 -Uri "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip" -OutFile voix-cache/piper.zip
           Invoke-WebRequest -MaximumRetryCount 3 -Uri "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx" -OutFile voix-cache/fr_FR-siwis-medium.onnx
           Invoke-WebRequest -MaximumRetryCount 3 -Uri "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx.json" -OutFile voix-cache/fr_FR-siwis-medium.onnx.json
+          # Seconde voix féminine « jessica » (modèle upmc, locuteur 0 ; jeu de données UPMC sous CC BY-SA 4.0)
+          Invoke-WebRequest -MaximumRetryCount 3 -Uri "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/fr/fr_FR/upmc/medium/fr_FR-upmc-medium.onnx" -OutFile voix-cache/fr_FR-upmc-medium.onnx
+          Invoke-WebRequest -MaximumRetryCount 3 -Uri "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/fr/fr_FR/upmc/medium/fr_FR-upmc-medium.onnx.json" -OutFile voix-cache/fr_FR-upmc-medium.onnx.json
           Get-ChildItem voix-cache
 
       - name: Voix naturelle hors ligne (installation dans l'application)
@@ -72,6 +75,7 @@ jobs:
           Expand-Archive voix-cache/piper.zip -DestinationPath voix-tmp -Force
           Copy-Item voix-tmp/piper/* $dst -Recurse -Force
           Copy-Item voix-cache/fr_FR-siwis-medium.onnx* $dst -Force
+          Copy-Item voix-cache/fr_FR-upmc-medium.onnx* $dst -Force
           if (-not (Test-Path "$dst/piper.exe") -or -not (Test-Path "$dst/fr_FR-siwis-medium.onnx")) { Write-Error "voix hors ligne incomplète"; exit 1 }
           "{0:N0} Mo" -f ((Get-ChildItem $dst -Recurse | Measure-Object Length -Sum).Sum / 1MB)
 

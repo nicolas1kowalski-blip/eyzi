@@ -379,8 +379,10 @@
                                         <ComboBoxItem Tag="windows" Content="🪟 Voix Windows" />
                                     </ComboBox>
                                     <TextBlock x:Name="EngineStatus" Style="{StaticResource Hint}" />
+                                    <TextBlock Text="Voix naturelle hors ligne" Style="{StaticResource Label}" />
+                                    <ComboBox x:Name="PiperVoiceCombo" Style="{StaticResource Pick}" SelectionChanged="PiperVoice_Changed" />
                                     <TextBlock Style="{StaticResource Hint}"
-                                               Text="La voix naturelle hors ligne est la même que celle des sons, des lettres et des syllabes : tout est cohérent, sans Internet. Sa première phrase sur un écran peut mettre une demi-seconde à venir ; ensuite elle est gardée en mémoire." />
+                                               Text="Siwis est aussi la voix des sons, des lettres et des syllabes livrés avec l'application. Sans Internet. La première phrase d'un écran peut mettre une demi-seconde à venir ; ensuite elle est gardée en mémoire." />
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}">

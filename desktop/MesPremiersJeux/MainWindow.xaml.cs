@@ -350,6 +350,15 @@ namespace MesPremiersJeux
             foreach (ComboBoxItem it in EngineCombo.Items)
                 if ((string)it.Tag == Speech.Engine) { EngineCombo.SelectedItem = it; break; }
             if (EngineCombo.SelectedItem == null) EngineCombo.SelectedIndex = 0;
+            // Les voix naturelles hors ligne livrées (toutes féminines pour l'instant).
+            PiperTts.Voice = _settings.PiperVoice ?? "siwis";
+            foreach (var v in PiperTts.Voices)
+            {
+                var it = new ComboBoxItem { Tag = v.Id, Content = "🎙 " + v.Label + (PiperTts.HasVoice(v.Id) ? "" : " (non livrée)"), IsEnabled = PiperTts.HasVoice(v.Id) || !PiperTts.Available };
+                PiperVoiceCombo.Items.Add(it);
+                if (v.Id == PiperTts.Voice) PiperVoiceCombo.SelectedItem = it;
+            }
+            if (PiperVoiceCombo.SelectedItem == null && PiperVoiceCombo.Items.Count > 0) PiperVoiceCombo.SelectedIndex = 0;
             RefreshEngineStatus();
             Lib.Log.Write("voix", "Moteur : réglage " + Speech.Engine + " → " + Speech.EngineInUse + (PiperTts.Available ? " (Piper livré : " + PiperTts.VoiceLabel + ")" : " (Piper absent)"));
             foreach (var v in Speech.Voices()) VoiceCombo.Items.Add(v);
@@ -1595,6 +1604,20 @@ namespace MesPremiersJeux
             Speech.Stop();
             RefreshEngineStatus();
             Lib.Log.Write("voix", "Moteur choisi : " + Speech.Engine + " → " + Speech.EngineInUse);
+        }
+
+        private void PiperVoice_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (_settings == null || !(PiperVoiceCombo.SelectedItem is ComboBoxItem it)) return;
+            var id = (string)it.Tag ?? "siwis";
+            if (id == PiperTts.Voice) return;
+            Speech.Stop();
+            PiperTts.Voice = id;
+            _settings.PiperVoice = id;
+            _settings.Save();
+            RefreshEngineStatus();
+            Lib.Log.Write("voix", "Voix hors ligne choisie : " + id);
+            if (Speech.UsePiper) Speech.Say("Bonjour ! C'est moi, " + id + ". On joue ensemble ?");
         }
 
         private void RefreshEngineStatus()
