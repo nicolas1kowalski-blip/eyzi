@@ -120,10 +120,24 @@
     });
   }
   function mins(m){ m = Math.round(m||0); return m >= 90 ? (Math.round(m/6)/10)+' h' : m+' min'; }
+  function daysAgo(d){ if(!d) return ''; var n = Math.round((Date.now() - new Date(d).getTime())/86400000); return n <= 0 ? "aujourd'hui" : n === 1 ? 'hier' : 'il y a '+n+' jours'; }
   function renderStats(j){
-    $('places').textContent = j.resume.length + ' famille' + (j.resume.length>1?'s':'') + ' avec licence';
+    var fam = j.familles || [];
+    var inst = fam.filter(function(f){ return f.installee; }).length;
+    $('places').textContent = fam.length + ' licence' + (fam.length>1?'s':'') + ' · ' + inst + ' installée' + (inst>1?'s':'') + ' · ' + (fam.length - inst) + ' pas encore';
     var list = $('list'); list.innerHTML = '';
-    if (!j.resume.length) { list.innerHTML = '<div class="empty">Aucune donnée d\'usage pour le moment.</div>'; return; }
+    // Installation : qui a installé, qui n'a pas encore commencé.
+    var tbl = document.createElement('div'); tbl.className = 'card req';
+    tbl.innerHTML = '<h3>📥 Installation par famille</h3><div class="meta">Une famille est « installée » dès que l\'application a été ouverte avec son numéro de licence.</div>'
+      + '<dl>' + fam.sort(function(a,b){ return (b.derniere_ouverture||'').localeCompare(a.derniere_ouverture||''); }).map(function(f){
+          var s = f.installee
+            ? '✅ installée '+daysAgo(f.premiere_installation)+' · dernière ouverture '+daysAgo(f.derniere_ouverture)+' · version '+esc(f.version||'?')+' · '+f.tablettes.filter(function(t){return t.active;}).length+' / '+f.max_tablettes+' tablette'+(f.max_tablettes>1?'s':'')
+            : '⏳ pas encore installée (licence créée '+daysAgo(f.creee)+')';
+          if (!f.active) s += ' · 🚫 licence désactivée';
+          return '<dt>'+esc(f.famille)+(f.canal==='test'?' <small>(test)</small>':'')+'</dt><dd>'+s+'</dd>';
+        }).join('') + '</dl>';
+    list.appendChild(tbl);
+    if (!j.resume.length) { list.innerHTML += '<div class="empty">Aucune donnée d\'usage pour le moment.</div>'; return; }
     // Vue d'ensemble, toutes familles : 30 derniers jours par activité.
     var agg = {}, aggAll = {};
     j.trente.forEach(function(r){ var a = agg[r.activite] = agg[r.activite] || {nom:r.nom||r.activite, minutes:0, ouvertures:0, familles:0}; a.minutes += +r.minutes||0; a.ouvertures += +r.ouvertures||0; a.familles++; });

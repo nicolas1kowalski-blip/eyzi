@@ -30,14 +30,31 @@ export default async function handler(req, res) {
       // Statistiques d'usage (ce que les familles utilisent, pas plus) : les
       // vues SQL de supabase.sql, plus le catalogue des activités de l'app
       // pour repérer ce qui n'est jamais ouvert.
-      const [resume, total, trente] = await Promise.all([
+      const [resume, total, trente, lic, act] = await Promise.all([
         supabase.from('usage_resume').select('*'),
         supabase.from('usage_par_famille').select('*'),
         supabase.from('usage_30_jours').select('*'),
+        supabase.from('licences').select('key, family, channel, max_tablets, enabled, expires_at, created_at'),
+        supabase.from('activations').select('licence_key, machine, app_version, first_seen, last_seen, enabled'),
       ]);
-      const err = resume.error || total.error || trente.error;
+      const err = resume.error || total.error || trente.error || lic.error || act.error;
       if (err) throw err;
-      res.status(200).json({ ok: true, resume: resume.data || [], total: total.data || [], trente: trente.data || [], catalogue });
+      // Installée ou pas : une activation = l'application a été installée et la licence saisie.
+      const tablets = {};
+      (act.data || []).forEach(a => { (tablets[a.licence_key] = tablets[a.licence_key] || []).push(a); });
+      const familles = (lic.data || []).map(l => {
+        const t = (tablets[l.key] || []).sort((a, b) => String(b.last_seen).localeCompare(String(a.last_seen)));
+        return {
+          famille: l.family, licence: l.key, canal: l.channel, max_tablettes: l.max_tablets, active: l.enabled,
+          expire: l.expires_at, creee: l.created_at,
+          installee: t.length > 0,
+          premiere_installation: t.length ? t.map(x => x.first_seen).sort()[0] : null,
+          derniere_ouverture: t.length ? t[0].last_seen : null,
+          version: t.length ? t[0].app_version : null,
+          tablettes: t.map(x => ({ machine: x.machine, version: x.app_version, depuis: x.first_seen, vue: x.last_seen, active: x.enabled })),
+        };
+      });
+      res.status(200).json({ ok: true, resume: resume.data || [], total: total.data || [], trente: trente.data || [], familles, catalogue });
       return;
     }
     if (req.method === 'GET') {
