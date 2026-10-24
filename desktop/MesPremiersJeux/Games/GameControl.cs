@@ -123,6 +123,24 @@ namespace MesPremiersJeux.Games
             };
             root.Children.Add(_consigneBubble);
 
+            // 👂 « J'ÉCOUTE D'ABORD » : pendant que la consigne se dit (et que rien
+            // n'est sélectionnable), une oreille reste affichée sur la bulle.
+            _ear = new TextBlock
+            {
+                Text = "👂", FontSize = 40, VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(10, 0, 4, 0), Visibility = Visibility.Collapsed, IsHitTestVisible = false,
+            };
+            _consigne.Children.Add(_ear);
+            _earWatch = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+            _earWatch.Tick += (s, e) =>
+            {
+                bool listening = GateVoice && Speech.IsGating && Speech.BusyElapsedSeconds < GateSeconds;
+                var v = listening ? Visibility.Visible : Visibility.Collapsed;
+                if (_ear.Visibility != v) _ear.Visibility = v;
+                if (listening && _consigneBubble.Visibility != Visibility.Visible) _consigneBubble.Visibility = Visibility.Visible;
+            };
+            _earWatch.Start();
+
             // LA TIRELIRE D'ÉTOILES, visible pendant le jeu (en haut à droite) :
             // à chaque réussite, une étoile VOLE dedans et le compteur saute.
             _jarText = new TextBlock
@@ -164,6 +182,7 @@ namespace MesPremiersJeux.Games
                 // Retour au menu : le jeu s'arrête VRAIMENT (voix, suites programmées).
                 Closed = true;
                 InputGate.Clear(this);
+                try { _earWatch?.Stop(); } catch { }
                 if (_gazeHooked) { _gazeHooked = false; GazeFeed.Sample -= OnGazeSample; }
                 Unlight();
                 _pendingClick = null;
@@ -208,6 +227,8 @@ namespace MesPremiersJeux.Games
         private Grid _rootGrid;
         private StackPanel _consigne;
         private Border _consigneBubble;
+        private TextBlock _ear;
+        private DispatcherTimer _earWatch;
         private bool _pageExplicit; // le jeu a choisi lui-même la couleur de page
 
         /// <summary>

@@ -669,6 +669,14 @@ namespace MesPremiersJeux.Lib
             catch { _pageMode = false; onDone?.Invoke(); }
         }
 
+        /// <summary>
+        /// LA VOIX APPARTIENT À L'ÉCRAN : quand l'écran actif change (tuile
+        /// choisie, onglet, retour, jeu ouvert ou fermé, tableau Parler), tout
+        /// ce que disait l'ancien écran s'arrête — la phrase en cours ET celles
+        /// en attente. La voix du nouvel écran repart de zéro.
+        /// </summary>
+        public static void ScreenChanged() => Stop();
+
         public static void Stop()
         {
             _partsToken++;

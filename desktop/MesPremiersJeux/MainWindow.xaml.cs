@@ -42,6 +42,7 @@ namespace MesPremiersJeux
             {
                 TopBar.Visibility = Chrome.Immersive ? Visibility.Collapsed : Visibility.Visible;
                 ApplyTiles(); // pendant une activité : Oui/Non cachés, Parler réduit
+                Speech.ScreenChanged(); // entrer dans une activité ou en sortir : l'ancienne voix se tait
             });
             BuildViews();
             Loaded += OnLoaded;
@@ -1722,6 +1723,7 @@ namespace MesPremiersJeux
         private void Select(string id)
         {
             Chrome.Immersive = false; // changer d'onglet réaffiche toujours la barre
+            Speech.ScreenChanged();   // la voix de l'écran quitté se tait (phrase en cours et en attente)
             foreach (var kv in _views) kv.Value.Visibility = kv.Key == id ? Visibility.Visible : Visibility.Collapsed;
             Usage.Screen(id);
         }

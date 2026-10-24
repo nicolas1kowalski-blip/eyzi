@@ -111,11 +111,13 @@ namespace MesPremiersJeux.Views
             }
             MenuRoot.Visibility = Visibility.Collapsed;
             ListRoot.Visibility = Visibility.Visible;
+            MesPremiersJeux.Lib.Speech.ScreenChanged();
             MesPremiersJeux.Lib.Speech.Say(t.Name + " !");
         }
 
         private void Themes_Click(object sender, RoutedEventArgs e)
         {
+            MesPremiersJeux.Lib.Speech.ScreenChanged();
             ListRoot.Visibility = Visibility.Collapsed;
             MenuRoot.Visibility = Visibility.Visible;
         }

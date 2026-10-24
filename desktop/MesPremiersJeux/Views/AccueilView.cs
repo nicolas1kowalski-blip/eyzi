@@ -218,6 +218,7 @@ namespace MesPremiersJeux.Views
                 t.Tick += (s2, e2) =>
                 {
                     t.Stop();
+                    if (!IsVisible) return; // déjà parti ailleurs : la narration de l'accueil ne se joue pas
                     var d = DateTime.Now;
                     Speech.Say(Hello(d) + " " + _name + " ! Aujourd'hui, c'est " + DateText(d) + ". " +
                                SeasonText(d) + " " + SpecialSay(d) + " L'ami du jour, c'est " + Friend(d).Name + " !");

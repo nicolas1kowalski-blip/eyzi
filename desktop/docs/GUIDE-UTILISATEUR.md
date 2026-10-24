@@ -91,6 +91,13 @@ Tout en haut, toujours visibles :
 ### Parler, Oui, Non
 Les boutons **💬 Parler** (en bas à droite) et **✅ Oui / ✗ Non** (en bas à gauche) sont à l'écran sur l'accueil et dans les menus. « Parler » ouvre le tableau de communication : je veux, j'ai mal, j'aime, encore, fini, ma journée, et au niveau 2 « Je fais une phrase ». **Pendant une activité** (jeu, histoire, coloriage), Oui / Non disparaissent (les jeux ont leurs propres réponses) et Parler reste, en plus petit et plus discret : c'est le canal d'urgence de l'enfant (j'ai mal, stop, fini). Ces deux comportements se règlent dans l'administration, page Enfant & jeux ; on peut aussi cacher les tuiles tout le temps. On peut aussi les **déplacer** : à la souris ou au doigt sur un écran tactile, attrapez la tuile et glissez-la où vous voulez ; elle reste à cet endroit, même après un redémarrage (un simple clic ou un regard garde son effet normal).
 
+### Écouter ou choisir : la règle
+La voix appartient à l'écran. Trois sortes de phrases :
+
+- **La narration** (bonjour et la date sur l'accueil, le nom d'un menu, la présentation d'un jeu) ne bloque jamais : l'enfant peut choisir une tuile pendant qu'elle parle, et dès qu'il change d'écran, elle se tait, phrase en cours et phrases en attente comprises.
+- **La consigne** (la question à laquelle il doit répondre dans un jeu) va au bout la première fois : le cercle du regard ne se remplit pas sur les réponses et une oreille 👂 reste affichée sur la bulle de consigne. Jamais plus de 12 secondes. Répétée (bouton 🔊, tour suivant identique), elle ne bloque plus. Quitter le jeu ou ouvrir Parler reste toujours possible.
+- **Le retour** (« Bravo ! », « Non, c'est le L ») : un clic sur une réponse le coupe et agit tout de suite ; les enchaînements automatiques, eux, attendent qu'il soit fini.
+
 ### Je choisis
 Le bouton **🙋 Je choisis** (réglages) affiche 2 à 4 images que vous choisissez (le jus, le gâteau, un livre…). L'enfant regarde celle qu'il veut, l'application la dit. Idéal pour les vrais choix du quotidien.
 
