@@ -690,10 +690,11 @@ namespace MesPremiersJeux.Games
         {
             if (Closed) return;
             var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ms) };
-            // Une longue attente (≥ 2 s) est un PASSAGE (tour suivant, nouveau
-            // jeu) : il attend que la voix ait fini sa phrase (6 s au plus) —
-            // plus de mots coupés. Les petites attentes rythment les animations.
-            bool transition = ms >= 2000;
+            // Une attente d'au moins 1 s est une ÉTAPE SUIVANTE (le mot est dit,
+            // puis la grenouille scande ; le tour suivant ; un nouveau jeu) :
+            // elle attend que la voix ait fini sa phrase (6 s au plus) — plus
+            // de mots coupés. Les attentes plus courtes rythment les animations.
+            bool transition = ms >= 1000;
             double extra = 0;
             t.Tick += (s, e) =>
             {
