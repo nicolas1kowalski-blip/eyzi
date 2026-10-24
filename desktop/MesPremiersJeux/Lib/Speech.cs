@@ -536,8 +536,8 @@ namespace MesPremiersJeux.Lib
             _busyStart = DateTime.Now;
 
             bool phon = HasPhon(raw);
-            // Voix naturelle Azure si configurée, sinon voix Windows locale.
-            if (AzureTts.Enabled)
+            // Voix naturelle Azure si configurée, sinon Piper (hors ligne) si livré, sinon voix Windows.
+            if (UseAzure)
             {
                 LocalStop();
                 MarkBusy(2.0); // occupée le temps que l'audio arrive (la durée exacte suivra)
@@ -545,8 +545,25 @@ namespace MesPremiersJeux.Lib
                 else AzureTts.Speak(text, Pitch, () => LocalSay(text));
                 return;
             }
+            if (UsePiper)
+            {
+                LocalStop();
+                MarkBusy(2.0);
+                PiperTts.Speak(text, () => { if (phon) LocalSayPhon(raw, 0); else LocalSay(text); });
+                return;
+            }
             if (phon) LocalSayPhon(raw, 0); else LocalSay(text);
         }
+
+        // ------------------------------------------------------------------
+        //  LE MOTEUR DE LA VOIX : « auto » = Azure si une clé est saisie, sinon
+        //  la voix naturelle hors ligne (Piper) si elle est livrée, sinon la
+        //  voix Windows. L'administration peut forcer l'un des trois.
+        // ------------------------------------------------------------------
+        public static string Engine = "auto";
+        public static bool UseAzure => AzureTts.Enabled && (Engine == "auto" || Engine == "azure");
+        public static bool UsePiper => PiperTts.Available && (Engine == "piper" || (Engine == "auto" && !AzureTts.Enabled));
+        public static string EngineInUse => UseAzure ? "azure" : UsePiper ? "piper" : "windows";
 
         /// <summary>
         /// Parle LENTEMENT et distinctement — pour les sons des lettres, que
@@ -571,12 +588,20 @@ namespace MesPremiersJeux.Lib
             _currentText = text;
             _busyStart = DateTime.Now;
             bool phon = HasPhon(raw);
-            if (AzureTts.Enabled)
+            if (UseAzure)
             {
                 LocalStop();
                 MarkBusy(2.0);
                 if (phon) AzureTts.SpeakSsml("<prosody rate='-35%'>" + InnerSsml(raw) + "</prosody>", Pitch, () => LocalSayPhon(raw, -4));
                 else AzureTts.SpeakRate(text, Pitch, -35, () => LocalSaySlow(text));
+                return;
+            }
+            if (UsePiper)
+            {
+                // Piper n'a qu'une vitesse (déjà posée) : la phrase est dite normalement, bien articulée.
+                LocalStop();
+                MarkBusy(2.0);
+                PiperTts.Speak(text, () => { if (phon) LocalSayPhon(raw, -4); else LocalSaySlow(text); });
                 return;
             }
             if (phon) LocalSayPhon(raw, -4); else LocalSaySlow(text);
@@ -641,11 +666,17 @@ namespace MesPremiersJeux.Lib
         {
             if (string.IsNullOrWhiteSpace(text)) { onDone?.Invoke(); return; }
 
-            if (AzureTts.Enabled)
+            if (UseAzure)
             {
                 LocalStop();
                 AzureTts.SpeakPage(text, Pitch, onWord, onDone,
                     () => LocalSayPage(text, onWord, onDone));
+                return;
+            }
+            if (UsePiper)
+            {
+                LocalStop();
+                PiperTts.SpeakPage(text, onWord, onDone, () => LocalSayPage(text, onWord, onDone));
                 return;
             }
             LocalSayPage(text, onWord, onDone);
@@ -683,6 +714,7 @@ namespace MesPremiersJeux.Lib
             _pendingText = null;
             _currentText = "";
             AzureTts.StopPlayback();
+            PiperTts.StopPlayback();
             LocalStop();
             VoiceBank.Stop();
             MarkBusy(0);

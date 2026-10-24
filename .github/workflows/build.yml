@@ -44,6 +44,37 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Get-ChildItem desktop/MesPremiersJeux/bin/x64/Release/net472 | Select-Object -First 5
 
+      # Voix naturelle hors ligne : le moteur Piper (MIT) et la voix française
+      # « siwis » (CC BY 4.0) sont téléchargés ici, pas gardés dans le dépôt
+      # (85 Mo). Mis en cache d'une compilation à l'autre.
+      - name: Voix naturelle hors ligne (cache)
+        id: voix
+        uses: actions/cache@v4
+        with:
+          path: voix-cache
+          key: piper-2023.11.14-2-fr_FR-siwis-medium-v1
+
+      - name: Voix naturelle hors ligne (téléchargement)
+        if: steps.voix.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force voix-cache | Out-Null
+          Invoke-WebRequest -MaximumRetryCount 3 -Uri "https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip" -OutFile voix-cache/piper.zip
+          Invoke-WebRequest -MaximumRetryCount 3 -Uri "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx" -OutFile voix-cache/fr_FR-siwis-medium.onnx
+          Invoke-WebRequest -MaximumRetryCount 3 -Uri "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx.json" -OutFile voix-cache/fr_FR-siwis-medium.onnx.json
+          Get-ChildItem voix-cache
+
+      - name: Voix naturelle hors ligne (installation dans l'application)
+        shell: pwsh
+        run: |
+          $dst = "desktop/MesPremiersJeux/bin/x64/Release/net472/Voix/piper"
+          New-Item -ItemType Directory -Force $dst | Out-Null
+          Expand-Archive voix-cache/piper.zip -DestinationPath voix-tmp -Force
+          Copy-Item voix-tmp/piper/* $dst -Recurse -Force
+          Copy-Item voix-cache/fr_FR-siwis-medium.onnx* $dst -Force
+          if (-not (Test-Path "$dst/piper.exe") -or -not (Test-Path "$dst/fr_FR-siwis-medium.onnx")) { Write-Error "voix hors ligne incomplète"; exit 1 }
+          "{0:N0} Mo" -f ((Get-ChildItem $dst -Recurse | Measure-Object Length -Sum).Sum / 1MB)
+
       - name: Installeur (Inno Setup)
         shell: pwsh
         run: |

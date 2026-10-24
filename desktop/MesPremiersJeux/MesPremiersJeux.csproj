@@ -33,6 +33,9 @@
          dans Contenu\Images garde la priorité. -->
     <None Update="Images\**" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Sons\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Voix naturelle hors ligne (Piper) : le moteur et le modèle sont ajoutés
+         par la compilation automatique (CI) dans Voix\piper ; ici seulement la notice. -->
+    <None Update="Voix\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -371,9 +371,23 @@
                         <StackPanel x:Name="PageVoix" Style="{StaticResource Page}">
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
-                                    <TextBlock Text="Voix Windows (hors ligne)" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Le moteur de la voix" Style="{StaticResource CardTitle}" />
+                                    <ComboBox x:Name="EngineCombo" Style="{StaticResource Pick}" SelectionChanged="Engine_Changed">
+                                        <ComboBoxItem Tag="auto" Content="🤖 Automatique — Azure si une clé est saisie, sinon la voix naturelle hors ligne, sinon Windows" />
+                                        <ComboBoxItem Tag="piper" Content="🎙 Voix naturelle hors ligne (livrée avec l'application)" />
+                                        <ComboBoxItem Tag="azure" Content="🌟 Voix naturelle Azure (en ligne, clé ci-dessous)" />
+                                        <ComboBoxItem Tag="windows" Content="🪟 Voix Windows" />
+                                    </ComboBox>
+                                    <TextBlock x:Name="EngineStatus" Style="{StaticResource Hint}" />
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="La voix naturelle hors ligne est la même que celle des sons, des lettres et des syllabes : tout est cohérent, sans Internet. Sa première phrase sur un écran peut mettre une demi-seconde à venir ; ensuite elle est gardée en mémoire." />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="Voix Windows" Style="{StaticResource CardTitle}" />
                                     <ComboBox x:Name="VoiceCombo" Style="{StaticResource Pick}" SelectionChanged="Voice_Changed" />
-                                    <TextBlock Text="Hauteur de la voix (aiguë = plus enfantine)" Style="{StaticResource Label}" />
+                                    <TextBlock Text="Hauteur de la voix Windows (aiguë = plus enfantine)" Style="{StaticResource Label}" />
                                     <Slider x:Name="PitchSlider" Minimum="-20" Maximum="60" ValueChanged="Pitch_Changed" />
                                 </StackPanel>
                             </Border>
@@ -387,7 +401,7 @@
                                     <TextBlock Text="Voix" Style="{StaticResource Label}" />
                                     <ComboBox x:Name="AzureVoiceCombo" Style="{StaticResource Pick}" SelectionChanged="Azure_Changed" />
                                     <TextBlock Style="{StaticResource Hint}"
-                                               Text="Sans clé : voix Windows. Avec clé : voix naturelle (Eloise = voix d'enfant). Repli automatique hors ligne." />
+                                               Text="Facultatif. Avec une clé : voix naturelle en ligne (Eloise = voix d'enfant), prioritaire en mode automatique. Sans clé ou hors ligne : la voix naturelle hors ligne prend le relais." />
                                     <TextBlock x:Name="EnglishVoiceText" Style="{StaticResource Hint}" />
                                     <Button Content="🔈  Écouter un exemple" Style="{StaticResource AdminBtn}" Click="VoiceTest_Click" />
                                 </StackPanel>

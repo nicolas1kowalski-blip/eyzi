@@ -1,0 +1,14 @@
+Voix naturelle hors ligne d'Eyzi.
+
+Ce dossier reçoit, à la compilation automatique :
+- le moteur Piper (piper.exe, onnxruntime.dll, espeak-ng.dll, piper_phonemize.dll,
+  espeak-ng-data\) — https://github.com/rhasspy/piper, licence MIT ;
+  onnxruntime (MIT) ; espeak-ng (GPL v3, programme séparé, sources sur
+  https://github.com/espeak-ng/espeak-ng) ;
+- la voix française « siwis » (fr_FR-siwis-medium.onnx + .json), entraînée sur
+  la SIWIS French Speech Synthesis Database, licence CC BY 4.0,
+  https://datashare.is.ed.ac.uk/handle/10283/2353.
+
+Eyzi lance piper.exe en arrière-plan et lui envoie chaque phrase ; le son produit
+est gardé dans %AppData%\MesPremiersJeux\voix-piper (cache). Si ce dossier ne
+contient pas le moteur (version compilée à la main), la voix Windows est utilisée.

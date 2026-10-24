@@ -50,6 +50,7 @@ namespace MesPremiersJeux
             {
                 try { System.IO.File.Delete(CrashFlag); } catch { } // fermeture normale : pas un plantage
                 StopGazeSources();
+                PiperTts.Shutdown(); // le moteur de voix hors ligne ne reste pas en arrière-plan
                 // Mise à jour en cours : fermeture RAPIDE (l'envoi au nuage attendra
                 // la prochaine fermeture ; les statistiques ont 3 s au plus).
                 bool updating = Updater.PendingSetup != null;
@@ -345,6 +346,12 @@ namespace MesPremiersJeux
             // Voix : liste des voix installées + réglages sauvegardés.
             Speech.VoiceName = _settings.VoiceName;
             Speech.Pitch = _settings.VoicePitch;
+            Speech.Engine = _settings.VoiceEngine ?? "auto";
+            foreach (ComboBoxItem it in EngineCombo.Items)
+                if ((string)it.Tag == Speech.Engine) { EngineCombo.SelectedItem = it; break; }
+            if (EngineCombo.SelectedItem == null) EngineCombo.SelectedIndex = 0;
+            RefreshEngineStatus();
+            Lib.Log.Write("voix", "Moteur : réglage " + Speech.Engine + " → " + Speech.EngineInUse + (PiperTts.Available ? " (Piper livré : " + PiperTts.VoiceLabel + ")" : " (Piper absent)"));
             foreach (var v in Speech.Voices()) VoiceCombo.Items.Add(v);
             if (!string.IsNullOrEmpty(_settings.VoiceName) && VoiceCombo.Items.Contains(_settings.VoiceName))
                 VoiceCombo.SelectedItem = _settings.VoiceName;
@@ -1577,6 +1584,27 @@ namespace MesPremiersJeux
             Speech.Pitch = e.NewValue;
             _settings.VoicePitch = e.NewValue;
             _settings.Save();
+        }
+
+        private void Engine_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (_settings == null || !(EngineCombo.SelectedItem is ComboBoxItem it)) return;
+            Speech.Engine = (string)it.Tag ?? "auto";
+            _settings.VoiceEngine = Speech.Engine;
+            _settings.Save();
+            Speech.Stop();
+            RefreshEngineStatus();
+            Lib.Log.Write("voix", "Moteur choisi : " + Speech.Engine + " → " + Speech.EngineInUse);
+        }
+
+        private void RefreshEngineStatus()
+        {
+            if (EngineStatus == null) return;
+            string used = Speech.EngineInUse == "azure" ? "la voix naturelle Azure (en ligne)"
+                        : Speech.EngineInUse == "piper" ? "la voix naturelle hors ligne (" + PiperTts.VoiceLabel + ")"
+                        : "la voix Windows";
+            EngineStatus.Text = "En ce moment : " + used + "." +
+                (PiperTts.Available ? "" : " La voix naturelle hors ligne n'est pas livrée dans cette version.");
         }
 
         private void VoiceTest_Click(object sender, RoutedEventArgs e)

@@ -16,6 +16,7 @@ namespace MesPremiersJeux.Lib
         public double Smoothing = 0.8;   // 0 = réactif … 1 = très lissé/stable
         public double CircleSize = 90;   // diamètre du cercle de progression (px)
         public string VoiceName = "";    // voix Windows choisie (vide = par défaut)
+        public string VoiceEngine = "auto"; // auto | azure | piper | windows (le moteur de la voix)
         public double VoicePitch = 25;   // hauteur (%) : +25 ≈ voix enfantine
         public string AzureKey = "";     // clé Azure Speech (vide = voix Windows)
         public string AzureRegion = "francecentral";
@@ -73,6 +74,7 @@ namespace MesPremiersJeux.Lib
                         case "Smoothing": if (double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out var sm)) s.Smoothing = sm; break;
                         case "CircleSize": if (double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out var c)) s.CircleSize = c; break;
                         case "VoiceName": s.VoiceName = val; break;
+                        case "VoiceEngine": s.VoiceEngine = string.IsNullOrWhiteSpace(val) ? "auto" : val; break;
                         case "VoicePitch": if (double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out var vp)) s.VoicePitch = vp; break;
                         case "AzureKey": s.AzureKey = val; break;
                         case "AzureRegion": if (val.Length > 0) s.AzureRegion = val; break;
@@ -136,6 +138,7 @@ namespace MesPremiersJeux.Lib
                     "CircleSize=" + CircleSize.ToString(CultureInfo.InvariantCulture),
                     "VoiceName=" + (VoiceName ?? ""),
                     "VoicePitch=" + VoicePitch.ToString(CultureInfo.InvariantCulture),
+                    "VoiceEngine=" + (VoiceEngine ?? "auto"),
                     "AzureKey=" + (AzureKey ?? ""),
                     "AzureRegion=" + (AzureRegion ?? ""),
                     "AzureVoice=" + (AzureVoice ?? ""),
