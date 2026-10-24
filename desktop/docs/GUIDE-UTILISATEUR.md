@@ -12,7 +12,7 @@ Ce guide s'adresse aux parents et aux accompagnants. La première partie expliqu
 
 ### Ce qu'il faut
 - Une tablette ou un PC sous **Windows 10 ou 11**.
-- Pour la commande oculaire : un capteur **Tobii** avec son logiciel installé. Testés : TD I-13 et TD I-16, PCEye 5 (moteur direct, sans TD Control), Tobii Eye Tracker 4C et 5 (Tobii Experience), Tobii Pro (Nano, Fusion…). Toute autre commande oculaire qui déplace la souris (Irisbond, Lumin-i, TD Control, Computer Control) marche en mode « Curseur ». Sans capteur, l'application marche au doigt et à la souris.
+- Pour la commande oculaire : un capteur **Tobii** avec son logiciel installé. Testés : TD I-13 et TD I-16, PCEye 5 (moteur direct, sans TD Control), Tobii Eye Tracker 4C et 5 (Tobii Experience), Tobii Pro (Nano, Fusion…). Toute autre commande oculaire qui déplace la souris (Irisbond, Lumin-i, TD Control, Computer Control) marche en mode « Curseur ». Appareils **PRC-Saltillo Accent** avec module **Look** : non testés ; il faut un appareil « open » (accès au bureau Windows) ; le module repose sur une plateforme Tobii, donc le pilote automatique peut le trouver directement, sinon le mode « Curseur » prend le relais. Sans capteur, l'application marche au doigt et à la souris.
 - Pas encore : Mac, iPad, Android, Chromebook.
 - Une connexion internet pour l'installation et les mises à jour (ensuite l'application marche hors ligne).
 
