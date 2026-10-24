@@ -7,7 +7,10 @@ Ce dossier reçoit, à la compilation automatique :
   https://github.com/espeak-ng/espeak-ng) ;
 - la voix française « siwis » (fr_FR-siwis-medium.onnx + .json), entraînée sur
   la SIWIS French Speech Synthesis Database, licence CC BY 4.0,
-  https://datashare.is.ed.ac.uk/handle/10283/2353.
+  https://datashare.is.ed.ac.uk/handle/10283/2353 ;
+- la voix française « jessica » (fr_FR-upmc-medium.onnx + .json, locuteur 0),
+  entraînée sur les données UPMC (https://github.com/marytts/upmc-pierre-data),
+  licence CC BY-SA 4.0.
 
 Eyzi lance piper.exe en arrière-plan et lui envoie chaque phrase ; le son produit
 est gardé dans %AppData%\MesPremiersJeux\voix-piper (cache). Si ce dossier ne
