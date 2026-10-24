@@ -461,10 +461,20 @@ namespace MesPremiersJeux.Lib
         private static readonly System.Text.RegularExpressions.Regex LoneCap =
             new System.Text.RegularExpressions.Regex(@"(?<![\p{L}'’-])([IVXLCDM])(?![\p{L}'’-])");
 
-        /// <summary>Texte prêt pour la voix : pas de chiffres romains par erreur.</summary>
+        // « comme dans avion » : le mot est CITÉ, il n'y a pas de liaison (pas de
+        // « dan-z-avion »). Les moteurs appliquent la liaison dès que « dans » est
+        // suivi d'une voyelle ; une ponctuation entre les deux la supprime. On ne
+        // touche pas aux vrais compléments (« dans un jardin », « dans elle »…).
+        private static readonly System.Text.RegularExpressions.Regex CitedAfterDans =
+            new System.Text.RegularExpressions.Regex(
+                @"\b(dans)\s+(?!(?:un|une|les|l'|l’|en|ici|aucun|aucune|autre|autres|elle|elles|eux|il|ils|on|y|et|est|aussi|encore|ensuite|environ|entre|après|avant|assez|autant|ailleurs|au|aux|également|enfin|une?)\b)(?=[aeiouyàâäéèêëîïôöùûüh])",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        /// <summary>Texte prêt pour la voix : pas de chiffres romains par erreur, pas de liaison sur un mot cité.</summary>
         public static string Fix(string text)
         {
             if (string.IsNullOrEmpty(text)) return text;
+            text = CitedAfterDans.Replace(text, "$1 : ");
             // « iii », « IIII » (son étiré) → « hiii » (le h est muet) ;
             // « IIIIle » (île étirée) → « iiiile ».
             text = IRun.Replace(text, m => m.Groups[2].Length == 0
