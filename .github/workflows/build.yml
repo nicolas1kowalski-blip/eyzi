@@ -17,6 +17,12 @@ on:
 permissions:
   contents: write
 
+env:
+  # Identifiant de la voix naturelle hors ligne livrée (moteur + modèles). À changer quand on
+  # change de moteur ou de voix : les tablettes retéléchargent alors l'installeur complet
+  # une fois, puis repassent aux mises à jour légères.
+  PACK_ID: piper-2023.11.14-2-siwis-upmc-v2
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -52,7 +58,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: voix-cache
-          key: piper-2023.11.14-2-fr_FR-siwis-upmc-medium-v2
+          key: ${{ env.PACK_ID }}
 
       - name: Voix naturelle hors ligne (téléchargement)
         if: steps.voix.outputs.cache-hit != 'true'
@@ -77,6 +83,8 @@ jobs:
           Copy-Item voix-cache/fr_FR-siwis-medium.onnx* $dst -Force
           Copy-Item voix-cache/fr_FR-upmc-medium.onnx* $dst -Force
           if (-not (Test-Path "$dst/piper.exe") -or -not (Test-Path "$dst/fr_FR-siwis-medium.onnx")) { Write-Error "voix hors ligne incomplète"; exit 1 }
+          # L'identifiant de la voix livrée : l'application le compare à celui publié avec chaque version.
+          Set-Content -Path "$dst/version.txt" -Value $env:PACK_ID -Encoding ascii -NoNewline
           "{0:N0} Mo" -f ((Get-ChildItem $dst -Recurse | Measure-Object Length -Sum).Sum / 1MB)
 
       - name: Installeur (Inno Setup)
@@ -86,6 +94,9 @@ jobs:
           if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y; $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
           & $iscc "/DVersion=${{ steps.ver.outputs.version }}" "/DSource=..\MesPremiersJeux\bin\x64\Release\net472" desktop\installer\Eyzi.iss
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          # L'installeur LÉGER (sans la voix hors ligne) : celui des mises à jour.
+          & $iscc "/DVersion=${{ steps.ver.outputs.version }}" "/DSource=..\MesPremiersJeux\bin\x64\Release\net472" "/DLight=1" desktop\installer\Eyzi.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Archive portable + empreintes
         shell: pwsh
@@ -94,6 +105,8 @@ jobs:
           Compress-Archive -Path desktop/MesPremiersJeux/bin/x64/Release/net472/* -DestinationPath "desktop/installer/Output/Eyzi-$v.zip"
           # Copie à nom fixe : https://github.com/nicolas1kowalski-blip/eyzi/releases/latest/download/Eyzi-Setup.exe
           Copy-Item "desktop/installer/Output/Eyzi-Setup-$v.exe" "desktop/installer/Output/Eyzi-Setup.exe"
+          # Le nom de ce fichier dit quelle voix hors ligne accompagne la version (l'appli lit le nom, pas le contenu).
+          Set-Content -Path "desktop/installer/Output/voix-$env:PACK_ID.txt" -Value $env:PACK_ID -Encoding ascii
           Get-ChildItem desktop/installer/Output/*.exe, desktop/installer/Output/*.zip | ForEach-Object {
             $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
             "$h  $($_.Name)" | Out-File -Encoding ascii "$($_.FullName).sha256"
@@ -109,7 +122,8 @@ jobs:
           body: |
             Version **test** ${{ steps.ver.outputs.version }} — compilée automatiquement depuis le dépôt `eyzi` (${{ github.sha }}).
 
-            - `Eyzi-Setup-*.exe` : l'installeur (par utilisateur, sans droits administrateur).
+            - `Eyzi-Setup-*.exe` : l'installeur complet, avec la voix naturelle hors ligne (par utilisateur, sans droits administrateur).
+            - `Eyzi-Leger-*.exe` : l'installeur léger, sans la voix : celui que l'application télécharge pour se mettre à jour quand la voix installée est déjà la bonne (`voix-*.txt`).
             - `Eyzi-*.zip` : la version portable.
             - `*.sha256` : empreintes de contrôle, vérifiées par l'appli avant toute mise à jour.
 

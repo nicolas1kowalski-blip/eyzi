@@ -12,6 +12,17 @@
 #ifndef Source
   #define Source "..\MesPremiersJeux\bin\x64\Release\net472"
 #endif
+; Deux installeurs à partir des mêmes fichiers :
+;  - COMPLET (Eyzi-Setup-*)  : l'application + la voix naturelle hors ligne (~200 Mo) — nouvelles installations.
+;  - LÉGER   (Eyzi-Leger-*)  : tout SAUF Voix\piper — mises à jour quand la voix installée est déjà la bonne
+;    (l'application compare Voix\piper\version.txt à la voix publiée avec la version).
+#ifdef Light
+  #define Base "Eyzi-Leger"
+  #define Excl "*.pdb,*.xml,Contenu\*,MiseAJour\*,Voix\piper\*"
+#else
+  #define Base "Eyzi-Setup"
+  #define Excl "*.pdb,*.xml,Contenu\*,MiseAJour\*"
+#endif
 
 [Setup]
 AppId={{7E3FF2A1-4C1B-4D2E-9B6A-1A2B3C4D5E6F}
@@ -29,7 +40,7 @@ PrivilegesRequiredOverridesAllowed=dialog
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=Output
-OutputBaseFilename=Eyzi-Setup-{#Version}
+OutputBaseFilename={#Base}-{#Version}
 SetupIconFile=..\MesPremiersJeux\app.ico
 UninstallDisplayIcon={app}\Eyzi.exe
 Compression=lzma2/max
@@ -49,7 +60,7 @@ Name: "desktopicon"; Description: "Créer une icône sur le Bureau"; GroupDescri
 Name: "autostart"; Description: "Lancer Eyzi à l'ouverture de Windows (mode tablette)"; GroupDescription: "Démarrage :"; Flags: unchecked
 
 [Files]
-Source: "{#Source}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,*.xml,Contenu\*,MiseAJour\*"
+Source: "{#Source}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "{#Excl}"
 
 [Icons]
 Name: "{group}\Eyzi"; Filename: "{app}\Eyzi.exe"
@@ -67,6 +78,10 @@ Filename: "{app}\Eyzi.exe"; Description: "Lancer Eyzi"; Flags: nowait postinstal
 ; Après une MISE À JOUR automatique (installation silencieuse lancée par l'appli
 ; avec /LAUNCH=1) : on relance l'application tout seul.
 Filename: "{app}\Eyzi.exe"; Parameters: "--apres-maj"; Flags: nowait; Check: WantLaunch
+
+[UninstallDelete]
+; La voix hors ligne (posée par l'installeur complet, conservée par les installeurs légers) part avec l'application.
+Type: filesandordirs; Name: "{app}\Voix\piper"
 
 [InstallDelete]
 ; Transition depuis « Mes Premiers Jeux » : l'ancien exécutable et les anciens raccourcis disparaissent.

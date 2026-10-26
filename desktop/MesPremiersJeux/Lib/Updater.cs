@@ -51,6 +51,8 @@ namespace MesPremiersJeux.Lib
         {
             public Version Version;
             public string Tag, Title, Notes, SetupName, SetupUrl, ShaUrl;
+            public string LightName, LightUrl, LightShaUrl; // l'installeur léger (sans la voix hors ligne), s'il existe
+            public string VoicePackId;                      // la voix hors ligne qui accompagne cette version (nom de l'asset voix-*.txt)
             public bool Prerelease;
             public bool IsNewer => Version > Current;
         }
@@ -75,6 +77,9 @@ namespace MesPremiersJeux.Lib
                 var setup = Regex.Match(r, "\"browser_download_url\"\\s*:\\s*\"([^\"]*Eyzi-Setup-[^\"]*\\.exe)\"");
                 if (!setup.Success) continue;
                 var sha = Regex.Match(r, "\"browser_download_url\"\\s*:\\s*\"([^\"]*Eyzi-Setup-[^\"]*\\.exe\\.sha256)\"");
+                var light = Regex.Match(r, "\"browser_download_url\"\\s*:\\s*\"([^\"]*Eyzi-Leger-[^\"]*\\.exe)\"");
+                var lightSha = Regex.Match(r, "\"browser_download_url\"\\s*:\\s*\"([^\"]*Eyzi-Leger-[^\"]*\\.exe\\.sha256)\"");
+                var pack = Regex.Match(r, "\"name\"\\s*:\\s*\"voix-([^\"]+)\\.txt\"");
                 if (best != null && v <= best.Version) continue;
                 best = new Info
                 {
@@ -83,6 +88,10 @@ namespace MesPremiersJeux.Lib
                     Notes = Cloud.JsonGet(r, "body") ?? "",
                     SetupUrl = setup.Groups[1].Value, SetupName = Path.GetFileName(setup.Groups[1].Value),
                     ShaUrl = sha.Success ? sha.Groups[1].Value : null,
+                    LightUrl = light.Success ? light.Groups[1].Value : null,
+                    LightName = light.Success ? Path.GetFileName(light.Groups[1].Value) : null,
+                    LightShaUrl = lightSha.Success ? lightSha.Groups[1].Value : null,
+                    VoicePackId = pack.Success ? pack.Groups[1].Value : null,
                 };
             }
             return best;
@@ -91,13 +100,36 @@ namespace MesPremiersJeux.Lib
         /// <summary>Télécharge l'installeur, vérifie l'empreinte, l'installe en silence et relance l'application.
         /// Renvoie null si l'installation a démarré, sinon le message d'erreur.</summary>
         /// <param name="status">(texte, avancement 0..1, ou -1 si inconnu)</param>
+        /// <summary>La voix hors ligne installée sur cette tablette (Voix\piper\version.txt), ou null.</summary>
+        public static string LocalVoicePackId()
+        {
+            try
+            {
+                var p = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Voix", "piper", "version.txt");
+                return File.Exists(p) ? File.ReadAllText(p).Trim() : null;
+            }
+            catch { return null; }
+        }
+
         public static async Task<string> InstallAsync(Info info, Action<string, double> status)
         {
             try
             {
-                var path = Path.Combine(UpdatesDir, info.SetupName);
-                status?.Invoke("Téléchargement de la version " + info.Version + "…", 0);
-                using (var res = await Http.GetAsync(info.SetupUrl, HttpCompletionOption.ResponseHeadersRead))
+                // LÉGER OU COMPLET ? La voix hors ligne (~200 Mo) ne change presque jamais :
+                // si celle de la tablette est celle publiée avec la version, l'installeur
+                // léger suffit (dix fois plus petit). Sinon, ou en cas de doute, le complet.
+                string name = info.SetupName, url = info.SetupUrl, shaUrl = info.ShaUrl;
+                var local = LocalVoicePackId();
+                bool light = info.LightUrl != null && !string.IsNullOrEmpty(info.VoicePackId)
+                             && string.Equals(local, info.VoicePackId, StringComparison.OrdinalIgnoreCase);
+                if (light) { name = info.LightName; url = info.LightUrl; shaUrl = info.LightShaUrl; }
+                Log.Write("maj", light
+                    ? "Mise à jour légère : la voix hors ligne « " + info.VoicePackId + " » est déjà installée"
+                    : "Mise à jour complète (voix installée : « " + (local ?? "aucune") + " », voix publiée : « " + (info.VoicePackId ?? "?") + " »)");
+
+                var path = Path.Combine(UpdatesDir, name);
+                status?.Invoke("Téléchargement de la version " + info.Version + (light ? " (mise à jour légère)" : "") + "…", 0);
+                using (var res = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
                 {
                     res.EnsureSuccessStatusCode();
                     long total = res.Content.Headers.ContentLength ?? -1;
@@ -123,10 +155,10 @@ namespace MesPremiersJeux.Lib
                         }
                     }
                 }
-                if (info.ShaUrl != null)
+                if (shaUrl != null)
                 {
                     status?.Invoke("Vérification du fichier…", -1);
-                    var expected = (await Http.GetStringAsync(info.ShaUrl)).Trim().Split(' ')[0].ToLowerInvariant();
+                    var expected = (await Http.GetStringAsync(shaUrl)).Trim().Split(' ')[0].ToLowerInvariant();
                     var actual = Sha256(path);
                     if (expected != actual)
                     {
@@ -152,7 +184,7 @@ namespace MesPremiersJeux.Lib
         {
             try
             {
-                return Directory.GetFiles(UpdatesDir, "*-Setup-*.exe")
+                return SetupFiles()
                     .Select(f => (Path: f, Ver: ParseVersion(f)))
                     .Where(t => t.Ver != null && t.Ver < Current)
                     .OrderByDescending(t => t.Ver)
@@ -201,9 +233,13 @@ namespace MesPremiersJeux.Lib
             catch (Exception ex) { Log.Write("maj", "Impossible de lancer l'installeur : " + ex.Message); }
         }
 
+        // Les installeurs gardés sur la tablette (complets et légers).
+        private static IEnumerable<string> SetupFiles() =>
+            Directory.GetFiles(UpdatesDir, "Eyzi-Setup-*.exe").Concat(Directory.GetFiles(UpdatesDir, "Eyzi-Leger-*.exe"));
+
         private static Version ParseVersion(string path)
         {
-            var m = Regex.Match(Path.GetFileName(path), "Setup-(\\d+\\.\\d+\\.\\d+\\.\\d+)");
+            var m = Regex.Match(Path.GetFileName(path), "(?:Setup|Leger)-(\\d+\\.\\d+\\.\\d+\\.\\d+)");
             return m.Success && Version.TryParse(m.Groups[1].Value, out var v) ? v : null;
         }
 
@@ -219,7 +255,7 @@ namespace MesPremiersJeux.Lib
         {
             try
             {
-                foreach (var f in Directory.GetFiles(UpdatesDir, "*-Setup-*.exe")
+                foreach (var f in SetupFiles()
                              .Select(f => (Path: f, Ver: ParseVersion(f))).OrderByDescending(t => t.Ver).Skip(3))
                     File.Delete(f.Path);
             }
