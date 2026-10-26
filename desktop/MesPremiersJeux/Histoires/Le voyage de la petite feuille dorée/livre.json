@@ -1,6 +1,7 @@
 {
  "title": "Le voyage de la petite feuille dorée",
  "layout": "cote",
+ "background": "fond.jpg",
  "pages": [
   {
    "text": "Le voyage de la petite feuille dorée. Une histoire d'automne.",

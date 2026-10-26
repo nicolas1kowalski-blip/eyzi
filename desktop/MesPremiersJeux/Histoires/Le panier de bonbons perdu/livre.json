@@ -1,6 +1,7 @@
 {
  "title": "Le panier de bonbons perdu",
  "layout": "cote",
+ "background": "fond.jpg",
  "pages": [
   {
    "text": "Le panier de bonbons perdu. Une histoire d'Halloween.",

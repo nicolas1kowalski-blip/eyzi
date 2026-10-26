@@ -57,6 +57,9 @@ namespace MesPremiersJeux.Views
 
         private readonly TextBox _title;
         private readonly ComboBox _layout; // mise en page par défaut du livre
+        private string _background;        // fond d'écran du livre (fichier image ou null)
+        private readonly Image _bgPreview;
+        private readonly Button _bgClear;
         private readonly StackPanel _pagesHost;
         private readonly StackPanel _questionsHost;
         private readonly List<Row> _rows = new List<Row>();
@@ -64,12 +67,13 @@ namespace MesPremiersJeux.Views
         private readonly string _existingDir; // non nul = modification d'un livre
 
         /// <summary>Ouvre l'éditeur pré-rempli pour modifier un livre existant.</summary>
-        public BookEditorWindow(string title, List<PageDraft> pages, List<UserQuestion> questions, string existingDir, string layout = null) : this()
+        public BookEditorWindow(string title, List<PageDraft> pages, List<UserQuestion> questions, string existingDir, string layout = null, string background = null) : this()
         {
             _existingDir = existingDir;
             Title = "Modifier le livre";
             _title.Text = title;
             SelectLayout(_layout, layout);
+            SetBackground(background);
 
             _rows.Clear();
             _pagesHost.Children.Clear();
@@ -137,6 +141,26 @@ namespace MesPremiersJeux.Views
                 Foreground = new SolidColorBrush(Color.FromRgb(0x6B, 0x5B, 0x8A)),
                 VerticalAlignment = VerticalAlignment.Center,
             });
+            // Fond d'écran du livre : une image derrière la page dans le lecteur.
+            layoutRow.Children.Add(new TextBlock
+            {
+                Text = "      Fond d'écran : ",
+                FontSize = 16,
+                FontWeight = FontWeights.Bold,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            _bgPreview = new Image { Width = 64, Height = 40, Stretch = Stretch.UniformToFill, Margin = new Thickness(0, 0, 8, 0), Visibility = Visibility.Collapsed };
+            layoutRow.Children.Add(_bgPreview);
+            var bgBtn = new Button { Content = "🖼 Choisir…", FontSize = 15, Padding = new Thickness(10, 6, 10, 6), VerticalAlignment = VerticalAlignment.Center };
+            bgBtn.Click += (s, e) =>
+            {
+                var dlg = new OpenFileDialog { Title = "Fond d'écran du livre", Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif" };
+                if (dlg.ShowDialog(this) == true) SetBackground(dlg.FileName);
+            };
+            layoutRow.Children.Add(bgBtn);
+            _bgClear = new Button { Content = "✕", FontSize = 15, Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Sans fond d'écran", Visibility = Visibility.Collapsed };
+            _bgClear.Click += (s, e) => SetBackground(null);
+            layoutRow.Children.Add(_bgClear);
             DockPanel.SetDock(layoutRow, Dock.Top);
             dock.Children.Add(layoutRow);
 
@@ -642,6 +666,7 @@ namespace MesPremiersJeux.Views
 
             _title.Text = result.Title;
             SelectLayout(_layout, result.Layout);
+            SetBackground(result.Background);
             _rows.Clear();
             _pagesHost.Children.Clear();
             foreach (var draft in result.Pages)
@@ -655,6 +680,18 @@ namespace MesPremiersJeux.Views
             _qRows.Clear();
             _questionsHost.Children.Clear();
             foreach (var q in result.Questions) AddQuestion(q);
+        }
+
+        private void SetBackground(string path)
+        {
+            _background = UserContent.IsImageRef(path) ? path : null;
+            bool has = _background != null;
+            _bgPreview.Visibility = _bgClear.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
+            if (has)
+            {
+                try { _bgPreview.Source = UserContent.LoadBitmap(_background, 200); }
+                catch { _bgPreview.Visibility = Visibility.Collapsed; }
+            }
         }
 
         /// <summary>Sélectionne dans une liste de mises en page l'entrée dont le Tag vaut « value » (sinon la première).</summary>
@@ -691,8 +728,8 @@ namespace MesPremiersJeux.Views
 
             var layout = StoryLayouts.Parse((string)((ComboBoxItem)_layout.SelectedItem)?.Tag);
             var saved = _existingDir != null
-                ? UserContent.UpdateStory(_existingDir, title, pages, questions, layout)
-                : UserContent.SaveStory(title, pages, questions, layout);
+                ? UserContent.UpdateStory(_existingDir, title, pages, questions, layout, _background)
+                : UserContent.SaveStory(title, pages, questions, layout, _background);
             if (saved == null)
             {
                 MessageBox.Show(this, "Impossible d'enregistrer le livre.", "Nouveau livre");

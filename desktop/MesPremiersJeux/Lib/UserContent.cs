@@ -53,6 +53,7 @@ namespace MesPremiersJeux.Lib
         public string Title;
         public string Dir; // dossier du livre (pour modifier / supprimer)
         public string Layout; // mise en page par défaut du livre : "cote" | "dessus" (null = cote)
+        public string BackgroundPath; // fond d'écran du lecteur pour ce livre (fichier image, peut être null)
         public List<UserStoryPage> Pages = new List<UserStoryPage>();
         public List<UserQuestion> Questions = new List<UserQuestion>(); // quiz de fin
     }
@@ -103,6 +104,7 @@ namespace MesPremiersJeux.Lib
         [DataMember(Name = "title")] public string Title;
         [DataMember(Name = "metadata", EmitDefaultValue = false)] public BookMetaJson Metadata; // certains fichiers mettent le titre ici
         [DataMember(Name = "layout", EmitDefaultValue = false)] public string Layout; // "cote" | "dessus"
+        [DataMember(Name = "background", EmitDefaultValue = false)] public string Background; // fond d'écran (fichier du dossier)
         [DataMember(Name = "pages")] public List<BookPageJson> Pages;
         [DataMember(Name = "questions", EmitDefaultValue = false)] public List<BookQuestionJson> Questions;
     }
@@ -624,6 +626,7 @@ namespace MesPremiersJeux.Lib
             if (data?.Pages == null || data.Pages.Count == 0) return null;
 
             var story = new UserStory { Title = BookTitle(data, Path.GetFileName(dir)), Layout = StoryLayouts.Parse(data.Layout) };
+            if (!string.IsNullOrEmpty(data.Background)) story.BackgroundPath = ResolveImageRef(dir, data.Background);
             foreach (var p in data.Pages)
             {
                 var page = new UserStoryPage { Text = (p.Text ?? "").Trim(), Layout = StoryLayouts.Parse(p.Layout) };
@@ -890,7 +893,7 @@ namespace MesPremiersJeux.Lib
         }
 
         /// <summary>Enregistre un livre (format livre.json + images) ; renvoie null si échec.</summary>
-        public static string SaveStory(string title, IList<PageDraft> pages, IList<UserQuestion> questions = null, string layout = null)
+        public static string SaveStory(string title, IList<PageDraft> pages, IList<UserQuestion> questions = null, string layout = null, string background = null)
         {
             try
             {
@@ -901,17 +904,24 @@ namespace MesPremiersJeux.Lib
                 var dir = Path.Combine(StoriesDir, safe);
                 for (int i = 2; Directory.Exists(dir); i++) dir = Path.Combine(StoriesDir, safe + " " + i);
                 Directory.CreateDirectory(dir);
-                return WriteStory(dir, title, pages, questions, layout);
+                return WriteStory(dir, title, pages, questions, layout, background);
             }
             catch { return null; }
         }
 
         /// <summary>Met à jour un livre existant (dans son dossier) ; renvoie null si échec.</summary>
-        public static string UpdateStory(string dir, string title, IList<PageDraft> pages, IList<UserQuestion> questions = null, string layout = null)
+        public static string UpdateStory(string dir, string title, IList<PageDraft> pages, IList<UserQuestion> questions = null, string layout = null, string background = null)
         {
             try
             {
-                if (!Directory.Exists(dir)) return SaveStory(title, pages, questions, layout);
+                if (!Directory.Exists(dir)) return SaveStory(title, pages, questions, layout, background);
+                // Le fond d'écran aussi, s'il vit dans le dossier.
+                if (!string.IsNullOrEmpty(background) && File.Exists(background) && background.StartsWith(dir, StringComparison.OrdinalIgnoreCase))
+                {
+                    var tmpBg = Path.Combine(Path.GetTempPath(), "mpj-" + Guid.NewGuid().ToString("N") + Path.GetExtension(background));
+                    File.Copy(background, tmpBg, true);
+                    background = tmpBg;
+                }
 
                 // Sécurise les images référencées DANS le dossier : copie temporaire
                 // avant de nettoyer, pour pouvoir réécrire proprement 1.png, 2.png…
@@ -935,7 +945,7 @@ namespace MesPremiersJeux.Lib
                     }
 
                 foreach (var f in Directory.GetFiles(dir)) File.Delete(f);
-                return WriteStory(dir, title, pages, questions, layout);
+                return WriteStory(dir, title, pages, questions, layout, background);
             }
             catch { return null; }
         }
@@ -955,11 +965,12 @@ namespace MesPremiersJeux.Lib
             return false;
         }
 
-        private static string WriteStory(string dir, string title, IList<PageDraft> pages, IList<UserQuestion> questions = null, string layout = null)
+        private static string WriteStory(string dir, string title, IList<PageDraft> pages, IList<UserQuestion> questions = null, string layout = null, string background = null)
         {
             try
             {
                 var data = new BookJson { Title = title.Trim(), Pages = new List<BookPageJson>(), Layout = StoryLayouts.Parse(layout) };
+                data.Background = StoreImage(dir, "fond", background);
                 for (int i = 0; i < pages.Count; i++)
                 {
                     var p = pages[i];
@@ -1050,6 +1061,7 @@ namespace MesPremiersJeux.Lib
         {
             public string Title;
             public string Layout;
+            public string Background;
             public List<PageDraft> Pages = new List<PageDraft>();
             public List<UserQuestion> Questions = new List<UserQuestion>();
         }
@@ -1074,6 +1086,7 @@ namespace MesPremiersJeux.Lib
             // Le titre n'est PAS bloquant : on le prend où qu'il soit (racine ou
             // metadata), sinon on laisse vide (le parent le complétera dans l'éditeur).
             var book = new ImportedBook { Title = BookTitle(data, ""), Layout = StoryLayouts.Parse(data.Layout) };
+            if (!string.IsNullOrEmpty(data.Background)) book.Background = StageImport(ResolveImageRef(null, data.Background));
             foreach (var p in data.Pages)
             {
                 var draft = new PageDraft { Text = (p.Text ?? "").Trim(), Layout = StoryLayouts.Parse(p.Layout) };

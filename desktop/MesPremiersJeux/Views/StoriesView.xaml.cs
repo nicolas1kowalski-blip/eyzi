@@ -50,6 +50,7 @@ namespace MesPremiersJeux.Views
 
         private sealed class Book
         {
+            public string BackgroundPath; // fond d'écran du lecteur (image), peut être null
             public string Layout; // mise en page par défaut du livre ("cote" si vide)
             public string Title;
             public string Dir; // dossier du livre personnalisé (null = livre intégré)
@@ -75,6 +76,7 @@ namespace MesPremiersJeux.Views
 
         private bool _sideBySide = true; // mise en page de la page affichée (choisie par livre, puis par page)
         private Border _textCard;        // le cadre du texte
+        private readonly Image _bg;      // fond d'écran du livre ouvert (derrière la page)
         private StackPanel _dots;        // points de progression (une pastille par page)
         private Button _listenBtn;       // 🔊 Écouter / ⏸ Pause
 
@@ -134,6 +136,10 @@ namespace MesPremiersJeux.Views
             _readerRoot = new Grid { Visibility = Visibility.Collapsed };
             _readerRoot.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             _readerRoot.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            // Fond d'écran du livre (s'il en a un) : plein écran derrière la page.
+            _bg = new Image { Stretch = Stretch.UniformToFill, Visibility = Visibility.Collapsed };
+            Grid.SetRowSpan(_bg, 2);
+            _readerRoot.Children.Add(_bg);
 
             var body = _body = new Grid();
             body.ColumnDefinitions.Add(new ColumnDefinition());
@@ -318,7 +324,7 @@ namespace MesPremiersJeux.Views
             // Livres du parent (Documents\MesPremiersJeux\Histoires).
             foreach (var s in UserContent.LoadStories())
             {
-                var book = new Book { Title = s.Title, Dir = s.Dir, Questions = s.Questions, Layout = s.Layout };
+                var book = new Book { Title = s.Title, Dir = s.Dir, Questions = s.Questions, Layout = s.Layout, BackgroundPath = s.BackgroundPath };
                 foreach (var p in s.Pages)
                     book.Pages.Add(new BookPage { Text = p.Text, ImagePath = p.ImagePath, Zones = p.Zones, Layout = p.Layout });
                 _books.Add(book);
@@ -549,7 +555,7 @@ namespace MesPremiersJeux.Views
                 }).ToList(),
             }).ToList();
 
-            var editor = new BookEditorWindow(book.Title, drafts, qDrafts, book.Dir, book.Layout) { Owner = Window.GetWindow(this) };
+            var editor = new BookEditorWindow(book.Title, drafts, qDrafts, book.Dir, book.Layout, book.BackgroundPath) { Owner = Window.GetWindow(this) };
             if (editor.ShowDialog() == true)
             {
                 ReloadBooks();
@@ -605,6 +611,13 @@ namespace MesPremiersJeux.Views
         {
             _book = book;
             _title.Text = "✨ " + book.Title + " ✨";
+            _bg.Source = null;
+            _bg.Visibility = Visibility.Collapsed;
+            if (book.BackgroundPath != null)
+            {
+                try { _bg.Source = UserContent.LoadBitmap(book.BackgroundPath, 1920); _bg.Visibility = Visibility.Visible; }
+                catch { }
+            }
             _quizBtn.Visibility = book.Questions.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             _menuRoot.Visibility = Visibility.Collapsed;
             _readerRoot.Visibility = Visibility.Visible;
