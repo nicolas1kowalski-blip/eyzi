@@ -1,0 +1,335 @@
+{
+ "title": "Le voyage de la petite feuille dorée",
+ "pages": [
+  {
+   "text": "Le voyage de la petite feuille dorée. Une histoire d'automne.",
+   "image": "0.jpg",
+   "zones": [
+    {
+     "label": "Plume",
+     "left": 24,
+     "top": 12,
+     "width": 22,
+     "height": 22
+    },
+    {
+     "label": "le grand chêne",
+     "left": 52,
+     "top": 6,
+     "width": 46,
+     "height": 36
+    },
+    {
+     "label": "les feuilles",
+     "left": 6,
+     "top": 40,
+     "width": 60,
+     "height": 36
+    },
+    {
+     "label": "les montagnes",
+     "left": 0,
+     "top": 80,
+     "width": 60,
+     "height": 14
+    }
+   ]
+  },
+  {
+   "text": "Tout en haut d'un grand chêne, dans la forêt, vit Plume. C'est une petite feuille de toutes les couleurs : un peu jaune, un peu rouge, et très dorée. Elle adore danser quand le vent chatouille ses branches. Mais aujourd'hui, le grand chêne murmure : « C'est l'automne, mes petites feuilles. Il est temps de partir en voyage ! » Plume a un peu peur, mais elle est très curieuse.",
+   "image": "1.jpg",
+   "zones": [
+    {
+     "label": "Plume",
+     "left": 24,
+     "top": 12,
+     "width": 22,
+     "height": 22
+    },
+    {
+     "label": "le grand chêne",
+     "left": 52,
+     "top": 6,
+     "width": 46,
+     "height": 36
+    },
+    {
+     "label": "les feuilles",
+     "left": 6,
+     "top": 40,
+     "width": 60,
+     "height": 36
+    },
+    {
+     "label": "les montagnes",
+     "left": 0,
+     "top": 80,
+     "width": 60,
+     "height": 14
+    }
+   ]
+  },
+  {
+   "text": "« Ffchhh ! » Un grand souffle de vent rigolo arrive en tourbillonnant. C'est Zéphyr, le vent de l'automne ! D'un seul coup, il détache Plume et ses copines. « Youpi ! » crie Plume. La voilà qui s'envole, qui pirouette et qui fait des cabrioles dans les airs comme un petit oiseau doré.",
+   "image": "2.jpg",
+   "zones": [
+    {
+     "label": "Plume",
+     "left": 36,
+     "top": 34,
+     "width": 32,
+     "height": 30
+    },
+    {
+     "label": "Zéphyr le vent",
+     "left": 0,
+     "top": 34,
+     "width": 40,
+     "height": 40
+    },
+    {
+     "label": "les feuilles qui volent",
+     "left": 30,
+     "top": 68,
+     "width": 68,
+     "height": 30
+    },
+    {
+     "label": "le gland",
+     "left": 8,
+     "top": 48,
+     "width": 12,
+     "height": 12
+    }
+   ]
+  },
+  {
+   "text": "En voyageant, Plume survole de grands arbres et aperçoit un petit écureuil roux au milieu d'un énorme tas de feuilles. C'est Grignote ! Il court dans tous les sens pour cacher ses noisettes et ses glands pour l'hiver. « Salut Grignote ! » crie Plume en frôlant sa queue touffue. L'écureuil sursaute en riant.",
+   "image": "3.jpg",
+   "zones": [
+    {
+     "label": "Plume",
+     "left": 20,
+     "top": 16,
+     "width": 32,
+     "height": 28
+    },
+    {
+     "label": "Grignote l'écureuil",
+     "left": 36,
+     "top": 36,
+     "width": 44,
+     "height": 46
+    },
+    {
+     "label": "le tas de feuilles",
+     "left": 0,
+     "top": 74,
+     "width": 100,
+     "height": 26
+    },
+    {
+     "label": "les glands",
+     "left": 64,
+     "top": 70,
+     "width": 28,
+     "height": 14
+    },
+    {
+     "label": "les champignons",
+     "left": 0,
+     "top": 50,
+     "width": 18,
+     "height": 16
+    }
+   ]
+  },
+  {
+   "text": "Soudain, de gros nuages gris cachent le soleil. « Plic, ploc ! » C'est la pluie de l'automne ! Des milliers de petites gouttes d'eau tombent du ciel. Plume essaie de les éviter. « Splash ! » Une goutte l'arrose. Plume glisse et s'amuse à faire du toboggan sur les gouttes comme si c'était un manège de fête !",
+   "image": "4.jpg",
+   "zones": [
+    {
+     "label": "Plume",
+     "left": 36,
+     "top": 28,
+     "width": 34,
+     "height": 28
+    },
+    {
+     "label": "les nuages gris",
+     "left": 0,
+     "top": 0,
+     "width": 100,
+     "height": 18
+    },
+    {
+     "label": "la pluie",
+     "left": 20,
+     "top": 46,
+     "width": 62,
+     "height": 36
+    },
+    {
+     "label": "les champignons",
+     "left": 4,
+     "top": 68,
+     "width": 28,
+     "height": 18
+    }
+   ]
+  },
+  {
+   "text": "Heureusement, le vent de l'automne, Zéphyr, revient souffler pour la sécher. « Ffchhh ! » La revoilà qui s'envole vers un grand champ de citrouilles orange. Plume atterrit doucement sur le nez d'une énorme citrouille tout ronde. La citrouille semble lui sourire. « Quel joli endroit ! » se dit Plume.",
+   "image": "5.jpg",
+   "zones": [
+    {
+     "label": "Plume",
+     "left": 30,
+     "top": 26,
+     "width": 26,
+     "height": 26
+    },
+    {
+     "label": "la grosse citrouille",
+     "left": 8,
+     "top": 52,
+     "width": 66,
+     "height": 42
+    },
+    {
+     "label": "les citrouilles",
+     "left": 52,
+     "top": 36,
+     "width": 48,
+     "height": 34
+    },
+    {
+     "label": "la barrière",
+     "left": 54,
+     "top": 28,
+     "width": 46,
+     "height": 10
+    }
+   ]
+  },
+  {
+   "text": "Le soleil commence à se coucher et le ciel devient tout rose et violet. Zéphyr, le vent, souffle doucement. « C'est l'heure de se reposer, petite feuille dorée », semble-t-il chuchoter. Plume se laisse porter une dernière fois, prête à trouver un lit douillet pour la nuit.",
+   "image": "6.jpg",
+   "zones": [
+    {
+     "label": "Plume",
+     "left": 36,
+     "top": 30,
+     "width": 32,
+     "height": 32
+    },
+    {
+     "label": "le ciel rose",
+     "left": 0,
+     "top": 0,
+     "width": 100,
+     "height": 30
+    },
+    {
+     "label": "le soleil",
+     "left": 34,
+     "top": 58,
+     "width": 30,
+     "height": 14
+    },
+    {
+     "label": "les feuilles",
+     "left": 14,
+     "top": 4,
+     "width": 70,
+     "height": 18
+    }
+   ]
+  },
+  {
+   "text": "Tout en bas, au pied du chêne, s'est formé un magnifique et immense tapis de feuilles. C'est tout doux, tout chaud, et multicolore ! Plume s'y pose avec tendresse, tout contre ses amies les autres feuilles. Elle ferme ses petits yeux, fatiguée par toutes ses aventures. Fin.",
+   "image": "7.jpg",
+   "zones": [
+    {
+     "label": "Plume",
+     "left": 34,
+     "top": 54,
+     "width": 34,
+     "height": 24
+    },
+    {
+     "label": "le tapis de feuilles",
+     "left": 10,
+     "top": 50,
+     "width": 82,
+     "height": 46
+    },
+    {
+     "label": "le grand chêne",
+     "left": 18,
+     "top": 0,
+     "width": 66,
+     "height": 48
+    },
+    {
+     "label": "les autres feuilles",
+     "left": 56,
+     "top": 54,
+     "width": 26,
+     "height": 20
+    },
+    {
+     "label": "les étoiles",
+     "left": 60,
+     "top": 0,
+     "width": 40,
+     "height": 12
+    }
+   ]
+  }
+ ],
+ "questions": [
+  {
+   "text": "Plume est une petite feuille dorée ?",
+   "type": "vraifaux",
+   "answer": true
+  },
+  {
+   "text": "Qui cache ses noisettes pour l'hiver ?",
+   "type": "image",
+   "choices": [
+    {
+     "image": "quiz-ecureuil.jpg",
+     "correct": true
+    },
+    {
+     "image": "quiz-citrouille.jpg"
+    },
+    {
+     "image": "quiz-plume.jpg"
+    }
+   ]
+  },
+  {
+   "text": "Montre Plume !",
+   "type": "image",
+   "choices": [
+    {
+     "image": "quiz-plume.jpg",
+     "correct": true
+    },
+    {
+     "image": "quiz-ecureuil.jpg"
+    },
+    {
+     "image": "quiz-citrouille.jpg"
+    }
+   ]
+  },
+  {
+   "text": "À la fin, Plume se repose sur un tapis de feuilles ?",
+   "type": "vraifaux",
+   "answer": true
+  }
+ ]
+}
