@@ -38,6 +38,13 @@
                     <Viewbox Stretch="Uniform" StretchDirection="DownOnly"
                              HorizontalAlignment="Left" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <!-- Le « i » d'Eyzi (jaune, avec son œil), dessiné : net à toute taille. -->
+                        <Canvas Width="44" Height="78" Margin="10,0,22,0" VerticalAlignment="Center" ToolTip="Eyzi">
+                            <Ellipse Canvas.Left="4" Canvas.Top="0" Width="30" Height="30" Fill="#FFFFD54A" />
+                            <Ellipse Canvas.Left="13" Canvas.Top="7" Width="16" Height="16" Fill="White" />
+                            <Ellipse Canvas.Left="19" Canvas.Top="11" Width="8" Height="8" Fill="#FF2A1A4A" />
+                            <Rectangle Canvas.Left="7" Canvas.Top="36" Width="24" Height="42" RadiusX="12" RadiusY="12" Fill="#FFFFD54A" />
+                        </Canvas>
                         <Button x:Name="TabAccueil" Style="{StaticResource TabButton}" FontSize="26" MinWidth="190" Height="88" Click="Tab_Click" Tag="accueil">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="🏠  " FontSize="32" /><TextBlock Text="Accueil" VerticalAlignment="Center" />
@@ -68,7 +75,8 @@
                                 <TextBlock Text="🎵  " FontSize="32" /><TextBlock Text="Musique" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button x:Name="TabParcours" Style="{StaticResource TabButton}" FontSize="26" MinWidth="190" Height="88" Click="Parcours_Click">
+                        <!-- Parcours : accessible depuis l'accueil seulement (onglet retiré de la barre). -->
+                        <Button x:Name="TabParcours" Visibility="Collapsed" Style="{StaticResource TabButton}" FontSize="26" MinWidth="190" Height="88" Click="Parcours_Click">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="📅  " FontSize="32" /><TextBlock Text="Parcours" VerticalAlignment="Center" />
                             </StackPanel>
