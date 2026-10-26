@@ -1,0 +1,486 @@
+{
+ "title": "Le panier de bonbons perdu",
+ "pages": [
+  {
+   "text": "Le panier de bonbons perdu. Une histoire d'Halloween.",
+   "image": "0.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 20,
+     "top": 42,
+     "width": 32,
+     "height": 40
+    },
+    {
+     "label": "Lili",
+     "left": 56,
+     "top": 40,
+     "width": 26,
+     "height": 32
+    },
+    {
+     "label": "le chat noir",
+     "left": 70,
+     "top": 56,
+     "width": 12,
+     "height": 14
+    },
+    {
+     "label": "le panier",
+     "left": 62,
+     "top": 72,
+     "width": 16,
+     "height": 14
+    },
+    {
+     "label": "la lune",
+     "left": 54,
+     "top": 6,
+     "width": 28,
+     "height": 24
+    }
+   ]
+  },
+  {
+   "text": "Ce soir, c'est Halloween. Léo a cinq ans, et c'est sa toute première tournée de bonbons ! Il a mis son déguisement de petit monstre vert, avec des cornes toutes douces. « Grrr ! » fait Léo devant le miroir. Papa fait semblant d'avoir très peur.",
+   "image": "1.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 40,
+     "top": 48,
+     "width": 22,
+     "height": 44
+    },
+    {
+     "label": "le miroir",
+     "left": 10,
+     "top": 22,
+     "width": 30,
+     "height": 70
+    },
+    {
+     "label": "Papa",
+     "left": 58,
+     "top": 20,
+     "width": 38,
+     "height": 62
+    },
+    {
+     "label": "la citrouille",
+     "left": 0,
+     "top": 46,
+     "width": 12,
+     "height": 14
+    }
+   ]
+  },
+  {
+   "text": "Léo prend son panier en forme de citrouille. Il frappe aux portes avec Papa. Toc, toc, toc ! « Des bonbons ou un sort ! » Une sucette. Un caramel. Trois bonbons à la fraise. Le panier se remplit.",
+   "image": "2.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 8,
+     "top": 48,
+     "width": 32,
+     "height": 48
+    },
+    {
+     "label": "Papa",
+     "left": 26,
+     "top": 14,
+     "width": 30,
+     "height": 48
+    },
+    {
+     "label": "la mamie",
+     "left": 50,
+     "top": 36,
+     "width": 42,
+     "height": 50
+    },
+    {
+     "label": "le panier",
+     "left": 38,
+     "top": 60,
+     "width": 24,
+     "height": 18
+    },
+    {
+     "label": "la sucette",
+     "left": 44,
+     "top": 56,
+     "width": 12,
+     "height": 8
+    }
+   ]
+  },
+  {
+   "text": "Léo pose son panier sur un muret pour refaire son lacet. Il se relève… Le panier a disparu ! « Papa ! Mon panier n'est plus là ! » Léo a envie de pleurer.",
+   "image": "3.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 18,
+     "top": 44,
+     "width": 40,
+     "height": 48
+    },
+    {
+     "label": "Papa",
+     "left": 60,
+     "top": 12,
+     "width": 36,
+     "height": 60
+    },
+    {
+     "label": "le lampadaire",
+     "left": 30,
+     "top": 6,
+     "width": 14,
+     "height": 14
+    },
+    {
+     "label": "le muret",
+     "left": 54,
+     "top": 60,
+     "width": 46,
+     "height": 40
+    }
+   ]
+  },
+  {
+   "text": "Papa allume sa lampe de poche. « Regarde par terre, Léo. » Sur le trottoir, il y a un bonbon rouge. Un peu plus loin, un bonbon jaune. Et encore un, et encore un… « Des traces de bonbons ! On va les suivre ! »",
+   "image": "4.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 16,
+     "top": 42,
+     "width": 32,
+     "height": 46
+    },
+    {
+     "label": "Papa",
+     "left": 50,
+     "top": 18,
+     "width": 40,
+     "height": 62
+    },
+    {
+     "label": "la lampe de poche",
+     "left": 68,
+     "top": 56,
+     "width": 10,
+     "height": 10
+    },
+    {
+     "label": "les bonbons",
+     "left": 38,
+     "top": 78,
+     "width": 32,
+     "height": 18
+    }
+   ]
+  },
+  {
+   "text": "Les bonbons passent devant la boulangerie. Ils tournent au coin de la rue. Un chat noir regarde Léo. « Miaou ! » Il montre le parc avec sa queue. « Merci, le chat ! » dit Léo.",
+   "image": "5.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 14,
+     "top": 46,
+     "width": 22,
+     "height": 40
+    },
+    {
+     "label": "Papa",
+     "left": 32,
+     "top": 28,
+     "width": 22,
+     "height": 50
+    },
+    {
+     "label": "le chat noir",
+     "left": 52,
+     "top": 70,
+     "width": 22,
+     "height": 22
+    },
+    {
+     "label": "la boulangerie",
+     "left": 0,
+     "top": 10,
+     "width": 48,
+     "height": 46
+    },
+    {
+     "label": "les bonbons",
+     "left": 36,
+     "top": 56,
+     "width": 24,
+     "height": 20
+    }
+   ]
+  },
+  {
+   "text": "Dans le parc, sur un banc, il y a une petite fille. Elle porte un chapeau pointu et une cape violette. C'est une petite sorcière. Et sur ses genoux… il y a le panier de Léo !",
+   "image": "6.jpg",
+   "zones": [
+    {
+     "label": "Lili",
+     "left": 28,
+     "top": 24,
+     "width": 44,
+     "height": 54
+    },
+    {
+     "label": "le panier",
+     "left": 46,
+     "top": 56,
+     "width": 22,
+     "height": 16
+    },
+    {
+     "label": "le chat noir",
+     "left": 64,
+     "top": 56,
+     "width": 16,
+     "height": 12
+    },
+    {
+     "label": "la lune",
+     "left": 66,
+     "top": 4,
+     "width": 20,
+     "height": 16
+    },
+    {
+     "label": "le banc",
+     "left": 14,
+     "top": 48,
+     "width": 72,
+     "height": 36
+    }
+   ]
+  },
+  {
+   "text": "Léo s'approche doucement. « C'est mon panier, tu sais. » La petite sorcière baisse la tête. « Je m'appelle Lili. Je suis nouvelle ici. Personne ne m'a ouvert la porte. Je n'ai pas eu un seul bonbon… » Une petite larme coule sur sa joue.",
+   "image": "7.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 12,
+     "top": 36,
+     "width": 36,
+     "height": 52
+    },
+    {
+     "label": "Lili",
+     "left": 50,
+     "top": 36,
+     "width": 40,
+     "height": 42
+    },
+    {
+     "label": "le panier",
+     "left": 56,
+     "top": 60,
+     "width": 16,
+     "height": 14
+    },
+    {
+     "label": "le chat noir",
+     "left": 74,
+     "top": 78,
+     "width": 16,
+     "height": 14
+    },
+    {
+     "label": "la lanterne",
+     "left": 28,
+     "top": 18,
+     "width": 12,
+     "height": 14
+    }
+   ]
+  },
+  {
+   "text": "Lili tend le panier à Léo. « Pardon. Je n'aurais pas dû le prendre. » Léo réfléchit. Il regarde le panier. Il regarde Lili. Puis il sourit. « Tu veux venir faire la tournée avec moi ? »",
+   "image": "8.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 10,
+     "top": 36,
+     "width": 38,
+     "height": 56
+    },
+    {
+     "label": "Lili",
+     "left": 54,
+     "top": 36,
+     "width": 36,
+     "height": 56
+    },
+    {
+     "label": "le panier",
+     "left": 48,
+     "top": 66,
+     "width": 16,
+     "height": 14
+    },
+    {
+     "label": "le chat noir",
+     "left": 46,
+     "top": 80,
+     "width": 14,
+     "height": 12
+    },
+    {
+     "label": "la lune",
+     "left": 54,
+     "top": 4,
+     "width": 16,
+     "height": 12
+    }
+   ]
+  },
+  {
+   "text": "Le petit monstre et la petite sorcière frappent aux portes ensemble. Toc, toc, toc ! « Des bonbons ou un sort ! » Cette fois, tout le monde leur ouvre. Le panier déborde de bonbons !",
+   "image": "9.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 4,
+     "top": 42,
+     "width": 32,
+     "height": 50
+    },
+    {
+     "label": "Lili",
+     "left": 28,
+     "top": 30,
+     "width": 32,
+     "height": 52
+    },
+    {
+     "label": "le vampire",
+     "left": 56,
+     "top": 22,
+     "width": 36,
+     "height": 58
+    },
+    {
+     "label": "le panier",
+     "left": 36,
+     "top": 58,
+     "width": 28,
+     "height": 18
+    },
+    {
+     "label": "les bonbons",
+     "left": 56,
+     "top": 42,
+     "width": 22,
+     "height": 16
+    }
+   ]
+  },
+  {
+   "text": "De retour au parc, Léo et Lili partagent tout : un bonbon pour toi, un bonbon pour moi. Le chat noir vient aussi s'asseoir sur le banc. « C'est le plus bel Halloween de ma vie », dit Lili. Léo est bien d'accord. Ce soir, il a trouvé bien mieux que des bonbons : une amie. Fin.",
+   "image": "10.jpg",
+   "zones": [
+    {
+     "label": "Léo",
+     "left": 20,
+     "top": 42,
+     "width": 32,
+     "height": 40
+    },
+    {
+     "label": "Lili",
+     "left": 56,
+     "top": 40,
+     "width": 26,
+     "height": 32
+    },
+    {
+     "label": "le chat noir",
+     "left": 70,
+     "top": 56,
+     "width": 12,
+     "height": 14
+    },
+    {
+     "label": "le panier",
+     "left": 62,
+     "top": 72,
+     "width": 16,
+     "height": 14
+    },
+    {
+     "label": "les bonbons",
+     "left": 40,
+     "top": 54,
+     "width": 22,
+     "height": 16
+    },
+    {
+     "label": "la lune",
+     "left": 54,
+     "top": 6,
+     "width": 28,
+     "height": 24
+    }
+   ]
+  }
+ ],
+ "questions": [
+  {
+   "text": "Léo est déguisé en petit monstre vert ?",
+   "type": "vraifaux",
+   "answer": true
+  },
+  {
+   "text": "Qui a pris le panier de Léo ?",
+   "type": "image",
+   "choices": [
+    {
+     "image": "quiz-lili.jpg",
+     "correct": true
+    },
+    {
+     "image": "quiz-chat.jpg"
+    },
+    {
+     "image": "quiz-papa.jpg"
+    }
+   ]
+  },
+  {
+   "text": "Montre Léo !",
+   "type": "image",
+   "choices": [
+    {
+     "image": "quiz-leo.jpg",
+     "correct": true
+    },
+    {
+     "image": "quiz-vampire.jpg"
+    },
+    {
+     "image": "quiz-mamie.jpg"
+    }
+   ]
+  },
+  {
+   "text": "À la fin, Léo et Lili partagent les bonbons ?",
+   "type": "vraifaux",
+   "answer": true
+  }
+ ]
+}
