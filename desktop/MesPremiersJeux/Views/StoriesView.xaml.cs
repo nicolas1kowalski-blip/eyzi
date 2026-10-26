@@ -768,55 +768,183 @@ namespace MesPremiersJeux.Views
         }
 
         // ------------------------------------------------------------------
-        // Fin du livre : « Fin », bravo, et le choix : quiz, relire, un autre livre
+        // Fin du livre : « Fin », bravo, et le choix : quiz, relire, un autre livre.
+        // Tout est dessiné (étoiles, confettis, icônes) : les pictogrammes du
+        // système sortent en noir et blanc sur certaines tablettes.
         // ------------------------------------------------------------------
+        private Image _endBg;
+        private Canvas _endDeco;
+        private Border _endCover;
+
         private UIElement BuildEndRoot()
         {
-            _endRoot = new Grid { Visibility = Visibility.Collapsed };
-            _endRoot.Background = new LinearGradientBrush(Color.FromRgb(0xFF, 0xF0, 0xDC), Color.FromRgb(0xE9, 0xDC, 0xFF), 90);
+            _endRoot = new Grid { Visibility = Visibility.Collapsed, ClipToBounds = true };
+            _endRoot.Background = new LinearGradientBrush(Color.FromRgb(0xFF, 0xE9, 0xD0), Color.FromRgb(0xE6, 0xD6, 0xFF), 90);
+            _endBg = new Image { Stretch = Stretch.UniformToFill, Visibility = Visibility.Collapsed };
+            _endRoot.Children.Add(_endBg);
+            _endRoot.Children.Add(new Border { Background = new SolidColorBrush(Color.FromArgb(0x8C, 0xFF, 0xFF, 0xFF)) }); // voile clair
+            _endDeco = new Canvas();
+            _endRoot.Children.Add(_endDeco);
 
-            // Quelques étoiles qui flottent, pour la fête.
-            var rnd = new Random(7);
-            string[] stars = { "⭐", "✨", "🌟", "💫", "🎉" };
-            for (int i = 0; i < 14; i++)
+            var card = new Border
             {
-                var tb = new TextBlock
-                {
-                    Text = stars[i % stars.Length],
-                    FontSize = 34 + rnd.Next(40),
-                    Opacity = 0.75,
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Top,
-                    Margin = new Thickness(40 + rnd.Next(1700), 20 + rnd.Next(900), 0, 0),
-                    RenderTransform = new TranslateTransform(),
-                };
-                var up = new DoubleAnimation(0, -18 - rnd.Next(20), TimeSpan.FromMilliseconds(1600 + rnd.Next(1400))) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase() };
-                tb.RenderTransform.BeginAnimation(TranslateTransform.YProperty, up);
-                _endRoot.Children.Add(tb);
-            }
-
-            var col = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                Background = new SolidColorBrush(Color.FromArgb(0xF0, 0xFF, 0xFF, 0xFF)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xD6, 0xA5)),
+                BorderThickness = new Thickness(4),
+                CornerRadius = new CornerRadius(44),
+                Padding = new Thickness(56, 30, 56, 36),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            var col = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+            _endCover = new Border
+            {
+                Width = 210, Height = 210,
+                CornerRadius = new CornerRadius(26),
+                Background = new SolidColorBrush(Color.FromRgb(0xFF, 0xF2, 0xE2)),
+                Clip = new RectangleGeometry(new Rect(0, 0, 210, 210), 26, 26),
+                Margin = new Thickness(0, 0, 0, 6),
+                HorizontalAlignment = HorizontalAlignment.Center,
+            };
+            col.Children.Add(_endCover);
             col.Children.Add(new TextBlock
             {
-                Text = "✨ Fin ✨",
+                Text = "Fin",
                 FontSize = 120,
                 FontWeight = FontWeights.ExtraBold,
-                Foreground = Violet,
+                Foreground = new LinearGradientBrush(Color.FromRgb(0xFF, 0x8A, 0x3D), Color.FromRgb(0x7E, 0x3F, 0xF2), 0),
                 HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, -10, 0, -16),
             });
             col.Children.Add(new TextBlock
             {
-                Text = "Bravo ! Tu as lu toute l'histoire.",
-                FontSize = 40,
+                Text = "Bravo, tu as lu toute l'histoire !",
+                FontSize = 38,
                 FontWeight = FontWeights.Bold,
                 Foreground = Dark,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 40),
+                Margin = new Thickness(0, 0, 0, 30),
             });
             _endButtons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
             col.Children.Add(_endButtons);
-            _endRoot.Children.Add(col);
+            card.Child = col;
+            _endRoot.Children.Add(card);
             return _endRoot;
+        }
+
+        // Un gros bouton coloré de l'écran de fin : icône dessinée + libellé.
+        private Border EndButton(string label, Color color, UIElement icon, Action onClick)
+        {
+            var sp = new StackPanel();
+            icon.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            sp.Children.Add(icon);
+            sp.Children.Add(new TextBlock
+            {
+                Text = label, FontSize = 30, FontWeight = FontWeights.ExtraBold, Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 12, 0, 0),
+            });
+            var b = new Border
+            {
+                Background = new SolidColorBrush(color),
+                CornerRadius = new CornerRadius(34),
+                Padding = new Thickness(26, 24, 26, 20),
+                Margin = new Thickness(14, 0, 14, 0),
+                Width = 270,
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Child = sp,
+            };
+            b.MouseLeftButtonDown += (s, e) => { e.Handled = true; onClick(); };
+            GazeTargets.SetIsTarget(b, true);
+            return b;
+        }
+
+        private static readonly Geometry StarGeometry = Geometry.Parse("M 0,-10 L 2.9,-3.1 10,-3.1 4.3,1.2 6.2,8.1 0,4 -6.2,8.1 -4.3,1.2 -10,-3.1 -2.9,-3.1 Z");
+
+        // Icônes vectorielles (blanches) : cible, flèche qui tourne, pile de livres.
+        private static UIElement IconTarget()
+        {
+            var g = new Grid { Width = 72, Height = 72 };
+            foreach (var (d, fill) in new[] { (72.0, false), (46.0, false), (20.0, true) })
+                g.Children.Add(new System.Windows.Shapes.Ellipse
+                {
+                    Width = d, Height = d, Stroke = Brushes.White, StrokeThickness = 6,
+                    Fill = fill ? Brushes.White : null, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                });
+            return g;
+        }
+
+        private static UIElement IconRepeat()
+        {
+            var g = new Grid { Width = 72, Height = 72 };
+            g.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M 60,36 A 24,24 0 1 1 50,16.5"),
+                Stroke = Brushes.White, StrokeThickness = 7, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+            });
+            g.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M 42,4 L 60,16 L 44,28 Z"), Fill = Brushes.White,
+            });
+            return g;
+        }
+
+        private static UIElement IconBooks()
+        {
+            var g = new Grid { Width = 72, Height = 72 };
+            foreach (var (x, y, w) in new[] { (12.0, 10.0, 48.0), (6.0, 30.0, 56.0), (14.0, 50.0, 46.0) })
+                g.Children.Add(new System.Windows.Shapes.Rectangle
+                {
+                    Width = w, Height = 14, RadiusX = 5, RadiusY = 5, Fill = Brushes.White,
+                    HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(x, y, 0, 0),
+                });
+            return g;
+        }
+
+        // Étoiles qui flottent et confettis qui tombent, à la taille réelle de l'écran.
+        private void BuildEndDeco()
+        {
+            _endDeco.Children.Clear();
+            double W = Math.Max(800, _endRoot.ActualWidth), H = Math.Max(600, _endRoot.ActualHeight);
+            var rnd = new Random();
+            var golds = new[] { Color.FromRgb(0xFF, 0xD2, 0x4D), Color.FromRgb(0xFF, 0xB3, 0x47), Color.FromRgb(0xFF, 0xE0, 0x8A) };
+            for (int i = 0; i < 16; i++)
+            {
+                double size = 1.6 + rnd.NextDouble() * 2.6;
+                var star = new System.Windows.Shapes.Path
+                {
+                    Data = StarGeometry, Fill = new SolidColorBrush(golds[i % golds.Length]),
+                    Stroke = new SolidColorBrush(Color.FromRgb(0xFF, 0x9F, 0x43)), StrokeThickness = 0.6,
+                    Opacity = 0.9, RenderTransformOrigin = new Point(0.5, 0.5),
+                };
+                var tg = new TransformGroup();
+                tg.Children.Add(new ScaleTransform(size, size));
+                var rot = new RotateTransform(rnd.Next(360));
+                tg.Children.Add(rot);
+                var up = new TranslateTransform();
+                tg.Children.Add(up);
+                star.RenderTransform = tg;
+                Canvas.SetLeft(star, 30 + rnd.NextDouble() * (W - 60));
+                Canvas.SetTop(star, 20 + rnd.NextDouble() * (H - 40));
+                up.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(0, -14 - rnd.Next(18), TimeSpan.FromMilliseconds(1500 + rnd.Next(1500))) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase() });
+                rot.BeginAnimation(RotateTransform.AngleProperty, new DoubleAnimation(rot.Angle, rot.Angle + (rnd.Next(2) == 0 ? 20 : -20), TimeSpan.FromMilliseconds(2200 + rnd.Next(1800))) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase() });
+                _endDeco.Children.Add(star);
+            }
+            var confetti = new[] { Color.FromRgb(0xFF, 0x6B, 0x6B), Color.FromRgb(0x7E, 0x3F, 0xF2), Color.FromRgb(0x2E, 0xB8, 0x8A), Color.FromRgb(0x3F, 0x8E, 0xF2), Color.FromRgb(0xFF, 0x9F, 0x43), Color.FromRgb(0xF2, 0x5F, 0x8F) };
+            for (int i = 0; i < 40; i++)
+            {
+                var c = new System.Windows.Shapes.Rectangle
+                {
+                    Width = 10 + rnd.Next(8), Height = 16 + rnd.Next(10), RadiusX = 3, RadiusY = 3,
+                    Fill = new SolidColorBrush(confetti[i % confetti.Length]), Opacity = 0.85, RenderTransformOrigin = new Point(0.5, 0.5),
+                };
+                var rot = new RotateTransform(rnd.Next(360));
+                c.RenderTransform = rot;
+                Canvas.SetLeft(c, rnd.NextDouble() * W);
+                double dur = 5000 + rnd.Next(5000);
+                c.BeginAnimation(Canvas.TopProperty, new DoubleAnimation(-40, H + 40, TimeSpan.FromMilliseconds(dur)) { RepeatBehavior = RepeatBehavior.Forever, BeginTime = TimeSpan.FromMilliseconds(rnd.Next((int)dur)) });
+                rot.BeginAnimation(RotateTransform.AngleProperty, new DoubleAnimation(0, 360, TimeSpan.FromMilliseconds(1800 + rnd.Next(2200))) { RepeatBehavior = RepeatBehavior.Forever });
+                _endDeco.Children.Add(c);
+            }
         }
 
         private void ShowEnd()
@@ -826,20 +954,19 @@ namespace MesPremiersJeux.Views
             SetNarrating(false);
             HideNextBig();
             Speech.ScreenChanged();
+
+            // Le décor du livre (fond d'écran) derrière un voile, la couverture sur la carte.
+            _endBg.Source = _bg.Source;
+            _endBg.Visibility = _bg.Source != null ? Visibility.Visible : Visibility.Collapsed;
+            _endCover.Child = _book.Pages.Count > 0 ? PreviewOf(_book.Pages[0]) : null;
+
             _endButtons.Children.Clear();
             if (_book.Questions.Count > 0)
-            {
-                var quiz = QuizCard(BigGlyph("🎯", "Le quiz"), Brushes.White);
-                quiz.Click += (s, e) => { _endRoot.Visibility = Visibility.Collapsed; StartQuiz(); };
-                _endButtons.Children.Add(quiz);
-            }
-            var again = QuizCard(BigGlyph("🔁", "Relire"), Brushes.White);
-            again.Click += (s, e) => { _endRoot.Visibility = Visibility.Collapsed; ShowPage(0); };
-            _endButtons.Children.Add(again);
-            var other = QuizCard(BigGlyph("📚", "Un autre livre"), Brushes.White);
-            other.Click += (s, e) => { _endRoot.Visibility = Visibility.Collapsed; ShowMenu(); };
-            _endButtons.Children.Add(other);
+                _endButtons.Children.Add(EndButton("Le quiz", Color.FromRgb(0xFF, 0x9F, 0x43), IconTarget(), () => { _endRoot.Visibility = Visibility.Collapsed; StartQuiz(); }));
+            _endButtons.Children.Add(EndButton("Relire", Color.FromRgb(0x7E, 0x3F, 0xF2), IconRepeat(), () => { _endRoot.Visibility = Visibility.Collapsed; ShowPage(0); }));
+            _endButtons.Children.Add(EndButton("Un autre livre", Color.FromRgb(0x2E, 0xB8, 0x8A), IconBooks(), () => { _endRoot.Visibility = Visibility.Collapsed; ShowMenu(); }));
             _endRoot.Visibility = Visibility.Visible;
+            _endRoot.Dispatcher.BeginInvoke(new Action(BuildEndDeco), DispatcherPriority.Loaded);
             Speech.Say("C'est la fin de l'histoire. Bravo !");
         }
 
