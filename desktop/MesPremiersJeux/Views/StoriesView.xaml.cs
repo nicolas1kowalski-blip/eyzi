@@ -103,11 +103,17 @@ namespace MesPremiersJeux.Views
             _menuRoot.Children.Add(_menu);
             root.Children.Add(_menuRoot);
 
-            // --- Lecteur ---
+            // --- Lecteur : image à gauche (toute la hauteur), texte à droite ---
+            // Les histoires livrées ont des pages longues : en colonne (image au-dessus
+            // du texte) l'image finissait écrasée. En deux colonnes, l'illustration
+            // (souvent en portrait) garde toute la hauteur et le texte a sa place.
             _readerRoot = new Grid { Visibility = Visibility.Collapsed };
             _readerRoot.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             _readerRoot.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            _readerRoot.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var body = new Grid();
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(47, GridUnitType.Star) });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(53, GridUnitType.Star) });
 
             _title = new TextBlock
             {
@@ -122,14 +128,31 @@ namespace MesPremiersJeux.Views
             {
                 Background = Brushes.White,
                 CornerRadius = new CornerRadius(30),
-                Margin = new Thickness(24, 44, 24, 8),
+                Margin = new Thickness(24, 52, 8, 8),
                 Effect = new DropShadowEffect { BlurRadius = 22, ShadowDepth = 3, Opacity = 0.18 },
             };
             _illus = new ContentControl { Margin = new Thickness(20) };
             card.Child = _illus;
-            var illusHost = new Grid();
-            illusHost.Children.Add(card);
-            illusHost.Children.Add(_title);
+            Grid.SetColumn(card, 0);
+            body.Children.Add(card);
+
+            // Texte : panneau de 900 px de large ; s'il est trop haut pour l'écran,
+            // il est réduit d'un bloc (Viewbox) plutôt que coupé.
+            _wordHost = new WrapPanel { Width = 900, HorizontalAlignment = HorizontalAlignment.Center };
+            var textBox = new Viewbox
+            {
+                Child = _wordHost,
+                Stretch = Stretch.Uniform,
+                StretchDirection = StretchDirection.DownOnly,
+                Margin = new Thickness(8, 56, 24, 8),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(textBox, 1);
+            body.Children.Add(textBox);
+
+            Grid.SetColumnSpan(_title, 2);
+            body.Children.Add(_title);
 
             // Bouton retour bibliothèque.
             var backBtn = new Button
@@ -141,19 +164,10 @@ namespace MesPremiersJeux.Views
                 Margin = new Thickness(16),
             };
             backBtn.Click += (s, e) => ShowMenu();
-            illusHost.Children.Add(backBtn);
+            body.Children.Add(backBtn);
 
-            Grid.SetRow(illusHost, 0);
-            _readerRoot.Children.Add(illusHost);
-
-            _wordHost = new WrapPanel
-            {
-                HorizontalAlignment = HorizontalAlignment.Center,
-                MaxWidth = 1300,
-                Margin = new Thickness(24, 8, 24, 8),
-            };
-            Grid.SetRow(_wordHost, 1);
-            _readerRoot.Children.Add(_wordHost);
+            Grid.SetRow(body, 0);
+            _readerRoot.Children.Add(body);
 
             var nav = new StackPanel
             {
@@ -176,7 +190,7 @@ namespace MesPremiersJeux.Views
             };
             nav.Children.Add(_pageInfo);
             nav.Children.Add(NavButton("➡", () => ShowPage(_index + 1)));
-            Grid.SetRow(nav, 2);
+            Grid.SetRow(nav, 1);
             _readerRoot.Children.Add(nav);
 
             root.Children.Add(_readerRoot);
@@ -541,6 +555,9 @@ namespace MesPremiersJeux.Views
             _pageText = page.Text;
             _wordToGroup.Clear();
 
+            // Pages courtes en grandes lettres ; pages longues un peu plus petites
+            // (le panneau se réduit encore tout seul si besoin).
+            double fontSize = page.Text.Length <= 140 ? 52 : page.Text.Length <= 260 ? 46 : 40;
             int gi = 0;
             foreach (var g in SplitGroups(page.Text))
             {
@@ -551,9 +568,11 @@ namespace MesPremiersJeux.Views
                 var tb = new TextBlock
                 {
                     Text = g,
-                    FontSize = 52,
+                    FontSize = fontSize,
                     FontWeight = FontWeights.SemiBold,
                     Foreground = Dark,
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = 900,
                     Padding = new Thickness(14, 8, 14, 8),
                     Margin = new Thickness(5, 6, 5, 6),
                     Background = Brushes.Transparent,
