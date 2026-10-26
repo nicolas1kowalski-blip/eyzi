@@ -533,21 +533,37 @@ namespace MesPremiersJeux.Lib
         // ------------------------------------------------------------------
         // Histoires
         // ------------------------------------------------------------------
+        /// <summary>Histoires livrées avec l'application (dossier Histoires à côté de l'exécutable).</summary>
+        public static string BuiltInStoriesDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Histoires");
+
         public static List<UserStory> LoadStories()
         {
             var stories = new List<UserStory>();
             try
             {
-                if (!Directory.Exists(StoriesDir)) return stories;
-                foreach (var dir in Directory.GetDirectories(StoriesDir).OrderBy(d => d))
-                {
-                    var story = LoadStory(dir);
-                    if (story != null && story.Pages.Count > 0)
+                if (Directory.Exists(StoriesDir))
+                    foreach (var dir in Directory.GetDirectories(StoriesDir).OrderBy(d => d))
                     {
-                        story.Dir = dir;
-                        stories.Add(story);
+                        var story = LoadStory(dir);
+                        if (story != null && story.Pages.Count > 0)
+                        {
+                            story.Dir = dir;
+                            stories.Add(story);
+                        }
                     }
-                }
+            }
+            catch { }
+            // Les livres livrés avec l'application, après ceux de la famille.
+            // Dir reste vide : on ne les modifie ni ne les supprime depuis l'app.
+            try
+            {
+                if (Directory.Exists(BuiltInStoriesDir))
+                    foreach (var dir in Directory.GetDirectories(BuiltInStoriesDir).OrderBy(d => d))
+                    {
+                        if (stories.Any(s => string.Equals(s.Title, Path.GetFileName(dir), StringComparison.OrdinalIgnoreCase))) continue;
+                        var story = LoadStory(dir);
+                        if (story != null && story.Pages.Count > 0) { story.Dir = null; stories.Add(story); }
+                    }
             }
             catch { }
             return stories;

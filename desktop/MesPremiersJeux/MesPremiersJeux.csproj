@@ -36,6 +36,8 @@
     <!-- Voix naturelle hors ligne (Piper) : le moteur et le modèle sont ajoutés
          par la compilation automatique (CI) dans Voix\piper ; ici seulement la notice. -->
     <None Update="Voix\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Histoires livrées avec l'application (un dossier par livre : livre.json + images). -->
+    <None Update="Histoires\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

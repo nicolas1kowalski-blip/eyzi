@@ -83,7 +83,7 @@ Le pilote change à chaud, sans redémarrer.
 ### Les onglets
 Tout en haut, toujours visibles :
 
-- **📖 Histoires** : les livres fournis et les vôtres (photos de la famille, texte lu à voix haute).
+- **📖 Histoires** : les livres fournis (dont « La citrouille qui voulait un sourire », 10 pages illustrées, zones à regarder et quiz de fin) et les vôtres (photos de la famille, texte lu à voix haute).
 - **🎮 Jeux** : ballons, paires (seul ou à deux), cherche et trouve, le jeu magique…
 - **🎓 Éducatif** : par thèmes — *Les lettres* (mon prénom, mot et image, lettres mobiles, rimes, syllabes), *Les nombres* (compter, un de plus, partager, la bande numérique), *La musique*, *L'anglais*, *Découvrir* (les émotions, « Range la maison », les contraires).
 - **🎨 Coloriage** : on regarde une zone, elle se colorie.
