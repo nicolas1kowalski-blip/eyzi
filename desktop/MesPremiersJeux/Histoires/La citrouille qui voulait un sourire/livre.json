@@ -1,69 +1,430 @@
 {
-  "title": "La citrouille qui voulait un sourire",
-  "pages": [
-    { "text": "La citrouille qui voulait un sourire. Une histoire d'Halloween.", "image": "0.jpg",
-      "zones": [ { "label": "Pépita", "left": 38, "top": 66, "width": 26, "height": 18 },
-                 { "label": "Mirabelle", "left": 10, "top": 48, "width": 30, "height": 40 },
-                 { "label": "Zou", "left": 36, "top": 40, "width": 32, "height": 18 },
-                 { "label": "Monsieur Os", "left": 64, "top": 46, "width": 30, "height": 44 } ] },
-    { "text": "Dans le potager de Mamie Rose, il y a plein de citrouilles. Des grosses, des rondes, des orange. Tout au fond, il y a une toute petite citrouille. Elle s'appelle Pépita.", "image": "1.jpg",
-      "zones": [ { "label": "Pépita", "left": 33, "top": 67, "width": 30, "height": 22 },
-                 { "label": "la maison", "left": 64, "top": 6, "width": 30, "height": 18 },
-                 { "label": "les grosses citrouilles", "left": 62, "top": 40, "width": 36, "height": 20 } ] },
-    { "text": "Ce matin, c'est Halloween ! Mamie Rose prend les grosses citrouilles. Elle leur dessine des yeux, un nez… et un grand sourire. Pépita les regarde. « Moi aussi, je voudrais un sourire ! » Mais Mamie Rose ne la voit pas. Pépita est trop petite.", "image": "2.jpg",
-      "zones": [ { "label": "Pépita", "left": 33, "top": 67, "width": 30, "height": 22 },
-                 { "label": "les grosses citrouilles", "left": 62, "top": 40, "width": 36, "height": 20 } ] },
-    { "text": "Le soir tombe. Pépita prend une grande décision. « Je vais aller chercher mon sourire toute seule ! » Roule, roule, petite citrouille… Elle sort du potager et part vers le village.", "image": "3.jpg",
-      "zones": [ { "label": "Pépita", "left": 44, "top": 60, "width": 28, "height": 24 },
-                 { "label": "le village", "left": 60, "top": 28, "width": 30, "height": 12 },
-                 { "label": "la barrière", "left": 2, "top": 30, "width": 60, "height": 16 } ] },
-    { "text": "Sur le chemin, Pépita entend : « Atchoum ! » C'est une petite sorcière, assise par terre. Son balai est cassé. « Je suis Mirabelle, dit la sorcière. Je suis un peu maladroite… » Pépita l'aide à ramasser son chapeau. Mirabelle rit. Pépita aussi a envie de rire, mais elle n'a pas de bouche !", "image": "4.jpg",
-      "zones": [ { "label": "Mirabelle", "left": 44, "top": 50, "width": 36, "height": 36 },
-                 { "label": "Pépita", "left": 18, "top": 72, "width": 22, "height": 14 },
-                 { "label": "le balai cassé", "left": 68, "top": 68, "width": 28, "height": 16 },
-                 { "label": "le chapeau", "left": 72, "top": 82, "width": 24, "height": 12 } ] },
-    { "text": "Mirabelle agite sa baguette. « Abracadabra, un sourire pour toi ! » Pouf ! Il sort… des étoiles. Puis des bulles. Puis une petite grenouille ! « Oups, dit Mirabelle. La magie, ce n'est pas mon fort. »", "image": "5.jpg",
-      "zones": [ { "label": "Mirabelle", "left": 10, "top": 30, "width": 40, "height": 58 },
-                 { "label": "la baguette", "left": 50, "top": 30, "width": 12, "height": 18 },
-                 { "label": "la grenouille", "left": 64, "top": 24, "width": 20, "height": 16 },
-                 { "label": "les bulles", "left": 60, "top": 8, "width": 30, "height": 16 },
-                 { "label": "Pépita", "left": 60, "top": 70, "width": 30, "height": 24 } ] },
-    { "text": "Une chauve-souris arrive en volant. Flap, flap ! « Je m'appelle Zou. Pourquoi tu as l'air triste, petite citrouille ? » « Je cherche mon sourire », répond Pépita. « Viens avec nous ! dit Zou. Ce soir, tout le monde fait la fête sur la place du village. »", "image": "6.jpg",
-      "zones": [ { "label": "Zou", "left": 10, "top": 24, "width": 46, "height": 28 },
-                 { "label": "Mirabelle", "left": 52, "top": 32, "width": 42, "height": 52 },
-                 { "label": "Pépita", "left": 24, "top": 62, "width": 30, "height": 22 },
-                 { "label": "la lune", "left": 66, "top": 10, "width": 14, "height": 10 } ] },
-    { "text": "Sur la place, il y a de la musique. Et au milieu… un squelette qui danse ! Clic, clac, clic, clac, font ses os. « Bonsoir ! Je suis Monsieur Os. Vous dansez avec moi ? » Mirabelle danse. Zou danse. Pépita roule à droite, roule à gauche… Elle danse aussi !", "image": "7.jpg",
-      "zones": [ { "label": "Monsieur Os", "left": 28, "top": 32, "width": 36, "height": 54 },
-                 { "label": "Mirabelle", "left": 62, "top": 46, "width": 28, "height": 36 },
-                 { "label": "Zou", "left": 10, "top": 62, "width": 22, "height": 14 },
-                 { "label": "Pépita", "left": 56, "top": 80, "width": 22, "height": 14 } ] },
-    { "text": "Monsieur Os glisse sur une peau de banane. Patatras ! Ses os s'envolent partout. Mirabelle rit. Zou rit. Et Pépita rit si fort, si fort… Qu'un grand sourire apparaît sur sa petite citrouille !", "image": "8.jpg",
-      "zones": [ { "label": "Monsieur Os", "left": 26, "top": 18, "width": 36, "height": 60 },
-                 { "label": "la peau de banane", "left": 42, "top": 66, "width": 20, "height": 12 },
-                 { "label": "Mirabelle", "left": 64, "top": 46, "width": 28, "height": 34 },
-                 { "label": "Zou", "left": 12, "top": 56, "width": 22, "height": 16 },
-                 { "label": "Pépita", "left": 14, "top": 80, "width": 24, "height": 16 } ] },
-    { "text": "« Regardez ! crie Zou. Elle a un sourire ! » Pépita n'en revient pas. Son sourire n'est pas venu de la magie. Il est venu de ses nouveaux amis.", "image": "9.jpg",
-      "zones": [ { "label": "Pépita", "left": 38, "top": 66, "width": 26, "height": 22 },
-                 { "label": "Zou", "left": 34, "top": 18, "width": 36, "height": 20 },
-                 { "label": "Mirabelle", "left": 8, "top": 32, "width": 40, "height": 50 },
-                 { "label": "Monsieur Os", "left": 60, "top": 30, "width": 34, "height": 56 } ] },
-    { "text": "Plus tard, Mirabelle ramène Pépita au potager. Mamie Rose pose une petite bougie dans la citrouille. Cette nuit-là, la plus petite citrouille du jardin est aussi la plus lumineuse. Et elle sourit, sourit, sourit. Fin.", "image": "10.jpg",
-      "zones": [ { "label": "Pépita", "left": 30, "top": 52, "width": 40, "height": 30 },
-                 { "label": "la bougie", "left": 44, "top": 48, "width": 12, "height": 12 },
-                 { "label": "les étoiles", "left": 6, "top": 2, "width": 60, "height": 14 } ] }
-  ],
-  "questions": [
-    { "text": "Pépita est la plus grosse citrouille du potager ?", "type": "vraifaux", "answer": false },
-    { "text": "Qui glisse sur la peau de banane ?", "type": "image", "choices": [
-        { "image": "quiz-squelette.jpg", "correct": true },
-        { "image": "quiz-chauvesouris.jpg" },
-        { "image": "quiz-sorciere.jpg" } ] },
-    { "text": "Montre Pépita !", "type": "image", "choices": [
-        { "image": "quiz-pepita.jpg", "correct": true },
-        { "image": "quiz-grenouille.jpg" },
-        { "image": "quiz-chauvesouris.jpg" } ] },
-    { "text": "Le sourire de Pépita est venu de ses amis ?", "type": "vraifaux", "answer": true }
-  ]
+ "title": "La citrouille qui voulait un sourire",
+ "pages": [
+  {
+   "text": "La citrouille qui voulait un sourire. Une histoire d'Halloween.",
+   "image": "0.jpg",
+   "zones": [
+    {
+     "label": "Pépita",
+     "left": 38,
+     "top": 66,
+     "width": 26,
+     "height": 18
+    },
+    {
+     "label": "Mirabelle",
+     "left": 10,
+     "top": 48,
+     "width": 30,
+     "height": 40
+    },
+    {
+     "label": "Zou",
+     "left": 36,
+     "top": 40,
+     "width": 32,
+     "height": 18
+    },
+    {
+     "label": "Monsieur Os",
+     "left": 64,
+     "top": 46,
+     "width": 30,
+     "height": 44
+    }
+   ]
+  },
+  {
+   "text": "Dans le potager de Mamie Rose, il y a plein de citrouilles. Des grosses, des rondes, des orange. Tout au fond, il y a une toute petite citrouille. Elle s'appelle Pépita.",
+   "image": "1.jpg",
+   "zones": [
+    {
+     "label": "Pépita",
+     "left": 33,
+     "top": 67,
+     "width": 30,
+     "height": 22
+    },
+    {
+     "label": "la maison",
+     "left": 64,
+     "top": 6,
+     "width": 30,
+     "height": 18
+    },
+    {
+     "label": "les grosses citrouilles",
+     "left": 62,
+     "top": 40,
+     "width": 36,
+     "height": 20
+    }
+   ]
+  },
+  {
+   "text": "Ce matin, c'est Halloween ! Mamie Rose prend les grosses citrouilles. Elle leur dessine des yeux, un nez… et un grand sourire. Pépita les regarde. « Moi aussi, je voudrais un sourire ! » Mais Mamie Rose ne la voit pas. Pépita est trop petite.",
+   "image": "2.jpg",
+   "zones": [
+    {
+     "label": "Mamie Rose",
+     "left": 22,
+     "top": 22,
+     "width": 42,
+     "height": 42
+    },
+    {
+     "label": "le feutre",
+     "left": 46,
+     "top": 40,
+     "width": 8,
+     "height": 8
+    },
+    {
+     "label": "les grosses citrouilles",
+     "left": 40,
+     "top": 40,
+     "width": 38,
+     "height": 28
+    },
+    {
+     "label": "Pépita",
+     "left": 20,
+     "top": 76,
+     "width": 22,
+     "height": 16
+    },
+    {
+     "label": "la brouette",
+     "left": 4,
+     "top": 10,
+     "width": 32,
+     "height": 22
+    },
+    {
+     "label": "l'arrosoir",
+     "left": 66,
+     "top": 12,
+     "width": 18,
+     "height": 12
+    }
+   ]
+  },
+  {
+   "text": "Le soir tombe. Pépita prend une grande décision. « Je vais aller chercher mon sourire toute seule ! » Roule, roule, petite citrouille… Elle sort du potager et part vers le village.",
+   "image": "3.jpg",
+   "zones": [
+    {
+     "label": "Pépita",
+     "left": 44,
+     "top": 60,
+     "width": 28,
+     "height": 24
+    },
+    {
+     "label": "le village",
+     "left": 60,
+     "top": 28,
+     "width": 30,
+     "height": 12
+    },
+    {
+     "label": "la barrière",
+     "left": 2,
+     "top": 30,
+     "width": 60,
+     "height": 16
+    }
+   ]
+  },
+  {
+   "text": "Sur le chemin, Pépita entend : « Atchoum ! » C'est une petite sorcière, assise par terre. Son balai est cassé. « Je suis Mirabelle, dit la sorcière. Je suis un peu maladroite… » Pépita l'aide à ramasser son chapeau. Mirabelle rit. Pépita aussi a envie de rire, mais elle n'a pas de bouche !",
+   "image": "4.jpg",
+   "zones": [
+    {
+     "label": "Mirabelle",
+     "left": 44,
+     "top": 50,
+     "width": 36,
+     "height": 36
+    },
+    {
+     "label": "Pépita",
+     "left": 18,
+     "top": 72,
+     "width": 22,
+     "height": 14
+    },
+    {
+     "label": "le balai cassé",
+     "left": 68,
+     "top": 68,
+     "width": 28,
+     "height": 16
+    },
+    {
+     "label": "le chapeau",
+     "left": 72,
+     "top": 82,
+     "width": 24,
+     "height": 12
+    }
+   ]
+  },
+  {
+   "text": "Mirabelle agite sa baguette. « Abracadabra, un sourire pour toi ! » Pouf ! Il sort… des étoiles. Puis des bulles. Puis une petite grenouille ! « Oups, dit Mirabelle. La magie, ce n'est pas mon fort. »",
+   "image": "5.jpg",
+   "zones": [
+    {
+     "label": "Mirabelle",
+     "left": 10,
+     "top": 30,
+     "width": 40,
+     "height": 58
+    },
+    {
+     "label": "la baguette",
+     "left": 50,
+     "top": 30,
+     "width": 12,
+     "height": 18
+    },
+    {
+     "label": "la grenouille",
+     "left": 64,
+     "top": 24,
+     "width": 20,
+     "height": 16
+    },
+    {
+     "label": "les bulles",
+     "left": 60,
+     "top": 8,
+     "width": 30,
+     "height": 16
+    },
+    {
+     "label": "Pépita",
+     "left": 60,
+     "top": 70,
+     "width": 30,
+     "height": 24
+    }
+   ]
+  },
+  {
+   "text": "Une chauve-souris arrive en volant. Flap, flap ! « Je m'appelle Zou. Pourquoi tu as l'air triste, petite citrouille ? » « Je cherche mon sourire », répond Pépita. « Viens avec nous ! dit Zou. Ce soir, tout le monde fait la fête sur la place du village. »",
+   "image": "6.jpg",
+   "zones": [
+    {
+     "label": "Zou",
+     "left": 10,
+     "top": 24,
+     "width": 46,
+     "height": 28
+    },
+    {
+     "label": "Mirabelle",
+     "left": 52,
+     "top": 32,
+     "width": 42,
+     "height": 52
+    },
+    {
+     "label": "Pépita",
+     "left": 24,
+     "top": 62,
+     "width": 30,
+     "height": 22
+    },
+    {
+     "label": "la lune",
+     "left": 66,
+     "top": 10,
+     "width": 14,
+     "height": 10
+    }
+   ]
+  },
+  {
+   "text": "Sur la place, il y a de la musique. Et au milieu… un squelette qui danse ! Clic, clac, clic, clac, font ses os. « Bonsoir ! Je suis Monsieur Os. Vous dansez avec moi ? » Mirabelle danse. Zou danse. Pépita roule à droite, roule à gauche… Elle danse aussi !",
+   "image": "7.jpg",
+   "zones": [
+    {
+     "label": "Monsieur Os",
+     "left": 28,
+     "top": 32,
+     "width": 36,
+     "height": 54
+    },
+    {
+     "label": "Mirabelle",
+     "left": 62,
+     "top": 46,
+     "width": 28,
+     "height": 36
+    },
+    {
+     "label": "Zou",
+     "left": 10,
+     "top": 62,
+     "width": 22,
+     "height": 14
+    },
+    {
+     "label": "Pépita",
+     "left": 56,
+     "top": 80,
+     "width": 22,
+     "height": 14
+    }
+   ]
+  },
+  {
+   "text": "Monsieur Os glisse sur une peau de banane. Patatras ! Ses os s'envolent partout. Mirabelle rit. Zou rit. Et Pépita rit si fort, si fort… Qu'un grand sourire apparaît sur sa petite citrouille !",
+   "image": "8.jpg",
+   "zones": [
+    {
+     "label": "Monsieur Os",
+     "left": 26,
+     "top": 18,
+     "width": 36,
+     "height": 60
+    },
+    {
+     "label": "la peau de banane",
+     "left": 42,
+     "top": 66,
+     "width": 20,
+     "height": 12
+    },
+    {
+     "label": "Mirabelle",
+     "left": 64,
+     "top": 46,
+     "width": 28,
+     "height": 34
+    },
+    {
+     "label": "Zou",
+     "left": 12,
+     "top": 56,
+     "width": 22,
+     "height": 16
+    },
+    {
+     "label": "Pépita",
+     "left": 14,
+     "top": 80,
+     "width": 24,
+     "height": 16
+    }
+   ]
+  },
+  {
+   "text": "« Regardez ! crie Zou. Elle a un sourire ! » Pépita n'en revient pas. Son sourire n'est pas venu de la magie. Il est venu de ses nouveaux amis.",
+   "image": "9.jpg",
+   "zones": [
+    {
+     "label": "Pépita",
+     "left": 38,
+     "top": 66,
+     "width": 26,
+     "height": 22
+    },
+    {
+     "label": "Zou",
+     "left": 34,
+     "top": 18,
+     "width": 36,
+     "height": 20
+    },
+    {
+     "label": "Mirabelle",
+     "left": 8,
+     "top": 32,
+     "width": 40,
+     "height": 50
+    },
+    {
+     "label": "Monsieur Os",
+     "left": 60,
+     "top": 30,
+     "width": 34,
+     "height": 56
+    }
+   ]
+  },
+  {
+   "text": "Plus tard, Mirabelle ramène Pépita au potager. Mamie Rose pose une petite bougie dans la citrouille. Cette nuit-là, la plus petite citrouille du jardin est aussi la plus lumineuse. Et elle sourit, sourit, sourit. Fin.",
+   "image": "10.jpg",
+   "zones": [
+    {
+     "label": "Pépita",
+     "left": 30,
+     "top": 52,
+     "width": 40,
+     "height": 30
+    },
+    {
+     "label": "la bougie",
+     "left": 44,
+     "top": 48,
+     "width": 12,
+     "height": 12
+    },
+    {
+     "label": "les étoiles",
+     "left": 6,
+     "top": 2,
+     "width": 60,
+     "height": 14
+    }
+   ]
+  }
+ ],
+ "questions": [
+  {
+   "text": "Pépita est la plus grosse citrouille du potager ?",
+   "type": "vraifaux",
+   "answer": false
+  },
+  {
+   "text": "Qui glisse sur la peau de banane ?",
+   "type": "image",
+   "choices": [
+    {
+     "image": "quiz-squelette.jpg",
+     "correct": true
+    },
+    {
+     "image": "quiz-chauvesouris.jpg"
+    },
+    {
+     "image": "quiz-sorciere.jpg"
+    }
+   ]
+  },
+  {
+   "text": "Montre Pépita !",
+   "type": "image",
+   "choices": [
+    {
+     "image": "quiz-pepita.jpg",
+     "correct": true
+    },
+    {
+     "image": "quiz-grenouille.jpg"
+    },
+    {
+     "image": "quiz-chauvesouris.jpg"
+    }
+   ]
+  },
+  {
+   "text": "Le sourire de Pépita est venu de ses amis ?",
+   "type": "vraifaux",
+   "answer": true
+  }
+ ]
 }
