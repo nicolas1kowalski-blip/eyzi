@@ -7,38 +7,38 @@
    "zones": [
     {
      "label": "Léo",
-     "left": 20,
-     "top": 42,
-     "width": 32,
-     "height": 40
+     "left": 18,
+     "top": 44,
+     "width": 28,
+     "height": 46
     },
     {
      "label": "Lili",
-     "left": 56,
+     "left": 54,
      "top": 40,
-     "width": 26,
-     "height": 32
-    },
-    {
-     "label": "le chat noir",
-     "left": 70,
-     "top": 56,
-     "width": 12,
-     "height": 14
+     "width": 32,
+     "height": 50
     },
     {
      "label": "le panier",
-     "left": 62,
-     "top": 72,
+     "left": 38,
+     "top": 60,
+     "width": 26,
+     "height": 20
+    },
+    {
+     "label": "le chat noir",
+     "left": 46,
+     "top": 78,
      "width": 16,
-     "height": 14
+     "height": 16
     },
     {
      "label": "la lune",
-     "left": 54,
-     "top": 6,
-     "width": 28,
-     "height": 24
+     "left": 40,
+     "top": 34,
+     "width": 16,
+     "height": 10
     }
    ]
   },
