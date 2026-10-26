@@ -132,6 +132,7 @@ namespace MesPremiersJeux.Views
             _layout = new ComboBox { FontSize = 15, MinWidth = 320, VerticalAlignment = VerticalAlignment.Center };
             _layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.Side, Content = "📖 Image à gauche, texte à droite" });
             _layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.Stacked, Content = "🖼 Image au-dessus, texte en dessous" });
+            _layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.OnImage, Content = "🧱 Texte posé sur la partie droite de l'image" });
             _layout.SelectedIndex = 0;
             layoutRow.Children.Add(_layout);
             layoutRow.Children.Add(new TextBlock
@@ -303,6 +304,7 @@ namespace MesPremiersJeux.Views
             row.Layout.Items.Add(new ComboBoxItem { Tag = "", Content = "Comme le livre" });
             row.Layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.Side, Content = "📖 Image à gauche" });
             row.Layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.Stacked, Content = "🖼 Image au-dessus" });
+            row.Layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.OnImage, Content = "🧱 Texte sur l'image" });
             row.Layout.SelectedIndex = 0;
             row.Layout.SelectionChanged += (s, e) => row.Draft.Layout = StoryLayouts.Parse((string)((ComboBoxItem)row.Layout.SelectedItem)?.Tag);
             side.Children.Add(row.Layout);

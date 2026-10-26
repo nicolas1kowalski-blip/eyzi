@@ -32,8 +32,9 @@ namespace MesPremiersJeux.Lib
     /// <summary>Mises en page du lecteur d'histoires.</summary>
     public static class StoryLayouts
     {
-        public const string Side = "cote";    // image à gauche, texte à droite
-        public const string Stacked = "dessus"; // image au-dessus, texte en dessous
+        public const string Side = "cote";      // image à gauche, texte à droite
+        public const string Stacked = "dessus";  // image au-dessus, texte en dessous
+        public const string OnImage = "surimage"; // l'image remplit l'écran, le texte se pose sur sa partie droite
         /// <summary>Normalise une valeur lue (null si inconnue ou vide).</summary>
         public static string Parse(string v)
         {
@@ -41,6 +42,7 @@ namespace MesPremiersJeux.Lib
             v = v.Trim().ToLowerInvariant();
             if (v == Side || v == "side" || v == "gauche") return Side;
             if (v == Stacked || v == "stacked" || v == "haut") return Stacked;
+            if (v == OnImage || v == "mur" || v == "onimage") return OnImage;
             return null;
         }
         /// <summary>La mise en page effective d'une page : la sienne, sinon celle du livre, sinon côte à côte.</summary>
@@ -52,7 +54,8 @@ namespace MesPremiersJeux.Lib
     {
         public string Title;
         public string Dir; // dossier du livre (pour modifier / supprimer)
-        public string Layout; // mise en page par défaut du livre : "cote" | "dessus" (null = cote)
+        public string Layout; // mise en page par défaut du livre : "cote" | "dessus" | "surimage" (null = cote)
+        public double TextLeft; // mise en page « surimage » : où commence le texte, en % de la largeur de l'image (0 = 60)
         public string BackgroundPath; // fond d'écran du lecteur pour ce livre (fichier image, peut être null)
         public List<UserStoryPage> Pages = new List<UserStoryPage>();
         public List<UserQuestion> Questions = new List<UserQuestion>(); // quiz de fin
@@ -103,7 +106,8 @@ namespace MesPremiersJeux.Lib
     {
         [DataMember(Name = "title")] public string Title;
         [DataMember(Name = "metadata", EmitDefaultValue = false)] public BookMetaJson Metadata; // certains fichiers mettent le titre ici
-        [DataMember(Name = "layout", EmitDefaultValue = false)] public string Layout; // "cote" | "dessus"
+        [DataMember(Name = "layout", EmitDefaultValue = false)] public string Layout; // "cote" | "dessus" | "surimage"
+        [DataMember(Name = "text_left", EmitDefaultValue = false)] public double TextLeft; // surimage : début du texte en % de la largeur de l'image
         [DataMember(Name = "background", EmitDefaultValue = false)] public string Background; // fond d'écran (fichier du dossier)
         [DataMember(Name = "pages")] public List<BookPageJson> Pages;
         [DataMember(Name = "questions", EmitDefaultValue = false)] public List<BookQuestionJson> Questions;
@@ -625,7 +629,7 @@ namespace MesPremiersJeux.Lib
             var data = ParseJson(File.ReadAllText(jsonPath));
             if (data?.Pages == null || data.Pages.Count == 0) return null;
 
-            var story = new UserStory { Title = BookTitle(data, Path.GetFileName(dir)), Layout = StoryLayouts.Parse(data.Layout) };
+            var story = new UserStory { Title = BookTitle(data, Path.GetFileName(dir)), Layout = StoryLayouts.Parse(data.Layout), TextLeft = data.TextLeft };
             if (!string.IsNullOrEmpty(data.Background)) story.BackgroundPath = ResolveImageRef(dir, data.Background);
             foreach (var p in data.Pages)
             {

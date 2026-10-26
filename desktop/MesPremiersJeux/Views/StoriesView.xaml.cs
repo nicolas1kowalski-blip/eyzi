@@ -50,6 +50,7 @@ namespace MesPremiersJeux.Views
 
         private sealed class Book
         {
+            public double TextLeft;        // mise en page « surimage » : début du texte en % de la largeur de l'image
             public string BackgroundPath; // fond d'écran du lecteur (image), peut être null
             public string Layout; // mise en page par défaut du livre ("cote" si vide)
             public string Title;
@@ -74,7 +75,8 @@ namespace MesPremiersJeux.Views
         private readonly Border _card;    // la carte blanche de l'illustration
         private readonly Viewbox _textBox; // le panneau de texte
 
-        private bool _sideBySide = true; // mise en page de la page affichée (choisie par livre, puis par page)
+        private string _layoutMode = StoryLayouts.Side; // mise en page de la page affichée (choisie par livre, puis par page)
+        private double _imgAspect = 0.75; // largeur / hauteur de l'illustration affichée (pour poser le texte sur l'image)
         private Border _textCard;        // le cadre du texte
         private readonly Image _bg;      // fond d'écran du livre ouvert (derrière la page)
         private StackPanel _dots;        // points de progression (une pastille par page)
@@ -207,6 +209,7 @@ namespace MesPremiersJeux.Views
             Grid.SetColumn(_textCol, 1);
             body.Children.Add(_textCol);
             ApplyLayout();
+            body.SizeChanged += (s, e) => PositionOverlayText();
 
             Grid.SetColumnSpan(_title, 2);
             body.Children.Add(_title);
@@ -280,7 +283,31 @@ namespace MesPremiersJeux.Views
         /// <summary>Place l'image et le texte selon la mise en page de la page (côte à côte ou l'un au-dessus de l'autre).</summary>
         private void ApplyLayout()
         {
-            if (_sideBySide)
+            // Carte de l'illustration : blanche et encadrée, sauf quand le texte se pose sur l'image.
+            bool onImage = _layoutMode == StoryLayouts.OnImage;
+            _card.Background = onImage ? Brushes.Transparent : Brushes.White;
+            _card.BorderThickness = new Thickness(onImage ? 0 : 4);
+            _card.Effect = onImage ? null : new DropShadowEffect { BlurRadius = 22, ShadowDepth = 3, Opacity = 0.18 };
+            _illus.Margin = new Thickness(onImage ? 0 : 20);
+            _illus.HorizontalContentAlignment = onImage ? HorizontalAlignment.Left : HorizontalAlignment.Center;
+            _textCard.VerticalAlignment = onImage ? VerticalAlignment.Top : VerticalAlignment.Center;
+
+            if (onImage)
+            {
+                // L'image remplit la hauteur, calée à gauche ; le texte vient par-dessus,
+                // à partir de « TextLeft » % de sa largeur (PositionOverlayText).
+                _body.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
+                _body.ColumnDefinitions[1].Width = new GridLength(0);
+                _body.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+                _body.RowDefinitions[1].Height = new GridLength(0);
+                Grid.SetRow(_card, 0); Grid.SetColumn(_card, 0); Grid.SetColumnSpan(_card, 2);
+                Grid.SetRow(_textCol, 0); Grid.SetColumn(_textCol, 0); Grid.SetColumnSpan(_textCol, 2);
+                _card.Margin = new Thickness(0, 48, 0, 0);
+                _textCard.HorizontalAlignment = HorizontalAlignment.Stretch;
+                PositionOverlayText();
+                return;
+            }
+            if (_layoutMode == StoryLayouts.Side)
             {
                 _body.ColumnDefinitions[0].Width = new GridLength(47, GridUnitType.Star);
                 _body.ColumnDefinitions[1].Width = new GridLength(53, GridUnitType.Star);
@@ -309,6 +336,22 @@ namespace MesPremiersJeux.Views
                 _textBox.MaxHeight = 360;
                 _wordHost.Width = 1300;
             }
+        }
+
+        /// <summary>Mise en page « texte sur l'image » : place le cadre du texte sur la partie droite de l'illustration.</summary>
+        private void PositionOverlayText()
+        {
+            if (_layoutMode != StoryLayouts.OnImage || _book == null) return;
+            double bw = _body.ActualWidth, bh = _body.ActualHeight;
+            if (bw < 50 || bh < 50) return;
+            double shownH = bh - 48;                           // hauteur de l'image affichée (marge du titre)
+            double shownW = Math.Min(bw, shownH * _imgAspect);  // largeur affichée (image calée à gauche)
+            double pct = _book.TextLeft > 0 ? _book.TextLeft : 60;
+            double x = shownW * pct / 100;
+            double width = Math.Max(320, bw - x - 24);
+            _textCol.Margin = new Thickness(x + 8, 60, 16, 12);
+            _wordHost.Width = Math.Max(240, width - 60);
+            _textBox.MaxHeight = Math.Max(200, shownH - 80);
         }
 
         // --- Bibliothèque ---
@@ -343,7 +386,7 @@ namespace MesPremiersJeux.Views
             // Livres du parent (Documents\MesPremiersJeux\Histoires).
             foreach (var s in UserContent.LoadStories())
             {
-                var book = new Book { Title = s.Title, Dir = s.Dir, Questions = s.Questions, Layout = s.Layout, BackgroundPath = s.BackgroundPath };
+                var book = new Book { Title = s.Title, Dir = s.Dir, Questions = s.Questions, Layout = s.Layout, TextLeft = s.TextLeft, BackgroundPath = s.BackgroundPath };
                 foreach (var p in s.Pages)
                     book.Pages.Add(new BookPage { Text = p.Text, ImagePath = p.ImagePath, Zones = p.Zones, Layout = p.Layout });
                 _books.Add(book);
@@ -372,6 +415,7 @@ namespace MesPremiersJeux.Views
             {
                 var bmp = UserContent.LoadBitmap(page.ImagePath);
                 double w = bmp.PixelWidth, h = bmp.PixelHeight;
+                _imgAspect = h > 0 ? w / h : 0.75;
                 var host = new Grid { Width = w, Height = h };
                 host.Children.Add(new Image { Source = bmp, Stretch = Stretch.Fill, Width = w, Height = h });
 
@@ -1009,9 +1053,10 @@ namespace MesPremiersJeux.Views
             _index = ((i % n) + n) % n;
             var page = _book.Pages[_index];
             UpdateDots(n);
-            bool side = StoryLayouts.Resolve(page.Layout, _book.Layout) == StoryLayouts.Side;
-            if (side != _sideBySide) { _sideBySide = side; ApplyLayout(); }
+            var mode = StoryLayouts.Resolve(page.Layout, _book.Layout);
+            if (mode != _layoutMode) { _layoutMode = mode; ApplyLayout(); }
             _illus.Content = new Viewbox { Child = MakeIllustration(page), Stretch = Stretch.Uniform };
+            PositionOverlayText();
             _pageInfo.Text = $"{_index + 1} / {n}";
 
             _wordHost.Children.Clear();

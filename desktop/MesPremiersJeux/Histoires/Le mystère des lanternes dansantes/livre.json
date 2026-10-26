@@ -1,6 +1,7 @@
 {
  "title": "Le mystère des lanternes dansantes",
- "layout": "cote",
+ "layout": "surimage",
+ "text_left": 61,
  "background": "fond.jpg",
  "pages": [
   {
@@ -9,37 +10,37 @@
    "zones": [
     {
      "label": "Luna",
-     "left": 44,
+     "left": 27.1,
      "top": 46,
-     "width": 22,
+     "width": 13.5,
      "height": 44
     },
     {
      "label": "les lanternes",
-     "left": 0,
+     "left": 0.0,
      "top": 2,
-     "width": 100,
+     "width": 61.5,
      "height": 34
     },
     {
      "label": "les fleurs orange",
-     "left": 0,
+     "left": 0.0,
      "top": 82,
-     "width": 22,
+     "width": 13.5,
      "height": 18
     },
     {
      "label": "les bougies",
-     "left": 0,
+     "left": 0.0,
      "top": 68,
-     "width": 14,
+     "width": 8.6,
      "height": 16
     },
     {
      "label": "la rue",
-     "left": 10,
+     "left": 6.2,
      "top": 40,
-     "width": 90,
+     "width": 55.4,
      "height": 58
     }
    ]
@@ -50,37 +51,37 @@
    "zones": [
     {
      "label": "Luna",
-     "left": 44,
+     "left": 27.1,
      "top": 46,
-     "width": 22,
+     "width": 13.5,
      "height": 44
     },
     {
      "label": "les lanternes",
-     "left": 0,
+     "left": 0.0,
      "top": 2,
-     "width": 100,
+     "width": 61.5,
      "height": 34
     },
     {
      "label": "les fleurs orange",
-     "left": 0,
+     "left": 0.0,
      "top": 82,
-     "width": 22,
+     "width": 13.5,
      "height": 18
     },
     {
      "label": "les bougies",
-     "left": 0,
+     "left": 0.0,
      "top": 68,
-     "width": 14,
+     "width": 8.6,
      "height": 16
     },
     {
      "label": "la rue",
-     "left": 10,
+     "left": 6.2,
      "top": 40,
-     "width": 90,
+     "width": 55.4,
      "height": 58
     }
    ]
@@ -91,37 +92,37 @@
    "zones": [
     {
      "label": "Don Osso",
-     "left": 10,
+     "left": 6.2,
      "top": 20,
-     "width": 36,
+     "width": 22.1,
      "height": 66
     },
     {
      "label": "Luna",
-     "left": 42,
+     "left": 25.8,
      "top": 46,
-     "width": 22,
+     "width": 13.5,
      "height": 44
     },
     {
      "label": "le chapeau à bougies",
-     "left": 8,
+     "left": 4.9,
      "top": 18,
-     "width": 42,
+     "width": 25.8,
      "height": 20
     },
     {
      "label": "les fleurs orange",
-     "left": 0,
+     "left": 0.0,
      "top": 30,
-     "width": 16,
+     "width": 9.8,
      "height": 70
     },
     {
      "label": "les lanternes",
-     "left": 30,
+     "left": 18.4,
      "top": 0,
-     "width": 70,
+     "width": 43.0,
      "height": 30
     }
    ]
@@ -132,37 +133,37 @@
    "zones": [
     {
      "label": "Don Osso",
-     "left": 10,
+     "left": 6.2,
      "top": 24,
-     "width": 36,
+     "width": 22.1,
      "height": 66
     },
     {
      "label": "Luna",
-     "left": 44,
+     "left": 27.1,
      "top": 48,
-     "width": 20,
+     "width": 12.3,
      "height": 42
     },
     {
      "label": "la lanterne magique",
-     "left": 62,
+     "left": 38.1,
      "top": 52,
-     "width": 14,
+     "width": 8.6,
      "height": 22
     },
     {
      "label": "les papillons de lumière",
-     "left": 54,
+     "left": 33.2,
      "top": 72,
-     "width": 38,
+     "width": 23.4,
      "height": 26
     },
     {
      "label": "les lanternes",
-     "left": 30,
+     "left": 18.4,
      "top": 0,
-     "width": 70,
+     "width": 43.0,
      "height": 30
     }
    ]
@@ -173,44 +174,44 @@
    "zones": [
     {
      "label": "Don Osso",
-     "left": 24,
+     "left": 14.8,
      "top": 22,
-     "width": 24,
+     "width": 14.8,
      "height": 64
     },
     {
      "label": "Luna",
-     "left": 46,
+     "left": 28.3,
      "top": 46,
-     "width": 18,
+     "width": 11.1,
      "height": 44
     },
     {
      "label": "la lanterne",
-     "left": 63,
+     "left": 38.7,
      "top": 57,
-     "width": 10,
+     "width": 6.2,
      "height": 14
     },
     {
      "label": "le petit chien squelette",
-     "left": 78,
+     "left": 48.0,
      "top": 76,
-     "width": 18,
+     "width": 11.1,
      "height": 16
     },
     {
      "label": "la dame squelette",
-     "left": 70,
+     "left": 43.0,
      "top": 50,
-     "width": 14,
+     "width": 8.6,
      "height": 30
     },
     {
      "label": "le petit squelette",
-     "left": 10,
+     "left": 6.2,
      "top": 54,
-     "width": 16,
+     "width": 9.8,
      "height": 28
     }
    ]
@@ -221,44 +222,44 @@
    "zones": [
     {
      "label": "les têtes de mort en sucre",
-     "left": 0,
+     "left": 0.0,
      "top": 0,
-     "width": 100,
+     "width": 61.5,
      "height": 22
     },
     {
      "label": "le guitariste",
-     "left": 2,
+     "left": 1.2,
      "top": 44,
-     "width": 18,
+     "width": 11.1,
      "height": 36
     },
     {
      "label": "Don Osso",
-     "left": 22,
+     "left": 13.5,
      "top": 34,
-     "width": 24,
+     "width": 14.8,
      "height": 52
     },
     {
      "label": "Luna",
-     "left": 45,
+     "left": 27.7,
      "top": 46,
-     "width": 18,
+     "width": 11.1,
      "height": 44
     },
     {
      "label": "le tambour",
-     "left": 62,
+     "left": 38.1,
      "top": 64,
-     "width": 12,
+     "width": 7.4,
      "height": 18
     },
     {
      "label": "les trompettes",
-     "left": 72,
+     "left": 44.3,
      "top": 42,
-     "width": 20,
+     "width": 12.3,
      "height": 24
     }
    ]
@@ -269,37 +270,37 @@
    "zones": [
     {
      "label": "Luna",
-     "left": 42,
+     "left": 25.8,
      "top": 46,
-     "width": 18,
+     "width": 11.1,
      "height": 44
     },
     {
      "label": "le musicien à la guitare",
-     "left": 10,
+     "left": 6.2,
      "top": 30,
-     "width": 24,
+     "width": 14.8,
      "height": 46
     },
     {
      "label": "le bras qui vole",
-     "left": 22,
+     "left": 13.5,
      "top": 26,
-     "width": 10,
+     "width": 6.2,
      "height": 12
     },
     {
      "label": "les squelettes qui dansent",
-     "left": 62,
+     "left": 38.1,
      "top": 40,
-     "width": 28,
+     "width": 17.2,
      "height": 52
     },
     {
      "label": "les lanternes",
-     "left": 20,
+     "left": 12.3,
      "top": 0,
-     "width": 80,
+     "width": 49.2,
      "height": 30
     }
    ]
@@ -310,37 +311,37 @@
    "zones": [
     {
      "label": "Luna",
-     "left": 40,
+     "left": 24.6,
      "top": 46,
-     "width": 20,
+     "width": 12.3,
      "height": 46
     },
     {
      "label": "Don Osso",
-     "left": 58,
+     "left": 35.7,
      "top": 26,
-     "width": 36,
+     "width": 22.1,
      "height": 66
     },
     {
      "label": "le crâne en sucre",
-     "left": 64,
+     "left": 39.4,
      "top": 52,
-     "width": 10,
+     "width": 6.2,
      "height": 10
     },
     {
      "label": "les squelettes dans la brume",
-     "left": 16,
+     "left": 9.8,
      "top": 50,
-     "width": 26,
+     "width": 16.0,
      "height": 30
     },
     {
      "label": "le soleil qui se lève",
-     "left": 52,
+     "left": 32.0,
      "top": 30,
-     "width": 20,
+     "width": 12.3,
      "height": 20
     }
    ]
