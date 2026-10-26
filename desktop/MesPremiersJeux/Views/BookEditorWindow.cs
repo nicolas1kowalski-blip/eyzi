@@ -28,6 +28,7 @@ namespace MesPremiersJeux.Views
             public Button CropBtn;
             public Button ZonesBtn;
             public Image Preview;
+            public ComboBox Layout; // mise en page de la page : comme le livre / image à gauche / image au-dessus
             public PageDraft Draft = new PageDraft();
         }
 
@@ -55,6 +56,7 @@ namespace MesPremiersJeux.Views
         }
 
         private readonly TextBox _title;
+        private readonly ComboBox _layout; // mise en page par défaut du livre
         private readonly StackPanel _pagesHost;
         private readonly StackPanel _questionsHost;
         private readonly List<Row> _rows = new List<Row>();
@@ -62,11 +64,12 @@ namespace MesPremiersJeux.Views
         private readonly string _existingDir; // non nul = modification d'un livre
 
         /// <summary>Ouvre l'éditeur pré-rempli pour modifier un livre existant.</summary>
-        public BookEditorWindow(string title, List<PageDraft> pages, List<UserQuestion> questions, string existingDir) : this()
+        public BookEditorWindow(string title, List<PageDraft> pages, List<UserQuestion> questions, string existingDir, string layout = null) : this()
         {
             _existingDir = existingDir;
             Title = "Modifier le livre";
             _title.Text = title;
+            SelectLayout(_layout, layout);
 
             _rows.Clear();
             _pagesHost.Children.Clear();
@@ -112,6 +115,30 @@ namespace MesPremiersJeux.Views
             titleRow.Children.Add(_title);
             DockPanel.SetDock(titleRow, Dock.Top);
             dock.Children.Add(titleRow);
+
+            // Mise en page du livre (chaque page peut ensuite faire autrement).
+            var layoutRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
+            layoutRow.Children.Add(new TextBlock
+            {
+                Text = "Mise en page : ",
+                FontSize = 16,
+                FontWeight = FontWeights.Bold,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            _layout = new ComboBox { FontSize = 15, MinWidth = 320, VerticalAlignment = VerticalAlignment.Center };
+            _layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.Side, Content = "📖 Image à gauche, texte à droite" });
+            _layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.Stacked, Content = "🖼 Image au-dessus, texte en dessous" });
+            _layout.SelectedIndex = 0;
+            layoutRow.Children.Add(_layout);
+            layoutRow.Children.Add(new TextBlock
+            {
+                Text = "  (pour tout le livre ; chaque page peut choisir autrement)",
+                FontSize = 13,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x6B, 0x5B, 0x8A)),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            DockPanel.SetDock(layoutRow, Dock.Top);
+            dock.Children.Add(layoutRow);
 
             // Boutons du bas.
             var buttons = new StackPanel
@@ -247,6 +274,14 @@ namespace MesPremiersJeux.Views
             };
             row.ZonesBtn.Click += (s, e) => EditZones(row);
             side.Children.Add(row.ZonesBtn);
+            // Mise en page de cette page (par défaut : comme le livre).
+            row.Layout = new ComboBox { FontSize = 14, Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Mise en page de cette page" };
+            row.Layout.Items.Add(new ComboBoxItem { Tag = "", Content = "Comme le livre" });
+            row.Layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.Side, Content = "📖 Image à gauche" });
+            row.Layout.Items.Add(new ComboBoxItem { Tag = StoryLayouts.Stacked, Content = "🖼 Image au-dessus" });
+            row.Layout.SelectedIndex = 0;
+            row.Layout.SelectionChanged += (s, e) => row.Draft.Layout = StoryLayouts.Parse((string)((ComboBoxItem)row.Layout.SelectedItem)?.Tag);
+            side.Children.Add(row.Layout);
             // Réordonner la page (utile si l'import n'est pas dans l'ordre).
             var up = new Button { Content = "⬆", FontSize = 15, Padding = new Thickness(10, 8, 10, 8), Margin = new Thickness(12, 0, 0, 0), ToolTip = "Monter la page" };
             up.Click += (s, e) => MoveRow(row, -1);
@@ -344,6 +379,7 @@ namespace MesPremiersJeux.Views
         private void RefreshRowButtons(Row row)
         {
             bool hasImg = UserContent.IsImageRef(row.Draft.ImagePath);
+            if (row.Layout != null) SelectLayout(row.Layout, row.Draft.Layout);
             row.ImgBtn.Content = hasImg ? "🖼 Changer" : "🖼 Photo…";
             row.CropBtn.IsEnabled = hasImg;
             row.ZonesBtn.IsEnabled = hasImg;
@@ -605,6 +641,7 @@ namespace MesPremiersJeux.Views
             }
 
             _title.Text = result.Title;
+            SelectLayout(_layout, result.Layout);
             _rows.Clear();
             _pagesHost.Children.Clear();
             foreach (var draft in result.Pages)
@@ -618,6 +655,15 @@ namespace MesPremiersJeux.Views
             _qRows.Clear();
             _questionsHost.Children.Clear();
             foreach (var q in result.Questions) AddQuestion(q);
+        }
+
+        /// <summary>Sélectionne dans une liste de mises en page l'entrée dont le Tag vaut « value » (sinon la première).</summary>
+        private static void SelectLayout(ComboBox box, string value)
+        {
+            value = StoryLayouts.Parse(value) ?? "";
+            box.SelectedIndex = 0;
+            foreach (ComboBoxItem it in box.Items)
+                if ((string)it.Tag == value) { box.SelectedItem = it; break; }
         }
 
         private void Save(object sender, RoutedEventArgs e)
@@ -643,9 +689,10 @@ namespace MesPremiersJeux.Views
 
             var questions = CollectQuestions();
 
+            var layout = StoryLayouts.Parse((string)((ComboBoxItem)_layout.SelectedItem)?.Tag);
             var saved = _existingDir != null
-                ? UserContent.UpdateStory(_existingDir, title, pages, questions)
-                : UserContent.SaveStory(title, pages, questions);
+                ? UserContent.UpdateStory(_existingDir, title, pages, questions, layout)
+                : UserContent.SaveStory(title, pages, questions, layout);
             if (saved == null)
             {
                 MessageBox.Show(this, "Impossible d'enregistrer le livre.", "Nouveau livre");

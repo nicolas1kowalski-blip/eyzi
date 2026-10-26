@@ -43,12 +43,14 @@ namespace MesPremiersJeux.Views
         {
             public string Text;
             public Func<UIElement> Cartoon;   // dessin intégré
+            public string Layout;             // "cote" | "dessus" | null = comme le livre
             public string ImagePath;          // photo personnalisée
             public List<UserZone> Zones = new List<UserZone>();
         }
 
         private sealed class Book
         {
+            public string Layout; // mise en page par défaut du livre ("cote" si vide)
             public string Title;
             public string Dir; // dossier du livre personnalisé (null = livre intégré)
             public List<BookPage> Pages = new List<BookPage>();
@@ -71,16 +73,7 @@ namespace MesPremiersJeux.Views
         private readonly Border _card;    // la carte blanche de l'illustration
         private readonly Viewbox _textBox; // le panneau de texte
 
-        // Mise en page du lecteur (réglage d'administration, commun à tous les livres) :
-        // true = image à gauche / texte à droite ; false = image au-dessus du texte.
-        public static bool SideBySide { get; private set; } = true;
-        private static event Action LayoutChanged;
-        public static void SetSideBySide(bool side)
-        {
-            if (SideBySide == side) return;
-            SideBySide = side;
-            LayoutChanged?.Invoke();
-        }
+        private bool _sideBySide = true; // mise en page de la page affichée (choisie par livre, puis par page)
         private readonly TextBlock _pageInfo;
         private readonly List<TextBlock> _groups = new List<TextBlock>();
         private Book _book;
@@ -167,7 +160,6 @@ namespace MesPremiersJeux.Views
             Grid.SetColumn(textBox, 1);
             body.Children.Add(textBox);
             ApplyLayout();
-            LayoutChanged += () => Dispatcher.Invoke(ApplyLayout);
 
             Grid.SetColumnSpan(_title, 2);
             body.Children.Add(_title);
@@ -225,10 +217,10 @@ namespace MesPremiersJeux.Views
             UserContent.ContentChanged += () => Dispatcher.Invoke(ReloadBooks);
         }
 
-        /// <summary>Place l'image et le texte selon le réglage (côte à côte ou l'un au-dessus de l'autre).</summary>
+        /// <summary>Place l'image et le texte selon la mise en page de la page (côte à côte ou l'un au-dessus de l'autre).</summary>
         private void ApplyLayout()
         {
-            if (SideBySide)
+            if (_sideBySide)
             {
                 _body.ColumnDefinitions[0].Width = new GridLength(47, GridUnitType.Star);
                 _body.ColumnDefinitions[1].Width = new GridLength(53, GridUnitType.Star);
@@ -260,7 +252,8 @@ namespace MesPremiersJeux.Views
         // --- Bibliothèque ---
         private void BuildBooks()
         {
-            var builtIn = new Book { Title = "Étincelle la licorne" };
+            // Pages courtes et dessins carrés : image au-dessus du texte.
+            var builtIn = new Book { Title = "Étincelle la licorne", Layout = StoryLayouts.Stacked };
             foreach (var (text, art) in new[]
             {
                 ("Voici Étincelle, une petite licorne toute rose.", "licorne"),
@@ -288,9 +281,9 @@ namespace MesPremiersJeux.Views
             // Livres du parent (Documents\MesPremiersJeux\Histoires).
             foreach (var s in UserContent.LoadStories())
             {
-                var book = new Book { Title = s.Title, Dir = s.Dir, Questions = s.Questions };
+                var book = new Book { Title = s.Title, Dir = s.Dir, Questions = s.Questions, Layout = s.Layout };
                 foreach (var p in s.Pages)
-                    book.Pages.Add(new BookPage { Text = p.Text, ImagePath = p.ImagePath, Zones = p.Zones });
+                    book.Pages.Add(new BookPage { Text = p.Text, ImagePath = p.ImagePath, Zones = p.Zones, Layout = p.Layout });
                 _books.Add(book);
             }
         }
@@ -471,6 +464,7 @@ namespace MesPremiersJeux.Views
             {
                 Text = p.Text ?? "",
                 ImagePath = p.ImagePath,
+                Layout = p.Layout,
                 Zones = p.Zones?.Select(z => new UserZone
                 {
                     Left = z.Left, Top = z.Top, Width = z.Width, Height = z.Height, Label = z.Label,
@@ -489,7 +483,7 @@ namespace MesPremiersJeux.Views
                 }).ToList(),
             }).ToList();
 
-            var editor = new BookEditorWindow(book.Title, drafts, qDrafts, book.Dir) { Owner = Window.GetWindow(this) };
+            var editor = new BookEditorWindow(book.Title, drafts, qDrafts, book.Dir, book.Layout) { Owner = Window.GetWindow(this) };
             if (editor.ShowDialog() == true)
             {
                 ReloadBooks();
@@ -596,6 +590,8 @@ namespace MesPremiersJeux.Views
             int n = _book.Pages.Count;
             _index = ((i % n) + n) % n;
             var page = _book.Pages[_index];
+            bool side = StoryLayouts.Resolve(page.Layout, _book.Layout) == StoryLayouts.Side;
+            if (side != _sideBySide) { _sideBySide = side; ApplyLayout(); }
             _illus.Content = new Viewbox { Child = MakeIllustration(page), Stretch = Stretch.Uniform };
             _pageInfo.Text = $"{_index + 1} / {n}";
 
