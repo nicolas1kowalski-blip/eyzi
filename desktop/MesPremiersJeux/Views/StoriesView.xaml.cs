@@ -81,15 +81,16 @@ namespace MesPremiersJeux.Views
         private Button _listenBtn;       // 🔊 Écouter / ⏹ Stop
         private readonly List<Button> _navButtons = new List<Button>(); // inactifs pendant la narration
         private Grid _readerGate;        // ce que le regard ne doit pas sélectionner pendant la narration
-        private Grid _textCol;           // colonne du texte : le cadre + le grand bouton « page suivante »
-        private Border _nextBig;         // le grand bouton qui apparaît quand le texte est fini
-        private TextBlock _nextBigLabel;
+        private Grid _textCol;           // colonne du texte
+        private Button _nextBtn;         // ➡ Suite : mis en surbrillance quand le texte est fini
         private Grid _endRoot;           // l'écran de fin du livre
         private StackPanel _endButtons;
 
-        // Narration : la voix raconte la page ; pendant ce temps les boutons, les
-        // mots et les zones ne répondent pas. Le jeton invalide la fin de lecture
-        // si l'on change de page, revient aux livres ou quitte l'onglet entre-temps.
+        // Mode lecture (🔊) : la voix raconte chaque page que l'on ouvre, jusqu'à ⏹.
+        // Pendant qu'elle parle (_narrating), les boutons, les mots et les zones ne
+        // répondent pas. Le jeton invalide la fin de lecture si l'on change de page,
+        // revient aux livres ou quitte l'onglet entre-temps.
+        private bool _listenMode;
         private bool _narrating;
         private int _narrToken;
 
@@ -201,15 +202,8 @@ namespace MesPremiersJeux.Views
                 Child = textBox,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            // La colonne du texte : le cadre, et dessous le grand bouton « page
-            // suivante » qui n'apparaît que lorsque le texte de la page est fini.
             _textCol = new Grid();
-            _textCol.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            _textCol.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             _textCol.Children.Add(_textCard);
-            _nextBig = BuildNextBig();
-            Grid.SetRow(_nextBig, 1);
-            _textCol.Children.Add(_nextBig);
             Grid.SetColumn(_textCol, 1);
             body.Children.Add(_textCol);
             ApplyLayout();
@@ -258,7 +252,10 @@ namespace MesPremiersJeux.Views
             _dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) };
             info.Children.Add(_dots);
             nav.Children.Add(info);
-            nav.Children.Add(Nav("➡", "Suite", NextOrEnd));
+            _nextBtn = Nav("➡", "Suite", NextOrEnd);
+            _nextBtn.RenderTransformOrigin = new Point(0.5, 0.5);
+            _nextBtn.RenderTransform = new ScaleTransform(1, 1);
+            nav.Children.Add(_nextBtn);
             Grid.SetRow(nav, 1);
             _readerGate.Children.Add(nav);
             _readerRoot.Children.Add(backBtn); // au-dessus, hors de la porte
@@ -633,7 +630,9 @@ namespace MesPremiersJeux.Views
         private void ShowMenu()
         {
             _narrToken++;
+            _listenMode = false;
             SetNarrating(false);
+            UnhighlightNext();
             InputGate.Clear(_readerGate);
             _endRoot.Visibility = Visibility.Collapsed;
             _readerRoot.Visibility = Visibility.Collapsed;
@@ -690,19 +689,23 @@ namespace MesPremiersJeux.Views
             btn.Content = sp;
         }
 
-        // --- Narration ---
+        // --- Mode lecture / narration ---
         private void SetNarrating(bool on)
         {
             _narrating = on;
-            if (_listenBtn != null) SetNavContent(_listenBtn, on ? "⏹" : "🔊", on ? "Stop" : "Écouter");
+            if (_listenBtn != null) SetNavContent(_listenBtn, _listenMode ? "⏹" : "🔊", _listenMode ? "Stop" : "Écouter");
             foreach (var b in _navButtons) { b.IsEnabled = !on; b.Opacity = on ? 0.4 : 1.0; }
         }
 
-        /// <summary>🔊 : la voix raconte la page (boutons, mots et zones en pause) ; ⏹ arrête.</summary>
+        /// <summary>
+        /// 🔊 : le mode lecture s'allume et la voix raconte la page ; il reste allumé
+        /// de page en page (chaque page ouverte est racontée) jusqu'à ⏹.
+        /// </summary>
         private void ToggleListen()
         {
-            if (_narrating)
+            if (_listenMode)
             {
+                _listenMode = false;
                 _narrToken++;
                 SetNarrating(false);
                 Speech.Stop();
@@ -710,59 +713,41 @@ namespace MesPremiersJeux.Views
                 Refresh();
                 return;
             }
-            HideNextBig();
+            _listenMode = true;
+            StartNarration();
+        }
+
+        private void StartNarration()
+        {
+            UnhighlightNext();
             SetNarrating(true);
             ListenPage();
         }
 
-        /// <summary>Le texte de la page est fini (raconté ou lu) : le grand bouton apparaît.</summary>
+        /// <summary>Le texte de la page est fini (raconté ou lu) : le bouton ➡ s'illumine.</summary>
         private void OnTextFinished()
         {
             if (_book == null) return;
             bool last = _index >= _book.Pages.Count - 1;
-            _nextBigLabel.Text = last ? "C'est la fin !" : "Page suivante";
-            ShowNextBig();
+            HighlightNext(last ? "La fin !" : "Suite");
         }
 
-        // Le grand bouton « page suivante » : coloré, qui respire doucement, aimant du regard.
-        private Border BuildNextBig()
+        private void HighlightNext(string label)
         {
-            _nextBigLabel = new TextBlock { Text = "Page suivante", FontSize = 34, FontWeight = FontWeights.ExtraBold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center };
-            var sp = new StackPanel { Orientation = Orientation.Horizontal };
-            sp.Children.Add(_nextBigLabel);
-            sp.Children.Add(new TextBlock { Text = "  ➡", FontSize = 38, FontWeight = FontWeights.ExtraBold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center });
-            var b = new Border
-            {
-                Background = new LinearGradientBrush(Color.FromRgb(0xFF, 0x9F, 0x43), Color.FromRgb(0xFF, 0x6B, 0x6B), 0),
-                CornerRadius = new CornerRadius(44),
-                Padding = new Thickness(40, 16, 36, 16),
-                Margin = new Thickness(0, 14, 0, 6),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Cursor = System.Windows.Input.Cursors.Hand,
-                Visibility = Visibility.Collapsed,
-                RenderTransformOrigin = new Point(0.5, 0.5),
-                RenderTransform = new ScaleTransform(1, 1),
-                Child = sp,
-            };
-            b.MouseLeftButtonDown += (s, e) => { e.Handled = true; HideNextBig(); NextOrEnd(); };
-            GazeTargets.SetIsTarget(b, true);
-            return b;
-        }
-
-        private void ShowNextBig()
-        {
-            _nextBig.Visibility = Visibility.Visible;
-            var anim = new DoubleAnimation(1.0, 1.06, TimeSpan.FromMilliseconds(700)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase() };
-            var st = (ScaleTransform)_nextBig.RenderTransform;
+            SetNavContent(_nextBtn, "➡", label);
+            _nextBtn.Background = new LinearGradientBrush(Color.FromRgb(0xFF, 0xB8, 0x6B), Color.FromRgb(0xFF, 0x8A, 0x3D), 90);
+            var anim = new DoubleAnimation(1.0, 1.1, TimeSpan.FromMilliseconds(650)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase() };
+            var st = (ScaleTransform)_nextBtn.RenderTransform;
             st.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
             st.BeginAnimation(ScaleTransform.ScaleYProperty, anim);
         }
 
-        private void HideNextBig()
+        private void UnhighlightNext()
         {
-            if (_nextBig == null) return;
-            _nextBig.Visibility = Visibility.Collapsed;
-            var st = (ScaleTransform)_nextBig.RenderTransform;
+            if (_nextBtn == null) return;
+            SetNavContent(_nextBtn, "➡", "Suite");
+            _nextBtn.ClearValue(Button.BackgroundProperty); // retour au style
+            var st = (ScaleTransform)_nextBtn.RenderTransform;
             st.BeginAnimation(ScaleTransform.ScaleXProperty, null);
             st.BeginAnimation(ScaleTransform.ScaleYProperty, null);
         }
@@ -952,7 +937,7 @@ namespace MesPremiersJeux.Views
             if (_book == null) return;
             _narrToken++;
             SetNarrating(false);
-            HideNextBig();
+            UnhighlightNext();
             Speech.ScreenChanged();
 
             // Le décor du livre (fond d'écran) derrière un voile, la couverture sur la carte.
@@ -1019,7 +1004,7 @@ namespace MesPremiersJeux.Views
             if (_book == null || _book.Pages.Count == 0) return;
             _narrToken++;          // la fin de lecture de l'ancienne page ne compte plus
             SetNarrating(false);
-            HideNextBig();
+            UnhighlightNext();
             int n = _book.Pages.Count;
             _index = ((i % n) + n) % n;
             var page = _book.Pages[_index];
@@ -1066,7 +1051,8 @@ namespace MesPremiersJeux.Views
             }
 
             Refresh();
-            Speech.Say("À toi de lire !");
+            if (_listenMode) StartNarration();   // mode lecture : la page est racontée tout de suite
+            else Speech.Say("À toi de lire !");
         }
 
         // Histoire racontée : la voix lit toute la page ; les groupes se
@@ -1216,7 +1202,7 @@ namespace MesPremiersJeux.Views
             if (_book == null || _book.Questions.Count == 0) return;
             _narrToken++;
             SetNarrating(false);
-            HideNextBig();
+            UnhighlightNext();
             _endRoot.Visibility = Visibility.Collapsed;
             _quizIndex = 0;
             _menuRoot.Visibility = Visibility.Collapsed;

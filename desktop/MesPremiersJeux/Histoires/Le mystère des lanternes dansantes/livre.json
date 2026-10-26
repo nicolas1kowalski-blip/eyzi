@@ -1,0 +1,393 @@
+{
+ "title": "Le mystère des lanternes dansantes",
+ "layout": "cote",
+ "background": "fond.jpg",
+ "pages": [
+  {
+   "text": "Le mystère des lanternes dansantes. Une histoire de la fête des morts.",
+   "image": "0.jpg",
+   "zones": [
+    {
+     "label": "Luna",
+     "left": 44,
+     "top": 46,
+     "width": 22,
+     "height": 44
+    },
+    {
+     "label": "les lanternes",
+     "left": 0,
+     "top": 2,
+     "width": 100,
+     "height": 34
+    },
+    {
+     "label": "les fleurs orange",
+     "left": 0,
+     "top": 82,
+     "width": 22,
+     "height": 18
+    },
+    {
+     "label": "les bougies",
+     "left": 0,
+     "top": 68,
+     "width": 14,
+     "height": 16
+    },
+    {
+     "label": "la rue",
+     "left": 10,
+     "top": 40,
+     "width": 90,
+     "height": 58
+    }
+   ]
+  },
+  {
+   "text": "La nuit est tombée sur le petit village mexicain. Partout, les lanternes en papier s'allument, projetant des ombres mystérieuses sur les murs bleus et jaunes. Dans le silence, un bruit bizarre résonne : Clac… clac… clac… Luna s'arrête net. Son cœur bat un peu plus vite. Qui marche dans l'obscurité avec des pas qui craquent comme des branches sèches ?",
+   "image": "1.jpg",
+   "zones": [
+    {
+     "label": "Luna",
+     "left": 44,
+     "top": 46,
+     "width": 22,
+     "height": 44
+    },
+    {
+     "label": "les lanternes",
+     "left": 0,
+     "top": 2,
+     "width": 100,
+     "height": 34
+    },
+    {
+     "label": "les fleurs orange",
+     "left": 0,
+     "top": 82,
+     "width": 22,
+     "height": 18
+    },
+    {
+     "label": "les bougies",
+     "left": 0,
+     "top": 68,
+     "width": 14,
+     "height": 16
+    },
+    {
+     "label": "la rue",
+     "left": 10,
+     "top": 40,
+     "width": 90,
+     "height": 58
+    }
+   ]
+  },
+  {
+   "text": "Clac-clac-clac ! Le bruit se rapproche. Derrière un rideau de grandes fleurs orange, une silhouette apparaît. Elle est grande, mince… très mince ! Deux yeux lumineux s'allument dans le noir. Luna retient son souffle. Surgit alors… un grand squelette tout blanc, coiffé d'un chapeau géant décoré de bougies ! Mais au lieu de crier, le squelette fait un immense sourire de toutes ses dents blanches.",
+   "image": "2.jpg",
+   "zones": [
+    {
+     "label": "Don Osso",
+     "left": 10,
+     "top": 20,
+     "width": 36,
+     "height": 66
+    },
+    {
+     "label": "Luna",
+     "left": 42,
+     "top": 46,
+     "width": 22,
+     "height": 44
+    },
+    {
+     "label": "le chapeau à bougies",
+     "left": 8,
+     "top": 18,
+     "width": 42,
+     "height": 20
+    },
+    {
+     "label": "les fleurs orange",
+     "left": 0,
+     "top": 30,
+     "width": 16,
+     "height": 70
+    },
+    {
+     "label": "les lanternes",
+     "left": 30,
+     "top": 0,
+     "width": 70,
+     "height": 30
+    }
+   ]
+  },
+  {
+   "text": "« Bouh ! » murmure le squelette d'une voix rigolote. Puis il éclate d'un grand rire : « Je m'appelle Don Osso ! N'aie pas peur, petite courageuse. Ce soir, les squelettes ne mordent pas, ils font la fête ! Tiens, prends cette lanterne magique. » La lanterne brille d'une flamme violette qui ne brûle pas. Dès que Luna la prend, elle projette sur le sol des étoiles et des papillons de lumière.",
+   "image": "3.jpg",
+   "zones": [
+    {
+     "label": "Don Osso",
+     "left": 10,
+     "top": 24,
+     "width": 36,
+     "height": 66
+    },
+    {
+     "label": "Luna",
+     "left": 44,
+     "top": 48,
+     "width": 20,
+     "height": 42
+    },
+    {
+     "label": "la lanterne magique",
+     "left": 62,
+     "top": 52,
+     "width": 14,
+     "height": 22
+    },
+    {
+     "label": "les papillons de lumière",
+     "left": 54,
+     "top": 72,
+     "width": 38,
+     "height": 26
+    },
+    {
+     "label": "les lanternes",
+     "left": 30,
+     "top": 0,
+     "width": 70,
+     "height": 30
+    }
+   ]
+  },
+  {
+   "text": "Luna suit Don Osso à travers les ruelles sombres. Le vent souffle dans les branches : Ouuuh… ouuuh… C'est un peu effrayant, mais les lanternes posées par terre forment un couloir de feu étincelant. Soudain, d'autres ombres surgissent des coins de rue. Des petits squelettes avec des capes noires, des dames squelettes en robes à froufrous, et même un petit chien squelette qui remue la queue sans faire un seul bruit de poil, juste : Clic-clic-clic !",
+   "image": "4.jpg",
+   "zones": [
+    {
+     "label": "Don Osso",
+     "left": 24,
+     "top": 22,
+     "width": 24,
+     "height": 64
+    },
+    {
+     "label": "Luna",
+     "left": 46,
+     "top": 46,
+     "width": 18,
+     "height": 44
+    },
+    {
+     "label": "la lanterne",
+     "left": 63,
+     "top": 57,
+     "width": 10,
+     "height": 14
+    },
+    {
+     "label": "le petit chien squelette",
+     "left": 78,
+     "top": 76,
+     "width": 18,
+     "height": 16
+    },
+    {
+     "label": "la dame squelette",
+     "left": 70,
+     "top": 50,
+     "width": 14,
+     "height": 30
+    },
+    {
+     "label": "le petit squelette",
+     "left": 10,
+     "top": 54,
+     "width": 16,
+     "height": 28
+    }
+   ]
+  },
+  {
+   "text": "Ils arrivent sur la grande place secrète. Le spectacle donne des frissons… de joie ! Des centaines de squelettes jouent de la guitare, soufflent dans d'immenses trompettes et tapent sur des tambours. Leurs mâchoires claquent en rythme. Des lanternes en forme de têtes de mort en sucre flottent dans les arbres, éclairant des pyramides de gâteaux parfumés et des montagnes de bonbons.",
+   "image": "5.jpg",
+   "zones": [
+    {
+     "label": "les têtes de mort en sucre",
+     "left": 0,
+     "top": 0,
+     "width": 100,
+     "height": 22
+    },
+    {
+     "label": "le guitariste",
+     "left": 2,
+     "top": 44,
+     "width": 18,
+     "height": 36
+    },
+    {
+     "label": "Don Osso",
+     "left": 22,
+     "top": 34,
+     "width": 24,
+     "height": 52
+    },
+    {
+     "label": "Luna",
+     "left": 45,
+     "top": 46,
+     "width": 18,
+     "height": 44
+    },
+    {
+     "label": "le tambour",
+     "left": 62,
+     "top": 64,
+     "width": 12,
+     "height": 18
+    },
+    {
+     "label": "les trompettes",
+     "left": 72,
+     "top": 42,
+     "width": 20,
+     "height": 24
+    }
+   ]
+  },
+  {
+   "text": "« En piste ! » s'écrie Don Osso en tendant sa main osseuse. Luna entre dans la ronde. Clac, clac, clac ! font les os. Tap, tap, tap ! font les chaussures de Luna. En sautant trop haut, un musicien squelette perd accidentellement son bras gauche… mais son bras continue de gratter la guitare tout seul dans les airs ! Tout le monde éclate de rire.",
+   "image": "6.jpg",
+   "zones": [
+    {
+     "label": "Luna",
+     "left": 42,
+     "top": 46,
+     "width": 18,
+     "height": 44
+    },
+    {
+     "label": "le musicien à la guitare",
+     "left": 10,
+     "top": 30,
+     "width": 24,
+     "height": 46
+    },
+    {
+     "label": "le bras qui vole",
+     "left": 22,
+     "top": 26,
+     "width": 10,
+     "height": 12
+    },
+    {
+     "label": "les squelettes qui dansent",
+     "left": 62,
+     "top": 40,
+     "width": 28,
+     "height": 52
+    },
+    {
+     "label": "les lanternes",
+     "left": 20,
+     "top": 0,
+     "width": 80,
+     "height": 30
+    }
+   ]
+  },
+  {
+   "text": "Le ciel commence à s'éclaircir doucement. La fête touche à sa fin. Don Osso remet son chapeau bien droit et tend à Luna un magnifique crâne en sucre scintillant. « Merci pour la danse, petite vivante ! Grâce à ta lanterne et ton courage, notre nuit a été magique. » En un clin d'œil, les squelettes s'éclipsent dans la brume du matin, laissant derrière eux une délicieuse odeur de chocolat chaud et des étincelles dans les yeux de Luna. Fin.",
+   "image": "7.jpg",
+   "zones": [
+    {
+     "label": "Luna",
+     "left": 40,
+     "top": 46,
+     "width": 20,
+     "height": 46
+    },
+    {
+     "label": "Don Osso",
+     "left": 58,
+     "top": 26,
+     "width": 36,
+     "height": 66
+    },
+    {
+     "label": "le crâne en sucre",
+     "left": 64,
+     "top": 52,
+     "width": 10,
+     "height": 10
+    },
+    {
+     "label": "les squelettes dans la brume",
+     "left": 16,
+     "top": 50,
+     "width": 26,
+     "height": 30
+    },
+    {
+     "label": "le soleil qui se lève",
+     "left": 52,
+     "top": 30,
+     "width": 20,
+     "height": 20
+    }
+   ]
+  }
+ ],
+ "questions": [
+  {
+   "text": "Le grand squelette s'appelle Don Osso ?",
+   "type": "vraifaux",
+   "answer": true
+  },
+  {
+   "text": "Qui donne la lanterne magique à Luna ?",
+   "type": "image",
+   "choices": [
+    {
+     "image": "quiz-donosso.jpg",
+     "correct": true
+    },
+    {
+     "image": "quiz-luna.jpg"
+    },
+    {
+     "image": "quiz-chien.jpg"
+    }
+   ]
+  },
+  {
+   "text": "Montre le petit chien squelette !",
+   "type": "image",
+   "choices": [
+    {
+     "image": "quiz-chien.jpg",
+     "correct": true
+    },
+    {
+     "image": "quiz-lanterne.jpg"
+    },
+    {
+     "image": "quiz-luna.jpg"
+    }
+   ]
+  },
+  {
+   "text": "À la fin, Don Osso offre à Luna un crâne en sucre ?",
+   "type": "vraifaux",
+   "answer": true
+  }
+ ]
+}
