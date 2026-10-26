@@ -195,7 +195,7 @@ namespace MesPremiersJeux.Lib
             if (path == null) return;
             try
             {
-                Process.Start(new ProcessStartInfo(path, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LAUNCH=1") { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo(path, "/SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LAUNCH=1") { UseShellExecute = true });
                 Log.Write("maj", "Installeur lancé : " + path);
             }
             catch (Exception ex) { Log.Write("maj", "Impossible de lancer l'installeur : " + ex.Message); }

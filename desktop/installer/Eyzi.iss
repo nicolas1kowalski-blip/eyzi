@@ -66,7 +66,7 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 Filename: "{app}\Eyzi.exe"; Description: "Lancer Eyzi"; Flags: nowait postinstall skipifsilent
 ; Après une MISE À JOUR automatique (installation silencieuse lancée par l'appli
 ; avec /LAUNCH=1) : on relance l'application tout seul.
-Filename: "{app}\Eyzi.exe"; Flags: nowait; Check: WantLaunch
+Filename: "{app}\Eyzi.exe"; Parameters: "--apres-maj"; Flags: nowait; Check: WantLaunch
 
 [InstallDelete]
 ; Transition depuis « Mes Premiers Jeux » : l'ancien exécutable et les anciens raccourcis disparaissent.

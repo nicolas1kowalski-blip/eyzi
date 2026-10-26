@@ -23,6 +23,12 @@ namespace MesPremiersJeux
 
             Lib.Log.Write("app", $"PID {System.Diagnostics.Process.GetCurrentProcess().Id} — instance unique acquise");
 
+            // ⏳ Quelque chose à l'écran tout de suite : la fenêtre principale met
+            // plusieurs secondes à se construire (activités, regard, voix).
+            bool afterUpdate = e.Args != null && System.Linq.Enumerable.Contains(e.Args, "--apres-maj");
+            Views.Splash.Show(afterUpdate);
+            if (afterUpdate) Lib.Log.Write("maj", "Redémarrage après mise à jour");
+
             // 🛟 JAMAIS DE FERMETURE MUETTE : toute erreur imprévue est écrite dans
             // le journal (avec l'endroit exact dans le code) et dans un fichier
             // plantage-<tablette>.txt du dossier Contenu. Une erreur sur le fil

@@ -139,7 +139,7 @@ Dans le détail :
 
 ## 6. Les mises à jour
 
-L'application se met à jour **comme une application du Store** : au démarrage, elle regarde s'il existe une version plus récente de son canal, la télécharge, vérifie son empreinte, l'installe en silence et se relance. Le contenu de la famille et les réglages ne sont jamais touchés.
+L'application se met à jour **comme une application du Store** : au démarrage, elle regarde s'il existe une version plus récente de son canal, la télécharge, vérifie son empreinte, l'installe et se relance. Pendant l'installation, une petite fenêtre de progression reste à l'écran ; au redémarrage, l'écran « Eyzi démarre… » indique chaque étape (préparation des activités, réglages, regard) jusqu'à ce que l'application soit prête. Le contenu de la famille et les réglages ne sont jamais touchés.
 
 - Canal **test** : reçoit toutes les versions, dès qu'elles sont compilées. Pour les tablettes qui servent à essayer.
 - Canal **prod** : reçoit seulement les versions promues, une fois testées. Pour les tablettes de tous les jours.

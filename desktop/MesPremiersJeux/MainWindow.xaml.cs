@@ -35,6 +35,7 @@ namespace MesPremiersJeux
 
         public MainWindow()
         {
+            Views.Splash.Status("Préparation des activités…");
             InitializeComponent();
             WireAdminButton();
             // Mode immersif : masque/affiche la barre du haut pendant une activité.
@@ -250,6 +251,7 @@ namespace MesPremiersJeux
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            Views.Splash.Status("Lecture des réglages…");
             _settings = Settings.Load();
 
             // Les tuiles Oui/Non et Parler se déplacent à la souris ou au doigt.
@@ -268,6 +270,7 @@ namespace MesPremiersJeux
             // 🔑 LA LICENCE, avant tout le reste : sans licence valide, on s'arrête là.
             if (!Licence.IsValid(_settings))
             {
+                Views.Splash.Close(); // la fenêtre de licence doit être visible
                 GazeGate.Push();
                 var lw = new LicenceWindow(_settings) { Owner = this };
                 bool okLic = lw.ShowDialog() == true;
@@ -307,8 +310,12 @@ namespace MesPremiersJeux
             _dwell = new DwellController(RootGrid, GazeIndicator, GazeProgress, GazeDot);
 
             // Sources du regard : démarrées selon le PILOTE choisi (réglages).
+            Views.Splash.Status("Démarrage du regard…");
             StartGazeSources();
             GazeStatus.Text = "👁  Regard actif";
+            // L'écran de démarrage s'efface une fois la fenêtre principale dessinée.
+            Views.Splash.Status("C'est prêt !");
+            Dispatcher.BeginInvoke(new Action(Views.Splash.Close), System.Windows.Threading.DispatcherPriority.ContextIdle);
             _dwell.Clicked += p => Dispatcher.Invoke(() => _clicks++);
 
             // Diagnostic en direct : source active + « points valides/reçus » du
