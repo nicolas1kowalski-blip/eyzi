@@ -448,6 +448,10 @@ namespace MesPremiersJeux
             YesNoCheck.IsChecked = _settings.YesNoButtons;
             HideYesNoCheck.IsChecked = _settings.HideYesNoInGames;
             HideTalkCheck.IsChecked = _settings.HideTalkInGames;
+            foreach (ComboBoxItem it in StoryLayoutCombo.Items)
+                if ((string)it.Tag == _settings.StoryLayout) { StoryLayoutCombo.SelectedItem = it; break; }
+            if (StoryLayoutCombo.SelectedItem == null) StoryLayoutCombo.SelectedIndex = 0;
+            Views.StoriesView.SetSideBySide(_settings.StoryLayout != "dessus");
             AutoDwellCheck.IsChecked = _settings.AutoDwell;
             ApplyTiles();
 
@@ -1593,6 +1597,14 @@ namespace MesPremiersJeux
             Speech.Pitch = e.NewValue;
             _settings.VoicePitch = e.NewValue;
             _settings.Save();
+        }
+
+        private void StoryLayout_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (_settings == null || !(StoryLayoutCombo.SelectedItem is ComboBoxItem it)) return;
+            _settings.StoryLayout = (string)it.Tag;
+            _settings.Save();
+            Views.StoriesView.SetSideBySide(_settings.StoryLayout != "dessus");
         }
 
         private void Engine_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

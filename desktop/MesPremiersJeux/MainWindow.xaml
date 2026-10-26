@@ -432,6 +432,17 @@
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
+                                    <TextBlock Text="Histoires : mise en page du lecteur" Style="{StaticResource CardTitle}" />
+                                    <ComboBox x:Name="StoryLayoutCombo" Style="{StaticResource Pick}" SelectionChanged="StoryLayout_Changed">
+                                        <ComboBoxItem Tag="cote" Content="📖 Image à gauche, texte à droite (l'image garde toute la hauteur)" />
+                                        <ComboBoxItem Tag="dessus" Content="🖼 Image au-dessus, texte en dessous (grandes lettres)" />
+                                    </ComboBox>
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="Vaut pour tous les livres. « À gauche » convient aux histoires à pages longues et aux images en hauteur ; « au-dessus » aux pages courtes et aux images en largeur. Le texte se réduit tout seul s'il ne tient pas." />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
                                     <TextBlock Text="Le dossier de la famille" Style="{StaticResource CardTitle}" />
                                     <TextBlock x:Name="ContentDirInfo" Style="{StaticResource Hint}" Margin="0" />
                                     <Button Content="📂  Ouvrir le dossier du contenu" Style="{StaticResource AdminBtn}" Click="OpenContent_Click" />

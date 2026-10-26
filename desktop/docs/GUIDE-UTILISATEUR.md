@@ -121,7 +121,7 @@ Le panneau est rangé en six pages (menu à gauche) :
 - **👁 Regard** : piloter au regard, ajustement automatique de la fixation, source du regard (pilote), durée de fixation, lissage, taille du cercle, vérification des yeux, calibrage Tobii, réglage éclair et réglage de la précision.
 - **🧒 Enfant & jeux** : prénom, niveau des jeux, pause après N minutes, tuiles « Parler » et « Oui / Non » (visibles ou non, bouton pour les remettre à leur place), « Je choisis ».
 - **🔊 Voix** : voix Windows et hauteur, voix naturelle Azure, écouter un exemple, **🎙 Enregistrer vos voix**.
-- **📁 Contenu** : **🔧 outils d'édition** (une fois le panneau fermé, les outils pour ajouter, modifier ou supprimer les livres, coloriages et photos apparaissent dans les activités ; le regard reste en pause tant que la case est cochée), photos de famille, dossier du contenu, exporter / importer.
+- **📁 Contenu** : **🔧 outils d'édition** (une fois le panneau fermé, les outils pour ajouter, modifier ou supprimer les livres, coloriages et photos apparaissent dans les activités ; le regard reste en pause tant que la case est cochée), photos de famille, **mise en page des histoires** (image à gauche et texte à droite, ou image au-dessus du texte ; vaut pour tous les livres), dossier du contenu, exporter / importer.
 - **☁️ Licence & nuage** : licence, mises à jour, version précédente, libérer la tablette, synchronisation entre tablettes.
 - **📊 Suivi** : bilan de la semaine, bilan de la session, rapport du regard.
 - **🛠 Avancé** (versions de test seulement) : état technique du pilote, journal, réglages du serveur.

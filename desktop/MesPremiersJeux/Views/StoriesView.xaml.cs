@@ -67,6 +67,20 @@ namespace MesPremiersJeux.Views
         private readonly TextBlock _title;
         private readonly ContentControl _illus;
         private readonly WrapPanel _wordHost;
+        private readonly Grid _body;      // image + texte, en deux colonnes ou l'un au-dessus de l'autre
+        private readonly Border _card;    // la carte blanche de l'illustration
+        private readonly Viewbox _textBox; // le panneau de texte
+
+        // Mise en page du lecteur (réglage d'administration, commun à tous les livres) :
+        // true = image à gauche / texte à droite ; false = image au-dessus du texte.
+        public static bool SideBySide { get; private set; } = true;
+        private static event Action LayoutChanged;
+        public static void SetSideBySide(bool side)
+        {
+            if (SideBySide == side) return;
+            SideBySide = side;
+            LayoutChanged?.Invoke();
+        }
         private readonly TextBlock _pageInfo;
         private readonly List<TextBlock> _groups = new List<TextBlock>();
         private Book _book;
@@ -111,9 +125,11 @@ namespace MesPremiersJeux.Views
             _readerRoot.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             _readerRoot.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            var body = new Grid();
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(47, GridUnitType.Star) });
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(53, GridUnitType.Star) });
+            var body = _body = new Grid();
+            body.ColumnDefinitions.Add(new ColumnDefinition());
+            body.ColumnDefinitions.Add(new ColumnDefinition());
+            body.RowDefinitions.Add(new RowDefinition());
+            body.RowDefinitions.Add(new RowDefinition());
 
             _title = new TextBlock
             {
@@ -124,7 +140,7 @@ namespace MesPremiersJeux.Views
                 VerticalAlignment = VerticalAlignment.Top,
                 Margin = new Thickness(0, 12, 0, 0),
             };
-            var card = new Border
+            var card = _card = new Border
             {
                 Background = Brushes.White,
                 CornerRadius = new CornerRadius(30),
@@ -139,7 +155,7 @@ namespace MesPremiersJeux.Views
             // Texte : panneau de 900 px de large ; s'il est trop haut pour l'écran,
             // il est réduit d'un bloc (Viewbox) plutôt que coupé.
             _wordHost = new WrapPanel { Width = 900, HorizontalAlignment = HorizontalAlignment.Center };
-            var textBox = new Viewbox
+            var textBox = _textBox = new Viewbox
             {
                 Child = _wordHost,
                 Stretch = Stretch.Uniform,
@@ -150,6 +166,8 @@ namespace MesPremiersJeux.Views
             };
             Grid.SetColumn(textBox, 1);
             body.Children.Add(textBox);
+            ApplyLayout();
+            LayoutChanged += () => Dispatcher.Invoke(ApplyLayout);
 
             Grid.SetColumnSpan(_title, 2);
             body.Children.Add(_title);
@@ -205,6 +223,38 @@ namespace MesPremiersJeux.Views
             AdminMode.Changed += () => Dispatcher.Invoke(BuildMenu);
             // Après un import de contenu, la bibliothèque se recharge.
             UserContent.ContentChanged += () => Dispatcher.Invoke(ReloadBooks);
+        }
+
+        /// <summary>Place l'image et le texte selon le réglage (côte à côte ou l'un au-dessus de l'autre).</summary>
+        private void ApplyLayout()
+        {
+            if (SideBySide)
+            {
+                _body.ColumnDefinitions[0].Width = new GridLength(47, GridUnitType.Star);
+                _body.ColumnDefinitions[1].Width = new GridLength(53, GridUnitType.Star);
+                _body.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+                _body.RowDefinitions[1].Height = new GridLength(0);
+                Grid.SetRow(_card, 0); Grid.SetColumn(_card, 0); Grid.SetColumnSpan(_card, 1);
+                Grid.SetRow(_textBox, 0); Grid.SetColumn(_textBox, 1); Grid.SetColumnSpan(_textBox, 1);
+                _card.Margin = new Thickness(24, 52, 8, 8);
+                _textBox.Margin = new Thickness(8, 56, 24, 8);
+                _textBox.MaxHeight = double.PositiveInfinity;
+                _wordHost.Width = 900;
+            }
+            else
+            {
+                _body.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
+                _body.ColumnDefinitions[1].Width = new GridLength(0);
+                _body.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+                _body.RowDefinitions[1].Height = GridLength.Auto;
+                Grid.SetRow(_card, 0); Grid.SetColumn(_card, 0); Grid.SetColumnSpan(_card, 2);
+                Grid.SetRow(_textBox, 1); Grid.SetColumn(_textBox, 0); Grid.SetColumnSpan(_textBox, 2);
+                _card.Margin = new Thickness(24, 44, 24, 8);
+                _textBox.Margin = new Thickness(24, 4, 24, 4);
+                // Le texte garde au plus un gros tiers de l'écran : l'image n'est jamais écrasée.
+                _textBox.MaxHeight = 360;
+                _wordHost.Width = 1300;
+            }
         }
 
         // --- Bibliothèque ---
@@ -572,7 +622,7 @@ namespace MesPremiersJeux.Views
                     FontWeight = FontWeights.SemiBold,
                     Foreground = Dark,
                     TextWrapping = TextWrapping.Wrap,
-                    MaxWidth = 900,
+                    MaxWidth = 1300,
                     Padding = new Thickness(14, 8, 14, 8),
                     Margin = new Thickness(5, 6, 5, 6),
                     Background = Brushes.Transparent,
