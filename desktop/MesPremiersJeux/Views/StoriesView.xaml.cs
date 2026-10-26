@@ -209,7 +209,7 @@ namespace MesPremiersJeux.Views
             Grid.SetColumn(_textCol, 1);
             body.Children.Add(_textCol);
             ApplyLayout();
-            body.SizeChanged += (s, e) => PositionOverlayText();
+            body.SizeChanged += (s, e) => PositionOverlayTextSoon();
 
             Grid.SetColumnSpan(_title, 2);
             body.Children.Add(_title);
@@ -345,14 +345,31 @@ namespace MesPremiersJeux.Views
             double bw = _body.ActualWidth, bh = _body.ActualHeight;
             if (bw < 50 || bh < 50) return;
             double shownH = bh - 48;                           // hauteur de l'image affichée (marge du titre)
-            double shownW = Math.Min(bw, shownH * _imgAspect);  // largeur affichée (image calée à gauche)
+            double imgLeft = 0, imgW = Math.Min(bw, shownH * _imgAspect);
+            // L'endroit RÉEL où l'image est dessinée (après la mise en page), plutôt
+            // qu'une estimation : le texte doit tomber sur l'image, pas à côté.
+            try
+            {
+                var host = (_illus.Content as Viewbox)?.Child as FrameworkElement;
+                if (host != null && host.IsVisible && host.ActualWidth > 0)
+                {
+                    var t = host.TransformToAncestor(_body);
+                    var p0 = t.Transform(new Point(0, 0));
+                    var p1 = t.Transform(new Point(host.ActualWidth, host.ActualHeight));
+                    if (p1.X - p0.X > 50) { imgLeft = p0.X; imgW = p1.X - p0.X; shownH = p1.Y - p0.Y; }
+                }
+            }
+            catch { }
             double pct = _book.TextLeft > 0 ? _book.TextLeft : 60;
-            double x = shownW * pct / 100;
+            double x = imgLeft + imgW * pct / 100;
             double width = Math.Max(320, bw - x - 24);
             _textCol.Margin = new Thickness(x + 8, 60, 16, 12);
             _wordHost.Width = Math.Max(240, width - 60);
-            _textBox.MaxHeight = Math.Max(200, shownH - 80);
+            _textBox.MaxHeight = Math.Max(200, shownH - 60);
         }
+
+        private void PositionOverlayTextSoon() =>
+            Dispatcher.BeginInvoke(new Action(PositionOverlayText), DispatcherPriority.Loaded);
 
         // --- Bibliothèque ---
         private void BuildBooks()
@@ -1055,8 +1072,16 @@ namespace MesPremiersJeux.Views
             UpdateDots(n);
             var mode = StoryLayouts.Resolve(page.Layout, _book.Layout);
             if (mode != _layoutMode) { _layoutMode = mode; ApplyLayout(); }
-            _illus.Content = new Viewbox { Child = MakeIllustration(page), Stretch = Stretch.Uniform };
+            bool onImage = _layoutMode == StoryLayouts.OnImage;
+            _illus.Content = new Viewbox
+            {
+                Child = MakeIllustration(page),
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = onImage ? HorizontalAlignment.Left : HorizontalAlignment.Center, // calée à gauche : le texte vient sur sa partie droite
+            };
+            _textCard.Background = new SolidColorBrush(Color.FromArgb(onImage ? (byte)0xEC : (byte)0xD9, 0xFF, 0xFF, 0xFF));
             PositionOverlayText();
+            PositionOverlayTextSoon();
             _pageInfo.Text = $"{_index + 1} / {n}";
 
             _wordHost.Children.Clear();
