@@ -74,6 +74,23 @@ namespace MesPremiersJeux.Views
         private readonly Viewbox _textBox; // le panneau de texte
 
         private bool _sideBySide = true; // mise en page de la page affichée (choisie par livre, puis par page)
+        private Border _textCard;        // le cadre du texte
+        private StackPanel _dots;        // points de progression (une pastille par page)
+        private Button _listenBtn;       // 🔊 Écouter / ⏸ Pause
+
+        // Narration continue : la voix lit la page, marque une pause, passe à la
+        // suivante… jusqu'au quiz. Le jeton invalide les enchaînements programmés
+        // dès que l'on change de page à la main, revient aux livres ou quitte l'onglet.
+        private bool _auto;
+        private int _autoToken;
+        private const int PauseAfterTextMs = 2500; // la pause à la fin du texte, avant de tourner la page
+
+        // Couleurs des bandeaux de la bibliothèque (un livre = une couleur).
+        private static readonly Color[] Accents =
+        {
+            Color.FromRgb(0xFF, 0x9F, 0x43), Color.FromRgb(0x7E, 0x3F, 0xF2), Color.FromRgb(0x2E, 0xB8, 0x8A),
+            Color.FromRgb(0xF2, 0x5F, 0x8F), Color.FromRgb(0x3F, 0x8E, 0xF2), Color.FromRgb(0xE0, 0xA8, 0x00),
+        };
         private readonly TextBlock _pageInfo;
         private readonly List<TextBlock> _groups = new List<TextBlock>();
         private Book _book;
@@ -137,6 +154,8 @@ namespace MesPremiersJeux.Views
             {
                 Background = Brushes.White,
                 CornerRadius = new CornerRadius(30),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xD6, 0xA5)),
+                BorderThickness = new Thickness(4),
                 Margin = new Thickness(24, 52, 8, 8),
                 Effect = new DropShadowEffect { BlurRadius = 22, ShadowDepth = 3, Opacity = 0.18 },
             };
@@ -157,8 +176,17 @@ namespace MesPremiersJeux.Views
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            Grid.SetColumn(textBox, 1);
-            body.Children.Add(textBox);
+            _textCard = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(0xD9, 0xFF, 0xFF, 0xFF)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xE4, 0xC4)),
+                BorderThickness = new Thickness(3),
+                CornerRadius = new CornerRadius(30),
+                Padding = new Thickness(18, 14, 18, 14),
+                Child = textBox,
+            };
+            Grid.SetColumn(_textCard, 1);
+            body.Children.Add(_textCard);
             ApplyLayout();
 
             Grid.SetColumnSpan(_title, 2);
@@ -185,21 +213,26 @@ namespace MesPremiersJeux.Views
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 4, 0, 18),
             };
-            nav.Children.Add(NavButton("⬅", () => ShowPage(_index - 1)));
-            nav.Children.Add(NavButton("🔁", () => ShowPage(_index)));
-            nav.Children.Add(NavButton("🔊", ListenPage));
-            _quizBtn = NavButton("🎯", StartQuiz);
+            nav.Children.Add(NavButton("⬅", "Avant", () => ShowPage(_index - 1)));
+            nav.Children.Add(NavButton("🔁", "Encore", () => ShowPage(_index)));
+            _listenBtn = NavButton("🔊", "Écouter", ToggleListen);
+            nav.Children.Add(_listenBtn);
+            _quizBtn = NavButton("🎯", "Quiz", StartQuiz);
             _quizBtn.Visibility = Visibility.Collapsed; // seulement si le livre a des questions
             nav.Children.Add(_quizBtn);
+            var info = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(24, 0, 24, 0) };
             _pageInfo = new TextBlock
             {
                 FontSize = 24,
+                FontWeight = FontWeights.SemiBold,
                 Foreground = new SolidColorBrush(Color.FromRgb(0x6B, 0x5B, 0x8A)),
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(24, 0, 24, 0),
+                HorizontalAlignment = HorizontalAlignment.Center,
             };
-            nav.Children.Add(_pageInfo);
-            nav.Children.Add(NavButton("➡", () => ShowPage(_index + 1)));
+            info.Children.Add(_pageInfo);
+            _dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) };
+            info.Children.Add(_dots);
+            nav.Children.Add(info);
+            nav.Children.Add(NavButton("➡", "Suite", () => ShowPage(_index + 1)));
             Grid.SetRow(nav, 1);
             _readerRoot.Children.Add(nav);
 
@@ -227,9 +260,11 @@ namespace MesPremiersJeux.Views
                 _body.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
                 _body.RowDefinitions[1].Height = new GridLength(0);
                 Grid.SetRow(_card, 0); Grid.SetColumn(_card, 0); Grid.SetColumnSpan(_card, 1);
-                Grid.SetRow(_textBox, 0); Grid.SetColumn(_textBox, 1); Grid.SetColumnSpan(_textBox, 1);
+                Grid.SetRow(_textCard, 0); Grid.SetColumn(_textCard, 1); Grid.SetColumnSpan(_textCard, 1);
                 _card.Margin = new Thickness(24, 52, 8, 8);
-                _textBox.Margin = new Thickness(8, 56, 24, 8);
+                _textCard.Margin = new Thickness(8, 56, 24, 8);
+                _textCard.HorizontalAlignment = HorizontalAlignment.Stretch;
+                _textCard.VerticalAlignment = VerticalAlignment.Center;
                 _textBox.MaxHeight = double.PositiveInfinity;
                 _wordHost.Width = 900;
             }
@@ -240,9 +275,11 @@ namespace MesPremiersJeux.Views
                 _body.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
                 _body.RowDefinitions[1].Height = GridLength.Auto;
                 Grid.SetRow(_card, 0); Grid.SetColumn(_card, 0); Grid.SetColumnSpan(_card, 2);
-                Grid.SetRow(_textBox, 1); Grid.SetColumn(_textBox, 0); Grid.SetColumnSpan(_textBox, 2);
+                Grid.SetRow(_textCard, 1); Grid.SetColumn(_textCard, 0); Grid.SetColumnSpan(_textCard, 2);
                 _card.Margin = new Thickness(24, 44, 24, 8);
-                _textBox.Margin = new Thickness(24, 4, 24, 4);
+                _textCard.Margin = new Thickness(24, 4, 24, 4);
+                _textCard.HorizontalAlignment = HorizontalAlignment.Center;
+                _textCard.VerticalAlignment = VerticalAlignment.Center;
                 // Le texte garde au plus un gros tiers de l'écran : l'image n'est jamais écrasée.
                 _textBox.MaxHeight = 360;
                 _wordHost.Width = 1300;
@@ -381,25 +418,48 @@ namespace MesPremiersJeux.Views
         private void BuildMenu()
         {
             var tiles = new List<(UIElement Content, Action OnClick)>();
+            int bi = 0;
             foreach (var b in _books)
             {
-                var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
-                var preview = new ContentControl
+                // Une « couverture » : l'image du livre dans un cadre teinté, le titre
+                // sur un bandeau de couleur qui chevauche le bas de l'image, puis le
+                // nombre de pages et la présence d'un quiz.
+                var accent = Accents[bi++ % Accents.Length];
+                var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, Width = 300 };
+                var cover = new Border
                 {
-                    Content = b.Pages.Count > 0 ? PreviewOf(b.Pages[0]) : null,
-                    Width = 150,
-                    Height = 130,
+                    Width = 300,
+                    Height = 210,
+                    CornerRadius = new CornerRadius(22),
+                    Background = new SolidColorBrush(Color.FromArgb(0x38, accent.R, accent.G, accent.B)),
+                    Clip = new RectangleGeometry(new Rect(0, 0, 300, 210), 22, 22),
+                    Child = b.Pages.Count > 0 ? PreviewOf(b.Pages[0]) : null,
                 };
-                content.Children.Add(preview);
+                content.Children.Add(cover);
+                var ribbon = new Border
+                {
+                    Background = new SolidColorBrush(accent),
+                    CornerRadius = new CornerRadius(16),
+                    Padding = new Thickness(16, 8, 16, 8),
+                    Margin = new Thickness(10, -20, 10, 0), // chevauche la couverture
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Child = new TextBlock
+                    {
+                        Text = b.Title,
+                        FontSize = 22,
+                        FontWeight = FontWeights.Bold,
+                        Foreground = Brushes.White,
+                        TextWrapping = TextWrapping.Wrap,
+                        TextAlignment = TextAlignment.Center,
+                        MaxWidth = 250,
+                    },
+                };
+                content.Children.Add(ribbon);
                 content.Children.Add(new TextBlock
                 {
-                    Text = b.Title,
-                    FontSize = 24,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = Dark,
-                    TextWrapping = TextWrapping.Wrap,
-                    TextAlignment = TextAlignment.Center,
-                    MaxWidth = 220,
+                    Text = "📖 " + b.Pages.Count + (b.Pages.Count > 1 ? " pages" : " page") + (b.Questions.Count > 0 ? "   ·   🎯 quiz" : ""),
+                    FontSize = 17,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x6B, 0x5B, 0x8A)),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Margin = new Thickness(0, 8, 0, 0),
                 });
@@ -433,8 +493,14 @@ namespace MesPremiersJeux.Views
                 _menu.SetTiles(tiles);
                 return;
             }
-            var addContent = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
-            addContent.Children.Add(new TextBlock { Text = "➕", FontSize = 74, HorizontalAlignment = HorizontalAlignment.Center });
+            var addContent = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, Width = 300 };
+            addContent.Children.Add(new Border
+            {
+                Width = 300, Height = 210, CornerRadius = new CornerRadius(22),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0xC9, 0xB8, 0xE8)), BorderThickness = new Thickness(3),
+                Background = new SolidColorBrush(Color.FromArgb(0x60, 0xFF, 0xFF, 0xFF)),
+                Child = new TextBlock { Text = "➕", FontSize = 90, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+            });
             addContent.Children.Add(new TextBlock
             {
                 Text = "Nouveau livre",
@@ -517,10 +583,10 @@ namespace MesPremiersJeux.Views
         // Aperçu léger d'une page pour la tuile de la bibliothèque.
         private static UIElement PreviewOf(BookPage page)
         {
-            if (page.Cartoon != null) return page.Cartoon();
+            if (page.Cartoon != null) return new Viewbox { Child = page.Cartoon(), Stretch = Stretch.Uniform, Margin = new Thickness(10) };
             if (page.ImagePath != null)
             {
-                try { return new Image { Source = UserContent.LoadBitmap(page.ImagePath, 400), Stretch = Stretch.Uniform }; }
+                try { return new Image { Source = UserContent.LoadBitmap(page.ImagePath, 400), Stretch = Stretch.Uniform, Margin = new Thickness(6) }; }
                 catch { }
             }
             return new TextBlock { Text = "📖", FontSize = 90, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
@@ -528,6 +594,8 @@ namespace MesPremiersJeux.Views
 
         private void ShowMenu()
         {
+            _autoToken++;
+            SetAuto(false);
             _readerRoot.Visibility = Visibility.Collapsed;
             _menuRoot.Visibility = Visibility.Visible;
             Chrome.Immersive = false;
@@ -544,19 +612,90 @@ namespace MesPremiersJeux.Views
             ShowPage(0);
         }
 
-        private Button NavButton(string glyph, Action onClick)
+        private Button NavButton(string glyph, string label, Action onClick)
         {
             var btn = new Button
             {
                 Style = (Style)Application.Current.Resources["BackButton"],
-                Content = glyph,
-                FontSize = 40,
                 Height = 100,
                 MinWidth = 150,
                 Margin = new Thickness(10, 0, 10, 0),
             };
+            SetNavContent(btn, glyph, label);
             btn.Click += (s, e) => onClick();
             return btn;
+        }
+
+        private static void SetNavContent(Button btn, string glyph, string label)
+        {
+            var sp = new StackPanel();
+            sp.Children.Add(new TextBlock { Text = glyph, FontSize = 36, HorizontalAlignment = HorizontalAlignment.Center });
+            sp.Children.Add(new TextBlock { Text = label, FontSize = 16, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center, Foreground = Dark, Margin = new Thickness(0, -2, 0, 0) });
+            btn.Content = sp;
+        }
+
+        // --- Narration continue ---
+        private void SetAuto(bool on)
+        {
+            _auto = on;
+            if (_listenBtn != null) SetNavContent(_listenBtn, on ? "⏸" : "🔊", on ? "Pause" : "Écouter");
+        }
+
+        /// <summary>🔊 : la voix raconte la page, puis tourne les pages toute seule ; ⏸ arrête.</summary>
+        private void ToggleListen()
+        {
+            if (_auto)
+            {
+                _autoToken++;
+                SetAuto(false);
+                Speech.Stop();
+                _readIndex = 0;
+                Refresh();
+                return;
+            }
+            SetAuto(true);
+            ListenPage();
+        }
+
+        /// <summary>
+        /// Fin du texte d'une page (racontée par la voix ou lue au regard) : après une
+        /// pause, la page suivante ; sur la dernière page, le quiz s'il y en a un.
+        /// « narrate » : la page suivante est racontée à son tour (narration continue).
+        /// </summary>
+        private void AfterPageDone(bool narrate, int pauseMs)
+        {
+            if (_book == null) return;
+            int tok = _autoToken;
+            bool last = _index >= _book.Pages.Count - 1;
+            if (last)
+            {
+                SetAuto(false);
+                if (_book.Questions.Count > 0)
+                    Delay(pauseMs, () => { if (tok == _autoToken && _readerRoot.IsVisible) StartQuiz(); });
+                else
+                    Speech.Say("C'est la fin de l'histoire !");
+                return;
+            }
+            Delay(pauseMs, () => { if (tok == _autoToken && _readerRoot.IsVisible) ShowPage(_index + 1, narrate); });
+        }
+
+        private void UpdateDots(int n)
+        {
+            _dots.Children.Clear();
+            _dots.Visibility = n <= 16 ? Visibility.Visible : Visibility.Collapsed;
+            if (n > 16) return;
+            for (int k = 0; k < n; k++)
+            {
+                bool cur = k == _index;
+                _dots.Children.Add(new System.Windows.Shapes.Ellipse
+                {
+                    Width = cur ? 16 : 11,
+                    Height = cur ? 16 : 11,
+                    Margin = new Thickness(3, 0, 3, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Fill = cur ? new SolidColorBrush(Color.FromRgb(0xFF, 0x9F, 0x43)) : k < _index ? Violet : new SolidColorBrush(Color.FromRgb(0xD9, 0xD0, 0xE8)),
+                });
+            }
         }
 
         // --- Lecture au regard ---
@@ -584,12 +723,15 @@ namespace MesPremiersJeux.Views
             return groups;
         }
 
-        private void ShowPage(int i)
+        private void ShowPage(int i, bool narrate = false)
         {
             if (_book == null || _book.Pages.Count == 0) return;
+            _autoToken++;            // tout enchaînement programmé pour l'ancienne page est annulé
+            if (!narrate) SetAuto(false); // changer de page à la main arrête la narration continue
             int n = _book.Pages.Count;
             _index = ((i % n) + n) % n;
             var page = _book.Pages[_index];
+            UpdateDots(n);
             bool side = StoryLayouts.Resolve(page.Layout, _book.Layout) == StoryLayouts.Side;
             if (side != _sideBySide) { _sideBySide = side; ApplyLayout(); }
             _illus.Content = new Viewbox { Child = MakeIllustration(page), Stretch = Stretch.Uniform };
@@ -632,7 +774,8 @@ namespace MesPremiersJeux.Views
             }
 
             Refresh();
-            Speech.Say("À toi de lire !");
+            if (narrate && _auto) ListenPage();
+            else Speech.Say("À toi de lire !");
         }
 
         // Histoire racontée : la voix lit toute la page ; les groupes se
@@ -643,6 +786,7 @@ namespace MesPremiersJeux.Views
             _readIndex = 0;
             Refresh();
             PulseMatchingZones(_groups[0].Text);
+            int tok = _autoToken;
 
             Speech.SayPage(
                 _pageText,
@@ -661,12 +805,14 @@ namespace MesPremiersJeux.Views
                 {
                     _readIndex = 0; // la page se remet au début pour la lecture au regard
                     Refresh();
+                    if (_auto && tok == _autoToken) AfterPageDone(narrate: true, pauseMs: PauseAfterTextMs);
                 }));
         }
 
         private void OnGroupClicked(int idx)
         {
             if (idx != _readIndex || _readIndex >= _groups.Count) return;
+            if (_auto) { _autoToken++; SetAuto(false); } // l'enfant lit lui-même : la narration s'efface
             Speech.Say(_groups[idx].Text);
             PulseMatchingZones(_groups[idx].Text); // la zone correspondante s'illumine
             _readIndex++;
@@ -674,9 +820,9 @@ namespace MesPremiersJeux.Views
             if (_readIndex >= _groups.Count)
             {
                 Speech.Say("Bravo !");
-                // Fin de la dernière page + quiz disponible : on enchaîne en douceur.
-                if (_book != null && _index == _book.Pages.Count - 1 && _book.Questions.Count > 0)
-                    Delay(1400, StartQuiz);
+                // Page finie : pause (le temps du « Bravo ! »), puis la page suivante
+                // (ou le quiz après la dernière page).
+                AfterPageDone(narrate: false, pauseMs: PauseAfterTextMs + 1200);
             }
         }
 
@@ -777,6 +923,8 @@ namespace MesPremiersJeux.Views
         private void StartQuiz()
         {
             if (_book == null || _book.Questions.Count == 0) return;
+            _autoToken++;
+            SetAuto(false);
             _quizIndex = 0;
             _menuRoot.Visibility = Visibility.Collapsed;
             _readerRoot.Visibility = Visibility.Collapsed;
