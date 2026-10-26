@@ -207,6 +207,14 @@ namespace MesPremiersJeux
             ApplyTiles();
         }
 
+        private void StoryLittle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null) return;
+            _settings.StoryLittle = StoryLittleCheck.IsChecked == true;
+            _settings.Save();
+            Views.StoriesView.SetLittleMode(_settings.StoryLittle);
+        }
+
         private void AutoDwell_Changed(object sender, RoutedEventArgs e)
         {
             if (_settings == null) return;
@@ -456,6 +464,8 @@ namespace MesPremiersJeux
             HideYesNoCheck.IsChecked = _settings.HideYesNoInGames;
             HideTalkCheck.IsChecked = _settings.HideTalkInGames;
             AutoDwellCheck.IsChecked = _settings.AutoDwell;
+            StoryLittleCheck.IsChecked = _settings.StoryLittle;
+            Views.StoriesView.SetLittleMode(_settings.StoryLittle);
             ApplyTiles();
 
             // Bilan de session (carte de chaleur + compteurs).

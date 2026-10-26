@@ -38,6 +38,7 @@ namespace MesPremiersJeux.Lib
         public string TilePositions = ""; // où la famille a glissé les tuiles Oui/Non et Parler ("ouinon=x,y;parler=x,y")
         public bool HideYesNoInGames = true;  // pendant une activité : Oui/Non cachés (les jeux ont leurs propres réponses)
         public bool HideTalkInGames = false;  // pendant une activité : Parler caché aussi (sinon réduit et discret)
+        public bool StoryLittle = false;      // histoires : mode jeune enfant (texte par morceaux, avec des pictos)
         public string Level = "auto";    // niveau : auto | 1 | 2 | 3
         public int SessionMinutes = 10;  // au bout de N minutes de jeu, on propose une pause (0 = jamais)
         public bool NameAsked = false;   // le prénom a été demandé au premier démarrage sur cette tablette
@@ -98,6 +99,7 @@ namespace MesPremiersJeux.Lib
                         case "TilePositions": s.TilePositions = val; break;
                         case "HideYesNoInGames": s.HideYesNoInGames = val != "0"; break;
                         case "HideTalkInGames": s.HideTalkInGames = val == "1"; break;
+                        case "StoryLittle": s.StoryLittle = val == "1"; break;
                         case "Level": s.Level = val; break;
                         case "SessionMinutes": int.TryParse(val, out s.SessionMinutes); break;
                         case "NameAsked": s.NameAsked = val != "0"; break;
@@ -162,6 +164,7 @@ namespace MesPremiersJeux.Lib
                     "TilePositions=" + (TilePositions ?? ""),
                     "HideYesNoInGames=" + (HideYesNoInGames ? "1" : "0"),
                     "HideTalkInGames=" + (HideTalkInGames ? "1" : "0"),
+                    "StoryLittle=" + (StoryLittle ? "1" : "0"),
                     "Level=" + (Level ?? "auto"),
                     "SessionMinutes=" + SessionMinutes,
                     "NameAsked=" + (NameAsked ? "1" : "0"),

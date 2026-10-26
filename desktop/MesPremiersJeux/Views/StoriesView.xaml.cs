@@ -8,6 +8,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using MesPremiersJeux.Games;
 using MesPremiersJeux.Gaze;
@@ -104,6 +105,19 @@ namespace MesPremiersJeux.Views
         };
         private readonly TextBlock _pageInfo;
         private readonly List<TextBlock> _groups = new List<TextBlock>();
+        private readonly List<Border> _tiles = new List<Border>();   // mode jeune enfant : une tuile par morceau
+        private BitmapImage _pageBitmap;                              // l'illustration de la page (pour découper les pictos)
+
+        // 👶 Mode jeune enfant (réglage d'administration) : le texte par morceaux
+        // (phrase ou bout de phrase), chacun sur une grande tuile avec un picto.
+        public static bool LittleMode { get; private set; }
+        private static event Action LittleModeChanged;
+        public static void SetLittleMode(bool on)
+        {
+            if (LittleMode == on) return;
+            LittleMode = on;
+            LittleModeChanged?.Invoke();
+        }
         private Book _book;
         private int _index;
         private int _readIndex;
@@ -274,6 +288,8 @@ namespace MesPremiersJeux.Views
             Content = root;
 
             BuildMenu();
+            // Le mode jeune enfant change : la page ouverte se refait.
+            LittleModeChanged += () => Dispatcher.Invoke(() => { if (_book != null && _readerRoot.IsVisible) ShowPage(_index); });
             // Les outils parent apparaissent/disparaissent avec le mode admin.
             AdminMode.Changed += () => Dispatcher.Invoke(BuildMenu);
             // Après un import de contenu, la bibliothèque se recharge.
@@ -365,6 +381,7 @@ namespace MesPremiersJeux.Views
             double width = Math.Max(320, bw - x - 24);
             _textCol.Margin = new Thickness(x + 8, 60, 16, 12);
             _wordHost.Width = Math.Max(240, width - 60);
+            foreach (var t in _tiles) t.Width = Math.Max(300, _wordHost.Width - 12);
             _textBox.MaxHeight = Math.Max(200, shownH - 60);
         }
 
@@ -425,12 +442,14 @@ namespace MesPremiersJeux.Views
         private UIElement MakeIllustration(BookPage page)
         {
             _zoneUis.Clear();
+            _pageBitmap = null;
             if (page.Cartoon != null) return page.Cartoon();
             if (page.ImagePath == null) return Missing("📖", "Pas d'image pour cette page");
 
             try
             {
                 var bmp = UserContent.LoadBitmap(page.ImagePath);
+                _pageBitmap = bmp;
                 double w = bmp.PixelWidth, h = bmp.PixelHeight;
                 _imgAspect = h > 0 ? w / h : 0.75;
                 var host = new Grid { Width = w, Height = h };
@@ -1035,6 +1054,124 @@ namespace MesPremiersJeux.Views
             }
         }
 
+        // --- Mode jeune enfant : le texte par morceaux, avec des pictos ---
+        private void BuildTiles(BookPage page)
+        {
+            double width = Math.Max(300, _wordHost.Width - 12);
+            int gi = 0;
+            foreach (var chunk in SplitChunks(page.Text))
+            {
+                foreach (var tok in chunk.Split(' '))
+                    if (tok.Any(char.IsLetterOrDigit)) _wordToGroup.Add(gi);
+                int idx = gi++;
+                var row = new Grid();
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var picto = PictoFor(chunk, page);
+                if (picto != null)
+                {
+                    var pic = new Border
+                    {
+                        Width = 104, Height = 104, CornerRadius = new CornerRadius(18),
+                        Background = new SolidColorBrush(Color.FromRgb(0xFF, 0xF6, 0xEC)),
+                        Clip = new RectangleGeometry(new Rect(0, 0, 104, 104), 18, 18),
+                        Margin = new Thickness(0, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center,
+                        Child = new Image { Source = picto, Stretch = Stretch.UniformToFill },
+                    };
+                    row.Children.Add(pic);
+                }
+                var tb = new TextBlock
+                {
+                    Text = chunk, FontSize = 36, FontWeight = FontWeights.SemiBold, Foreground = Dark,
+                    TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center,
+                };
+                Grid.SetColumn(tb, 1);
+                row.Children.Add(tb);
+                var tile = new Border
+                {
+                    Background = Brushes.White,
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(0xE6, 0xDE, 0xF5)),
+                    BorderThickness = new Thickness(3),
+                    CornerRadius = new CornerRadius(24),
+                    Padding = new Thickness(14, 10, 18, 10),
+                    Margin = new Thickness(6),
+                    Width = width,
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    Child = row,
+                };
+                tile.MouseLeftButtonDown += (s, e) => OnGroupClicked(idx);
+                GazeTargets.SetIsTarget(tile, true); // la tuile entière est l'aimant du regard
+                _groups.Add(tb);
+                _tiles.Add(tile);
+                _wordHost.Children.Add(tile);
+            }
+        }
+
+        /// <summary>Les morceaux : une phrase, ou un bout de phrase (coupé aux virgules) de 9 mots au plus.</summary>
+        private static List<string> SplitChunks(string text)
+        {
+            var chunks = new List<string>();
+            foreach (var sentence in PiperTts.SplitSentences(text))
+            {
+                int start = chunks.Count;
+                if (CountWords(sentence) <= 9) { chunks.Add(sentence); continue; }
+                var cur = new List<string>();
+                foreach (var w in sentence.Split(' ').Where(x => x.Length > 0))
+                {
+                    cur.Add(w);
+                    int n = CountWords(string.Join(" ", cur));
+                    bool boundary = w.EndsWith(",") || w.EndsWith(":") || w.EndsWith(";") || w == "—" || w == "-";
+                    if ((boundary && n >= 3) || n >= 9) { chunks.Add(string.Join(" ", cur)); cur.Clear(); }
+                }
+                if (cur.Count > 0)
+                {
+                    var rest = string.Join(" ", cur);
+                    if (CountWords(rest) < 3 && chunks.Count > start) chunks[chunks.Count - 1] += " " + rest; // trop court : collé au précédent
+                    else chunks.Add(rest);
+                }
+            }
+            return chunks;
+        }
+
+        private static int CountWords(string s) => s.Split(' ').Count(t => t.Any(char.IsLetterOrDigit));
+
+        /// <summary>
+        /// Le picto d'un morceau : d'abord une zone de l'illustration dont le nom
+        /// apparaît dans le morceau (on découpe l'image : c'est LE personnage de
+        /// l'histoire), sinon une image de la banque livrée (chat, maison, pomme…).
+        /// </summary>
+        private ImageSource PictoFor(string chunk, BookPage page)
+        {
+            var words = chunk.Split(' ').Select(NormalizeWord).Where(w => w.Length >= 3).ToList();
+            if (words.Count == 0) return null;
+            if (_pageBitmap != null && page.Zones != null)
+            {
+                foreach (var z in page.Zones)
+                {
+                    var parts = z.Label.Split(' ').Select(NormalizeWord).Where(p => p.Length >= 3);
+                    if (!parts.Any(p => words.Contains(p))) continue;
+                    try
+                    {
+                        int W = _pageBitmap.PixelWidth, H = _pageBitmap.PixelHeight;
+                        int x = Math.Max(0, Math.Min(W - 2, (int)(z.Left / 100 * W)));
+                        int y = Math.Max(0, Math.Min(H - 2, (int)(z.Top / 100 * H)));
+                        int w = Math.Max(2, Math.Min(W - x, (int)(z.Width / 100 * W)));
+                        int h = Math.Max(2, Math.Min(H - y, (int)(z.Height / 100 * H)));
+                        var crop = new CroppedBitmap(_pageBitmap, new Int32Rect(x, y, w, h));
+                        crop.Freeze();
+                        return crop;
+                    }
+                    catch { }
+                }
+            }
+            foreach (var w in words)
+            {
+                var src = Art.Find(w) ?? (w.EndsWith("s") && w.Length > 3 ? Art.Find(w.Substring(0, w.Length - 1)) : null);
+                if (src != null) return src;
+            }
+            return null;
+        }
+
         // --- Lecture au regard ---
         private static List<string> SplitGroups(string text)
         {
@@ -1086,9 +1223,19 @@ namespace MesPremiersJeux.Views
 
             _wordHost.Children.Clear();
             _groups.Clear();
+            _tiles.Clear();
             _readIndex = 0;
             _pageText = page.Text;
             _wordToGroup.Clear();
+
+            if (LittleMode)
+            {
+                BuildTiles(page);
+                Refresh();
+                if (_listenMode) StartNarration();
+                else Speech.Say("À toi de lire !");
+                return;
+            }
 
             // Pages courtes en grandes lettres ; pages longues un peu plus petites
             // (le panneau se réduit encore tout seul si besoin).
@@ -1183,6 +1330,30 @@ namespace MesPremiersJeux.Views
         // Met à jour les couleurs : lus = gris, courant = surligné, à venir = foncé.
         private void Refresh()
         {
+            if (_tiles.Count > 0)
+            {
+                var soft = new SolidColorBrush(Color.FromRgb(0xE6, 0xDE, 0xF5));
+                for (int k = 0; k < _tiles.Count && k < _groups.Count; k++)
+                {
+                    var t = _tiles[k]; var tb = _groups[k];
+                    if (k < _readIndex)
+                    {
+                        t.Background = new SolidColorBrush(Color.FromRgb(0xF3, 0xF0, 0xF8)); t.BorderBrush = soft; t.Opacity = 0.8;
+                        tb.Foreground = Grey; tb.FontWeight = FontWeights.SemiBold;
+                    }
+                    else if (k == _readIndex)
+                    {
+                        t.Background = Yellow; t.BorderBrush = Violet; t.Opacity = 1;
+                        tb.Foreground = Violet; tb.FontWeight = FontWeights.Bold;
+                    }
+                    else
+                    {
+                        t.Background = Brushes.White; t.BorderBrush = soft; t.Opacity = 1;
+                        tb.Foreground = Dark; tb.FontWeight = FontWeights.SemiBold;
+                    }
+                }
+                return;
+            }
             for (int k = 0; k < _groups.Count; k++)
             {
                 if (k < _readIndex)

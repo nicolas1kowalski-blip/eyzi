@@ -365,6 +365,15 @@
                                     <Button Content="🙋  Je choisis (2 à 4 images, elle regarde celle qu'elle veut)" Style="{StaticResource AdminBtn}" Click="Choice_Click" />
                                 </StackPanel>
                             </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="Histoires" Style="{StaticResource CardTitle}" />
+                                    <CheckBox x:Name="StoryLittleCheck" Content="👶 Mode jeune enfant : le texte par morceaux, avec des pictos" Style="{StaticResource Check}"
+                                              Checked="StoryLittle_Changed" Unchecked="StoryLittle_Changed" />
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="Au lieu de lire mot à mot, l'enfant regarde une grande tuile par phrase (ou bout de phrase) et l'entend en entier. Chaque tuile porte un picto : le personnage ou l'objet de l'image dont on parle, sinon une image de la banque (chat, maison, pomme…)." />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
 
                         <!-- 🔊 VOIX -->
