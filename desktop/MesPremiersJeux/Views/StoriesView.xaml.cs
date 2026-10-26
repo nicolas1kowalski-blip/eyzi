@@ -347,8 +347,7 @@ namespace MesPremiersJeux.Views
         {
             _zoneUis.Clear();
             if (page.Cartoon != null) return page.Cartoon();
-            if (page.ImagePath == null)
-                return new TextBlock { Text = "📖", FontSize = 160, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            if (page.ImagePath == null) return Missing("📖", "Pas d'image pour cette page");
 
             try
             {
@@ -380,10 +379,21 @@ namespace MesPremiersJeux.Views
                 host.Children.Add(layer);
                 return host;
             }
-            catch
+            catch (Exception ex)
             {
-                return new TextBlock { Text = "🖼️", FontSize = 160 };
+                Log.Write("histoires", "Image illisible " + page.ImagePath + " : " + ex);
+                return Missing("🖼️", "Image illisible : " + ex.Message);
             }
+        }
+
+        // Quand une image manque ou ne se lit pas : le pictogramme ET la raison,
+        // pour que le parent (et nous) sachions quoi corriger.
+        private static UIElement Missing(string glyph, string why)
+        {
+            var sp = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Width = 600 };
+            sp.Children.Add(new TextBlock { Text = glyph, FontSize = 120, HorizontalAlignment = HorizontalAlignment.Center });
+            sp.Children.Add(new TextBlock { Text = why, FontSize = 22, Foreground = Grey, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center });
+            return sp;
         }
 
         // --- Mise en évidence d'une zone quand son mot est lu (comme sur le web) ---
@@ -593,7 +603,7 @@ namespace MesPremiersJeux.Views
             if (page.ImagePath != null)
             {
                 try { return new Image { Source = UserContent.LoadBitmap(page.ImagePath, 400), Stretch = Stretch.Uniform, Margin = new Thickness(6) }; }
-                catch { }
+                catch (Exception ex) { Log.Write("histoires", "Couverture illisible " + page.ImagePath + " : " + ex.Message); }
             }
             return new TextBlock { Text = "📖", FontSize = 90, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         }

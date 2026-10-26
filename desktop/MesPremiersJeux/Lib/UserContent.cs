@@ -634,6 +634,7 @@ namespace MesPremiersJeux.Lib
                 {
                     var img = ResolveImageRef(dir, p.Image);
                     if (img != null) page.ImagePath = img;
+                    else Log.Write("histoires", "Image introuvable « " + p.Image + " » dans " + dir);
                 }
                 if (p.Zones != null)
                 {
@@ -1190,7 +1191,15 @@ namespace MesPremiersJeux.Lib
             var bmp = new BitmapImage();
             bmp.BeginInit();
             bmp.CacheOption = BitmapCacheOption.OnLoad;
-            bmp.UriSource = new Uri(path);
+            // Profil couleur ignoré : certains JPEG (profils ICC exotiques) font
+            // échouer le décodage sinon.
+            bmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+            if (File.Exists(path))
+                // Lecture directe du fichier : pas de résolution d'adresse (accents,
+                // espaces, « % » dans le chemin) et pas de verrou sur le fichier.
+                bmp.StreamSource = new MemoryStream(File.ReadAllBytes(path));
+            else
+                bmp.UriSource = new Uri(path);
             bmp.DecodePixelWidth = maxSize;
             bmp.EndInit();
             bmp.Freeze();
