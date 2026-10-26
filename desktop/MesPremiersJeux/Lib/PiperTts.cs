@@ -202,18 +202,230 @@ namespace MesPremiersJeux.Lib
             catch { onFail?.Invoke(); }
         }
 
-        /// <summary>Lecture d'une page avec suivi des mots (temps estimés, pondérés par la longueur des mots).</summary>
+        // ------------------------------------------------------------------
+        //  Page racontée : phrase par phrase, avec de vraies pauses
+        // ------------------------------------------------------------------
+        // La voix synthétique enchaîne les phrases d'un bloc, ce qui sonne
+        // monotone. Ici chaque phrase est synthétisée à part (et mise en cache),
+        // puis les phrases sont recollées avec une pause qui dépend de la
+        // ponctuation : courte après un point, plus longue après une question,
+        // encore plus après des points de suspension, un souffle avant qu'un
+        // personnage parle (« …). Le suivi des mots gagne aussi en précision,
+        // puisque l'on connaît le début et la durée de chaque phrase.
+
+        public sealed class PageAudio
+        {
+            public string File;
+            public double Duration;
+            public readonly List<(double Start, double Dur, int Words)> Segments = new List<(double, double, int)>();
+        }
+
+        /// <summary>Découpe un texte en phrases : après . ! ? … (et le » qui suit), devant une majuscule, un chiffre, « ou un tiret.</summary>
+        public static List<string> SplitSentences(string text)
+        {
+            var list = new List<string>();
+            var sb = new StringBuilder();
+            text = (text ?? "").Trim();
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                sb.Append(c);
+                if (c != '.' && c != '!' && c != '?' && c != '…') continue;
+                int j = i + 1;
+                while (j < text.Length && (text[j] == '.' || text[j] == '!' || text[j] == '?' || text[j] == '…')) { sb.Append(text[j]); j++; }
+                int k = j;
+                while (k < text.Length && text[k] == ' ') k++;
+                if (k < text.Length && (text[k] == '»' || text[k] == '"' || text[k] == '”')) { sb.Append(' ').Append(text[k]); j = k + 1; }
+                int m = j;
+                while (m < text.Length && char.IsWhiteSpace(text[m])) m++;
+                bool cut = m >= text.Length || char.IsUpper(text[m]) || char.IsDigit(text[m]) || text[m] == '«' || text[m] == '"' || text[m] == '-' || text[m] == '—';
+                if (cut)
+                {
+                    var s = sb.ToString().Trim();
+                    if (s.Length > 0) list.Add(s);
+                    sb.Clear();
+                    i = m - 1;
+                }
+                else i = j - 1;
+            }
+            var rest = sb.ToString().Trim();
+            if (rest.Length > 0) list.Add(rest);
+            return list;
+        }
+
+        private static int CountWords(string s) => s.Split(' ').Count(t => t.Any(char.IsLetterOrDigit));
+
+        /// <summary>La pause (en secondes) après une phrase, d'après sa ponctuation et ce qui suit.</summary>
+        private static double PauseAfter(string sentence, string next)
+        {
+            string s = sentence.TrimEnd('»', '"', '”', ' ');
+            char last = s.Length > 0 ? s[s.Length - 1] : '.';
+            double p = last == '?' ? 0.65 : last == '!' ? 0.55 : last == '…' ? 0.85 : 0.5;
+            if (sentence.EndsWith("»")) p += 0.1;                 // fin d'une réplique
+            if (next != null && next.StartsWith("«")) p += 0.15;  // un personnage va parler
+            return p;
+        }
+
+        public static Task<PageAudio> SynthesizePageAsync(string text) => Task.Run(() => SynthesizePage(text));
+
+        private static PageAudio SynthesizePage(string text)
+        {
+            try
+            {
+                var sentences = SplitSentences(text);
+                if (sentences.Count == 0 || !Available) return null;
+                var outPath = CachePath("§page§" + text);
+                var segPath = outPath + ".seg";
+                // Déjà assemblée ? Le fichier des repères donne le début et la durée de chaque phrase.
+                if (File.Exists(outPath) && File.Exists(segPath))
+                {
+                    try
+                    {
+                        var pa = new PageAudio { File = outPath };
+                        foreach (var line in File.ReadAllLines(segPath))
+                        {
+                            var f = line.Split(';');
+                            if (f.Length < 3) continue;
+                            pa.Segments.Add((double.Parse(f[0], System.Globalization.CultureInfo.InvariantCulture),
+                                             double.Parse(f[1], System.Globalization.CultureInfo.InvariantCulture), int.Parse(f[2])));
+                        }
+                        pa.Duration = WavDurationSeconds(outPath);
+                        if (pa.Segments.Count == sentences.Count) return pa;
+                    }
+                    catch { }
+                }
+
+                int rate = 0, ch = 0, bits = 0;
+                var all = new MemoryStream();
+                var result = new PageAudio { File = outPath };
+                double t = 0;
+                for (int i = 0; i < sentences.Count; i++)
+                {
+                    var file = Synthesize(sentences[i]);
+                    if (file == null) return null;
+                    var data = ReadWav(file, out int r, out int c, out int b);
+                    if (data == null) return null;
+                    if (rate == 0) { rate = r; ch = c; bits = b; }
+                    else if (r != rate || c != ch || b != bits) return null;
+                    int frame = Math.Max(1, ch * bits / 8);
+                    int len = TrimSilence(data, frame, rate, bits);
+                    double dur = (double)len / (rate * frame);
+                    result.Segments.Add((t, dur, CountWords(sentences[i])));
+                    all.Write(data, 0, len);
+                    double pause = PauseAfter(sentences[i], i + 1 < sentences.Count ? sentences[i + 1] : null);
+                    int silence = (int)(pause * rate) * frame;
+                    all.Write(new byte[silence], 0, silence);
+                    t += dur + pause;
+                }
+                WriteWav(outPath, rate, ch, bits, all.ToArray());
+                result.Duration = t;
+                File.WriteAllLines(segPath, result.Segments.Select(s =>
+                    s.Start.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture) + ";" +
+                    s.Dur.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture) + ";" + s.Words));
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Log.Write("voix", "Piper (page) : " + ex.Message);
+                return null;
+            }
+        }
+
+        // Lit un WAV PCM (chunks fmt / data) ; null si le format n'est pas du PCM simple.
+        private static byte[] ReadWav(string path, out int rate, out int channels, out int bits)
+        {
+            rate = channels = bits = 0;
+            using (var fs = File.OpenRead(path))
+            using (var br = new BinaryReader(fs))
+            {
+                if (fs.Length < 44) return null;
+                fs.Seek(12, SeekOrigin.Begin);
+                byte[] data = null;
+                while (fs.Position + 8 <= fs.Length)
+                {
+                    var id = Encoding.ASCII.GetString(br.ReadBytes(4));
+                    int size = br.ReadInt32();
+                    long next = fs.Position + size + (size % 2);
+                    if (id == "fmt ")
+                    {
+                        int format = br.ReadInt16();
+                        channels = br.ReadInt16();
+                        rate = br.ReadInt32();
+                        fs.Seek(6, SeekOrigin.Current);
+                        bits = br.ReadInt16();
+                        if (format != 1 || bits != 16) return null;
+                    }
+                    else if (id == "data")
+                    {
+                        data = br.ReadBytes((int)Math.Min(size, fs.Length - fs.Position));
+                    }
+                    if (next > fs.Length) break;
+                    fs.Seek(next, SeekOrigin.Begin);
+                }
+                return rate > 0 ? data : null;
+            }
+        }
+
+        private static void WriteWav(string path, int rate, int channels, int bits, byte[] pcm)
+        {
+            using (var fs = File.Create(path))
+            using (var bw = new BinaryWriter(fs))
+            {
+                int frame = channels * bits / 8;
+                bw.Write(Encoding.ASCII.GetBytes("RIFF")); bw.Write(36 + pcm.Length); bw.Write(Encoding.ASCII.GetBytes("WAVE"));
+                bw.Write(Encoding.ASCII.GetBytes("fmt ")); bw.Write(16); bw.Write((short)1); bw.Write((short)channels);
+                bw.Write(rate); bw.Write(rate * frame); bw.Write((short)frame); bw.Write((short)bits);
+                bw.Write(Encoding.ASCII.GetBytes("data")); bw.Write(pcm.Length); bw.Write(pcm);
+            }
+        }
+
+        // Longueur utile (en octets) une fois le silence de fin enlevé (au plus 1 s, seuil bas).
+        private static int TrimSilence(byte[] pcm, int frame, int rate, int bits)
+        {
+            int len = pcm.Length - pcm.Length % frame;
+            if (bits != 16) return len;
+            int minLen = Math.Max(0, len - rate * frame);
+            int pos = len;
+            while (pos - frame >= minLen)
+            {
+                short s = (short)(pcm[pos - frame] | (pcm[pos - frame + 1] << 8));
+                if (Math.Abs((int)s) > 250) break;
+                pos -= frame;
+            }
+            return Math.Max(pos, Math.Min(len, frame * 10));
+        }
+
+        /// <summary>Lecture d'une page avec suivi des mots : phrase par phrase quand c'est possible (repères précis), sinon d'un bloc.</summary>
         public static async void SpeakPage(string text, Action<int> onWord, Action onDone, Action onFail)
         {
             try
             {
-                var file = await SynthesizeAsync(text);
-                if (file == null) { onFail?.Invoke(); return; }
-                double duration = WavDurationSeconds(file);
                 var words = text.Split(' ').Where(t => t.Any(char.IsLetterOrDigit)).ToList();
                 var times = new List<double>();
-                double totalWeight = words.Sum(w => w.Length + 2.0), cum = 0;
-                foreach (var w in words) { times.Add(duration * (cum / totalWeight)); cum += w.Length + 2.0; }
+                string file;
+                double duration;
+                var page = await SynthesizePageAsync(text);
+                if (page != null && page.Segments.Sum(s => s.Words) == words.Count)
+                {
+                    file = page.File;
+                    duration = page.Duration;
+                    int wi = 0;
+                    foreach (var seg in page.Segments)
+                    {
+                        var ws = words.Skip(wi).Take(seg.Words).ToList();
+                        wi += seg.Words;
+                        double tw = Math.Max(1, ws.Sum(w => w.Length + 2.0)), cum = 0;
+                        foreach (var w in ws) { times.Add(seg.Start + seg.Dur * (cum / tw)); cum += w.Length + 2.0; }
+                    }
+                }
+                else
+                {
+                    file = await SynthesizeAsync(text);
+                    if (file == null) { onFail?.Invoke(); return; }
+                    duration = WavDurationSeconds(file);
+                    double totalWeight = words.Sum(w => w.Length + 2.0), cum = 0;
+                    foreach (var w in words) { times.Add(duration * (cum / totalWeight)); cum += w.Length + 2.0; }
+                }
 
                 StopPlayback();
                 Speech.MarkBusyExact(duration + 0.2);
