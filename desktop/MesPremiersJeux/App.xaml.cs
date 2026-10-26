@@ -10,6 +10,23 @@ namespace MesPremiersJeux
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            // ⏳ Mode « fenêtre d'attente de mise à jour » : une copie de l'exécutable,
+            // lancée par l'ancienne version juste avant de se fermer. Pas de verrou,
+            // pas de fenêtre principale : juste la petite fenêtre, qui se ferme toute
+            // seule quand la nouvelle version est à l'écran.
+            var args = e.Args ?? new string[0];
+            int wait = Array.IndexOf(args, "--attente-maj");
+            if (wait >= 0)
+            {
+                StartupUri = null;
+                int oldPid = wait + 1 < args.Length && int.TryParse(args[wait + 1], out var pid) ? pid : -1;
+                var w = new Views.UpdateWaitWindow(oldPid);
+                MainWindow = w;
+                w.Show();
+                base.OnStartup(e);
+                return;
+            }
+
             // INSTANCE UNIQUE : plusieurs exemplaires simultanés = plusieurs moteurs
             // de regard qui injectent chacun leurs clics (chaos observé au journal).
             // Si l'application tourne déjà, ce nouvel exemplaire se ferme sans bruit.

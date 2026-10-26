@@ -113,6 +113,15 @@ namespace MesPremiersJeux.Lib
 
         public static async Task<string> InstallAsync(Info info, Action<string, double> status)
         {
+            // L'avancement peut venir d'un fil de fond (vérification du fichier) :
+            // on le ramène toujours sur le fil d'affichage.
+            var ui = status;
+            status = (t, f) =>
+            {
+                var d = System.Windows.Application.Current?.Dispatcher;
+                if (d != null && !d.CheckAccess()) d.BeginInvoke(new Action(() => ui?.Invoke(t, f)));
+                else ui?.Invoke(t, f);
+            };
             try
             {
                 // LÉGER OU COMPLET ? La voix hors ligne (~200 Mo) ne change presque jamais :
@@ -159,7 +168,7 @@ namespace MesPremiersJeux.Lib
                 {
                     status?.Invoke("Vérification du fichier…", -1);
                     var expected = (await Http.GetStringAsync(shaUrl)).Trim().Split(' ')[0].ToLowerInvariant();
-                    var actual = Sha256(path);
+                    var actual = await Task.Run(() => Sha256(path, pct => status?.Invoke("Vérification du fichier : " + pct + " %", pct / 100.0)));
                     if (expected != actual)
                     {
                         try { File.Delete(path); } catch { }
@@ -214,9 +223,31 @@ namespace MesPremiersJeux.Lib
             // encore ouverte (fichiers en cours d'usage → installation abandonnée
             // en silence) et la relance se heurtait au verrou « instance unique ».
             PendingSetup = setupPath;
+            StartWaiter();
             Log.Write("maj", "Fermeture de l'application ; l'installeur partira à la sortie : " + setupPath);
             System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => System.Windows.Application.Current.Shutdown()));
             return null;
+        }
+
+        /// <summary>
+        /// La fenêtre d'attente : une COPIE de l'exécutable (pour que l'installeur
+        /// puisse remplacer l'original), lancée avec --attente-maj. Elle reste à
+        /// l'écran de la fermeture jusqu'au premier écran de la nouvelle version.
+        /// </summary>
+        private static void StartWaiter()
+        {
+            try
+            {
+                var exe = Process.GetCurrentProcess().MainModule.FileName;
+                var dir = UpdatesDir;
+                Directory.CreateDirectory(dir);
+                var copy = Path.Combine(dir, "Eyzi-Attente.exe");
+                File.Copy(exe, copy, true);
+                if (File.Exists(exe + ".config")) File.Copy(exe + ".config", copy + ".config", true);
+                Process.Start(new ProcessStartInfo(copy, "--attente-maj " + Process.GetCurrentProcess().Id) { UseShellExecute = false, WorkingDirectory = dir });
+                Log.Write("maj", "Fenêtre d'attente lancée");
+            }
+            catch (Exception ex) { Log.Write("maj", "Fenêtre d'attente impossible : " + ex.Message); }
         }
 
         /// <summary>Appelé par App.OnExit, une fois tout fermé et le verrou relâché.</summary>
@@ -227,7 +258,7 @@ namespace MesPremiersJeux.Lib
             if (path == null) return;
             try
             {
-                Process.Start(new ProcessStartInfo(path, "/SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LAUNCH=1") { UseShellExecute = true });
+                Process.Start(new ProcessStartInfo(path, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /LAUNCH=1") { UseShellExecute = true });
                 Log.Write("maj", "Installeur lancé : " + path);
             }
             catch (Exception ex) { Log.Write("maj", "Impossible de lancer l'installeur : " + ex.Message); }
@@ -243,11 +274,23 @@ namespace MesPremiersJeux.Lib
             return m.Success && Version.TryParse(m.Groups[1].Value, out var v) ? v : null;
         }
 
-        private static string Sha256(string path)
+        private static string Sha256(string path, Action<int> progress = null)
         {
             using (var sha = SHA256.Create())
             using (var fs = File.OpenRead(path))
-                return BitConverter.ToString(sha.ComputeHash(fs)).Replace("-", "").ToLowerInvariant();
+            {
+                var buf = new byte[1024 * 1024];
+                long total = fs.Length, done = 0; int last = -1, n;
+                while ((n = fs.Read(buf, 0, buf.Length)) > 0)
+                {
+                    sha.TransformBlock(buf, 0, n, null, 0);
+                    done += n;
+                    int pct = total > 0 ? (int)(done * 100 / total) : 0;
+                    if (pct != last) { last = pct; progress?.Invoke(pct); }
+                }
+                sha.TransformFinalBlock(buf, 0, 0);
+                return BitConverter.ToString(sha.Hash).Replace("-", "").ToLowerInvariant();
+            }
         }
 
         /// <summary>Ménage : on garde les trois derniers installeurs.</summary>
