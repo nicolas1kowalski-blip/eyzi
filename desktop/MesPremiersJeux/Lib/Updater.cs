@@ -130,7 +130,8 @@ namespace MesPremiersJeux.Lib
                 string name = info.SetupName, url = info.SetupUrl, shaUrl = info.ShaUrl;
                 var local = LocalVoicePackId();
                 bool light = info.LightUrl != null && !string.IsNullOrEmpty(info.VoicePackId)
-                             && string.Equals(local, info.VoicePackId, StringComparison.OrdinalIgnoreCase);
+                             && string.Equals(local, info.VoicePackId, StringComparison.OrdinalIgnoreCase)
+                             && PiperTts.Available; // l'étiquette ne suffit pas : les fichiers de la voix doivent être là
                 if (light) { name = info.LightName; url = info.LightUrl; shaUrl = info.LightShaUrl; }
                 Log.Write("maj", light
                     ? "Mise à jour légère : la voix hors ligne « " + info.VoicePackId + " » est déjà installée"
