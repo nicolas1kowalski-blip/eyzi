@@ -38,6 +38,7 @@ namespace MesPremiersJeux.Views
                     ("🥧", "Tartes à la crème", c => new PieFaceGame(c)),
                     ("✨", "Bulles magiques", c => new MagicGame(c)),
                     ("🎈", "Ballons 3D", c => new BalloonsGame(c)),
+                    ("🪞", "Miroir magique", c => new MagicMirrorGame(c)),
                 },
             },
             new Theme

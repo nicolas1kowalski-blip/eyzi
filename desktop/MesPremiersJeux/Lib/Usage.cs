@@ -202,7 +202,7 @@ namespace MesPremiersJeux.Lib
             ["PuzzleGame"] = "Puzzle", ["FamiliesGame"] = "Les familles", ["MemoryGame"] = "Les paires",
             ["GooseGame"] = "Jeu de l'oie", ["HorseGame"] = "Petits chevaux", ["TicTacToeGame"] = "Morpion",
             ["ConnectFourGame"] = "Puissance 4", ["BirdSongGame"] = "Oiseaux chanteurs",
-            ["FireworksGame"] = "Feux d'artifice", ["MagicWindowGame"] = "Fenêtre magique", ["PieFaceGame"] = "Tartes à la crème",
+            ["FireworksGame"] = "Feux d'artifice", ["MagicMirrorGame"] = "Miroir magique", ["MagicWindowGame"] = "Fenêtre magique", ["PieFaceGame"] = "Tartes à la crème",
             ["ReadingGame"] = "Lire (prénom, mots, rimes)", ["MathGame"] = "Les nombres (un de plus, partager)",
             ["MusicSchoolGame"] = "L'école de musique", ["EnglishGame"] = "L'anglais", ["EmotionsGame"] = "Les émotions",
             ["TidyHouseGame"] = "Range la maison",

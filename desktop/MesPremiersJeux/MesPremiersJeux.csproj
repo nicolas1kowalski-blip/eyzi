@@ -55,6 +55,9 @@
          Nécessite le « WebView2 Runtime » installé sur le poste (présent par
          défaut sur Windows 10/11 récents). Toute version 1.0.* convient. -->
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2210.55" />
+    <!-- Caméra et détection de visages fournies par Windows 10 (miroir magique) :
+         les API WinRT, utilisables depuis une application de bureau. -->
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
   </ItemGroup>
 
   <ItemGroup>
