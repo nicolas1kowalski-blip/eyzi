@@ -20,7 +20,13 @@ namespace MesPremiersJeux.Games
         // La largeur suit la FORME DE L'ÉCRAN : la scène remplit tout l'écran.
         private double W = 1500;
         private const double H = 720;
-        private const double FaceSize = 290;
+        // LA PRÉCISION SE TRAVAILLE : les visages rapetissent au fil des tartes
+        // (dans la manche) et d'une manche à l'autre (niveau mémorisé), jusqu'à
+        // la moitié de la taille de départ.
+        private const double BaseFace = 290;
+        private double _scale = 1;
+        private double FaceSize => BaseFace * _scale;
+        private double Inner => FaceSize * 0.914; // l'image dans sa cible
 
         private static readonly string[] Faces = { "😀", "🤠", "🤓", "😮", "🥸", "😊", "🧐", "😁" };
         private static readonly string[] Hit = { "😵", "🤪", "😝", "😜" };
@@ -35,10 +41,17 @@ namespace MesPremiersJeux.Games
             GateVoice = false; // la tarte part toujours tout de suite — c'est le jeu !
         }
 
+        private void UpdateScale()
+        {
+            double start = 1 - 0.15 * Math.Min(2, Adaptive.Level("tartes-precision")); // 1 → 0.85 → 0.7 selon le niveau
+            _scale = Math.Max(0.5, start * (1 - 0.05 * _splats));                       // puis 5 % de moins par tarte
+        }
+
         protected override void NewRound()
         {
             Locked = false;
             _splats = 0;
+            UpdateScale();
             Question.Text = "🥧 Tartes à la crème";
             SetConsigne(new TextBlock { Text = "🔍🥧" },
                 () => "Cherche le visage rigolo... et regarde-le pour lancer la tarte ! SPLAT !");
@@ -119,8 +132,8 @@ namespace MesPremiersJeux.Games
             // intégré (FaceArt) ; l'emoji n'est plus qu'un secours.
             var imgF = Art.Find("visage-" + (fi + 1));
             var visual = imgF != null
-                ? (FrameworkElement)new Image { Source = imgF, Width = 265, Height = 265, Stretch = Stretch.Uniform }
-                : FaceArt.Make(fi, 265);
+                ? (FrameworkElement)new Image { Source = imgF, Width = Inner, Height = Inner, Stretch = Stretch.Uniform }
+                : FaceArt.Make(fi, Inner);
             // Bouton INVISIBLE : le visage vit directement dans la scène, sans
             // carte blanche — le halo doré du regard montre la cible.
             var face = SceneButton(new ContentControl { Content = visual }, FaceSize, FaceSize);
@@ -200,14 +213,14 @@ namespace MesPremiersJeux.Games
             int hi = _rng.Next(Hit.Length);
             if (imgH == null) imgH = Art.Find("visage-touche-" + (hi + 1));
             ((ContentControl)face.Content).Content = imgH != null
-                ? (FrameworkElement)new Image { Source = imgH, Width = 265, Height = 265, Stretch = Stretch.Uniform }
-                : FaceArt.Hit(hi, 265);
+                ? (FrameworkElement)new Image { Source = imgH, Width = Inner, Height = Inner, Stretch = Stretch.Uniform }
+                : FaceArt.Hit(hi, Inner);
 
             // Le visage tremble sous le choc.
             Shake(face);
 
             // La crème : un gros nuage blanc qui s'écrase sur le visage…
-            double cx = fx + 145, cy = fy + 130;
+            double cx = fx + FaceSize / 2, cy = fy + FaceSize * 0.45;
             var cream = new Canvas { IsHitTestVisible = false, RenderTransformOrigin = new Point(0.5, 0.5) };
             var csc = new ScaleTransform(0.25, 0.25);
             cream.RenderTransform = csc;
@@ -251,7 +264,9 @@ namespace MesPremiersJeux.Games
             }
 
             _splats++;
-            if (_splats % 3 == 0) Speak("Splat ! En pleine figure ! Hi hi hi !");
+            UpdateScale(); // le prochain visage sera un peu plus petit
+            if (_splats == 5) Speak("Ils deviennent tout petits… vise bien !");
+            else if (_splats % 3 == 0) Speak("Splat ! En pleine figure ! Hi hi hi !");
 
             // … puis la crème glisse, le visage s'en va, et un autre surgit
             // AILLEURS sur l'écran.
@@ -271,6 +286,7 @@ namespace MesPremiersJeux.Games
                 if (_splats >= 8 && !Locked)
                 {
                     Locked = true;
+                    Adaptive.Report("tartes-precision", true); // manche gagnée : la prochaine commence plus petit (3 manches = un cran)
                     Speak("Quelle bataille de tartes ! Bravo !");
                     GameKit.Success();
                     Celebrate();

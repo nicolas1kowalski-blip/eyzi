@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using MesPremiersJeux.Lib;
+using MesPremiersJeux.Views;
 
 namespace MesPremiersJeux.Games
 {
@@ -39,6 +40,9 @@ namespace MesPremiersJeux.Games
         private UniformGrid _zones;   // zones invisibles : le regard sur le miroir fait jaillir des étincelles
         private TextBlock _status;    // message quand la caméra manque
         private StackPanel _album;    // les dernières photos
+        private Grid _chooser;        // la galerie : l'enfant choisit son accessoire en image
+        private PagedMenu _chooserMenu;
+        private TextBlock _chooserTitle;
         private readonly List<Button> _tiles = new List<Button>();
         private readonly Random _rng = new Random();
 
@@ -221,12 +225,12 @@ namespace MesPremiersJeux.Games
             // --- Les tuiles (à droite, sur deux colonnes) : chaque regard fait défiler l'option suivante ---
             var rail = new UniformGrid { Columns = 2, Margin = new Thickness(4, 4, 8, 4), VerticalAlignment = VerticalAlignment.Center };
             _tiles.Clear();
-            rail.Children.Add(Tile("Chapeau", Color.FromRgb(0xFF, 0x9F, 0x43), IconHat(), () => Next(ref _hat, Hats)));
-            rail.Children.Add(Tile("Lunettes", Color.FromRgb(0x3F, 0x8E, 0xF2), IconGlasses(), () => Next(ref _eyes, Glasses)));
-            rail.Children.Add(Tile("Bouche", Color.FromRgb(0xF2, 0x3B, 0x5F), IconMouth(), () => Next(ref _mouth, Mouths)));
-            rail.Children.Add(Tile("Nez", Color.FromRgb(0xF2, 0x5F, 0x8F), IconNose(), () => Next(ref _nose, Noses)));
-            rail.Children.Add(Tile("Nœud", Color.FromRgb(0x8E, 0x5A, 0xF2), IconBow(), () => Next(ref _neck, Necks)));
-            rail.Children.Add(Tile("Bulle", Color.FromRgb(0x5A, 0x8A, 0xA8), IconBubble(), () => Next(ref _bubble, Bubbles)));
+            rail.Children.Add(Tile("Chapeau", Color.FromRgb(0xFF, 0x9F, 0x43), IconHat(), () => OpenChooser("un chapeau", Hats, _hat, i => _hat = i)));
+            rail.Children.Add(Tile("Lunettes", Color.FromRgb(0x3F, 0x8E, 0xF2), IconGlasses(), () => OpenChooser("des lunettes", Glasses, _eyes, i => _eyes = i)));
+            rail.Children.Add(Tile("Bouche", Color.FromRgb(0xF2, 0x3B, 0x5F), IconMouth(), () => OpenChooser("une bouche", Mouths, _mouth, i => _mouth = i)));
+            rail.Children.Add(Tile("Nez", Color.FromRgb(0xF2, 0x5F, 0x8F), IconNose(), () => OpenChooser("un nez", Noses, _nose, i => _nose = i)));
+            rail.Children.Add(Tile("Nœud", Color.FromRgb(0x8E, 0x5A, 0xF2), IconBow(), () => OpenChooser("un nœud", Necks, _neck, i => _neck = i)));
+            rail.Children.Add(Tile("Bulle", Color.FromRgb(0x5A, 0x8A, 0xA8), IconBubble(), () => OpenChooser("une bulle", Bubbles, _bubble, i => _bubble = i)));
             rail.Children.Add(Tile("Monde", Color.FromRgb(0x2E, 0xB8, 0x8A), IconRainbow(), () => { _world = (_world + 1) % WorldNames.Length; ApplyWorld(); Speak(WorldNames[_world] + " !"); }));
             rail.Children.Add(Tile("Miroir fou", Color.FromRgb(0x7E, 0x3F, 0xF2), IconWave(), () => { _deform = (_deform + 1) % DeformNames.Length; ApplyDeform(); Speak(DeformNames[_deform] + " !"); }));
             rail.Children.Add(Tile("Étincelles", Color.FromRgb(0xE0, 0xA8, 0x00), IconStar(), () => { _spark = (_spark + 1) % SparkNames.Length; Speak(SparkNames[_spark] + " ! Regarde le miroir !"); Sparkle(W / 2, H / 2); }));
@@ -234,6 +238,7 @@ namespace MesPremiersJeux.Games
             rail.Children.Add(Tile("Photo", Color.FromRgb(0x3B, 0x2A, 0x5A), IconCamera(), TakePhoto));
             Grid.SetColumn(rail, 1);
             root.Children.Add(rail);
+            root.Children.Add(BuildChooser());
 
             SetBodyFill(root);
             ApplyWorld();
@@ -335,12 +340,95 @@ namespace MesPremiersJeux.Games
         // ------------------------------------------------------------------
         //  Les déguisements, posés sur chaque visage
         // ------------------------------------------------------------------
-        private void Next(ref int index, Prop[] list)
+        // ------------------------------------------------------------------
+        //  La galerie : l'enfant choisit son accessoire parmi des images (6 par
+        //  page, flèches), « Rien » pour l'enlever, « Retour » pour ne rien changer.
+        // ------------------------------------------------------------------
+        private UIElement BuildChooser()
         {
-            index = (index + 1) % list.Length;
-            Redraw();
-            var p = list[index];
-            Speak(p == null ? "On enlève !" : p.Name + " !");
+            _chooser = new Grid { Visibility = Visibility.Collapsed, Background = new SolidColorBrush(Color.FromArgb(0xB0, 0x20, 0x10, 0x40)) };
+            Grid.SetColumnSpan(_chooser, 2);
+            var card = new Border
+            {
+                Background = new LinearGradientBrush(Color.FromRgb(0xFF, 0xF8, 0xEE), Color.FromRgb(0xF3, 0xEA, 0xFF), 90),
+                CornerRadius = new CornerRadius(32), Margin = new Thickness(30, 10, 30, 10), Padding = new Thickness(14),
+            };
+            var inner = new Grid();
+            inner.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            inner.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            var head = new DockPanel { Margin = new Thickness(10, 0, 10, 6) };
+            var back = new Button { Style = (Style)Application.Current.Resources["BackButton"], Content = "↩  Retour", HorizontalAlignment = HorizontalAlignment.Right };
+            back.Click += (s, e) => CloseChooser();
+            DockPanel.SetDock(back, Dock.Right);
+            head.Children.Add(back);
+            _chooserTitle = new TextBlock { FontSize = 32, FontWeight = FontWeights.ExtraBold, Foreground = new SolidColorBrush(Color.FromRgb(0x7E, 0x3F, 0xF2)), VerticalAlignment = VerticalAlignment.Center };
+            head.Children.Add(_chooserTitle);
+            inner.Children.Add(head);
+            _chooserMenu = new PagedMenu(3, 2);
+            Grid.SetRow(_chooserMenu, 1);
+            inner.Children.Add(_chooserMenu);
+            card.Child = inner;
+            _chooser.Children.Add(card);
+            return _chooser;
+        }
+
+        private void OpenChooser(string what, Prop[] list, int current, Action<int> pick)
+        {
+            if (Closed) return;
+            var tiles = new List<(UIElement Content, Action OnClick)>();
+            for (int i = 0; i < list.Length; i++)
+            {
+                int idx = i;
+                tiles.Add((Thumb(list[i], i == current), () =>
+                {
+                    pick(idx);
+                    Redraw();
+                    CloseChooser();
+                    var p = list[idx];
+                    Speak(p == null ? "On enlève !" : p.Name + " !");
+                }));
+            }
+            _chooserMenu.SetTiles(tiles);
+            _chooserTitle.Text = "Choisis " + what;
+            _chooser.Visibility = Visibility.Visible;
+            Speak("Choisis " + what + " !");
+        }
+
+        private void CloseChooser() { if (_chooser != null) _chooser.Visibility = Visibility.Collapsed; }
+
+        // Une vignette de la galerie : l'image de l'accessoire (ou un dessin), son nom, et un liseré doré si c'est celui porté.
+        private UIElement Thumb(Prop p, bool current)
+        {
+            var sp = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+            UIElement visual;
+            if (p == null)
+            {
+                var c = new Canvas { Width = 150, Height = 150 };
+                var ring = new Ellipse { Width = 110, Height = 110, Stroke = new SolidColorBrush(Color.FromRgb(0xC9, 0xB8, 0xE8)), StrokeThickness = 10 };
+                Canvas.SetLeft(ring, 20); Canvas.SetTop(ring, 20); c.Children.Add(ring);
+                c.Children.Add(new Line { X1 = 36, Y1 = 36, X2 = 114, Y2 = 114, Stroke = new SolidColorBrush(Color.FromRgb(0xC9, 0xB8, 0xE8)), StrokeThickness = 10 });
+                visual = c;
+            }
+            else if (p.File.StartsWith("@"))
+            {
+                visual = new TextBlock { Text = p.File == "@chat" ? "🐱" : p.File == "@etoiles" ? "✨" : p.File == "@papillon" ? "🦋" : "🐾", FontSize = 100, HorizontalAlignment = HorizontalAlignment.Center };
+            }
+            else
+            {
+                var src = Art.Find("miroir-" + p.File);
+                visual = new Image { Source = src, Width = 230, Height = 150, Stretch = Stretch.Uniform };
+            }
+            sp.Children.Add(visual);
+            sp.Children.Add(new TextBlock
+            {
+                Text = p == null ? "Rien" : p.Name, FontSize = 20, FontWeight = FontWeights.Bold, Foreground = Ink,
+                TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = 240, Margin = new Thickness(0, 6, 0, 0),
+            });
+            return new Border
+            {
+                Child = sp, Padding = new Thickness(8), CornerRadius = new CornerRadius(20),
+                BorderBrush = current ? Gold : Brushes.Transparent, BorderThickness = new Thickness(5),
+            };
         }
 
         private void Redraw()
