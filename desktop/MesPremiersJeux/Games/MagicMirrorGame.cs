@@ -49,13 +49,110 @@ namespace MesPremiersJeux.Games
         private bool _framePending;
         private int _photos;
 
-        private int _hat, _eyes, _nose, _world, _deform, _spark;
-        private static readonly string[] HatNames = { "sans chapeau", "des oreilles de chat", "des oreilles de lapin", "une couronne de princesse", "un chapeau de fête", "un chapeau de sorcière", "une couronne d'étoiles" };
-        private static readonly string[] EyeNames = { "sans lunettes", "des lunettes rondes", "des lunettes de soleil", "des lunettes étoiles", "des lunettes cœurs" };
-        private static readonly string[] NoseNames = { "rien sur le nez", "un nez de clown", "une moustache", "un papillon sur le nez", "des moustaches de chat" };
+        private int _hat, _eyes, _mouth, _nose, _neck, _bubble, _world, _deform, _spark;
+
+        // Un accessoire : une image (Images\miroir-*.png, découpée des planches de
+        // photomaton) ou un dessin vectoriel (« @… »), avec sa règle de pose sur le
+        // visage : Anchor 'b' = posé sur la tête (bas de l'image à Yk × H),
+        // 'c' = centré (centre à Yk × H), 't' = accroché par le haut (haut à Yk × H),
+        // 'r' = la bulle, à droite de la tête. Wk = largeur en fractions de la
+        // largeur du visage.
+        private sealed class Prop
+        {
+            public readonly string File, Name; public readonly char Anchor; public readonly double Wk, Yk;
+            public Prop(string file, string name, char anchor, double wk, double yk) { File = file; Name = name; Anchor = anchor; Wk = wk; Yk = yk; }
+        }
+
+        private static readonly Prop[] Hats =
+        {
+            null,
+            new Prop("@chat", "des oreilles de chat", 'b', 1, 0),
+            new Prop("oreilles-lapin", "des oreilles de lapin", 'b', 1.15, 0.30),
+            new Prop("couronne", "une couronne de princesse", 'b', 1.05, 0.22),
+            new Prop("chapeau-fete", "un chapeau de fête", 'b', 0.7, 0.14),
+            new Prop("haut-de-forme", "un haut-de-forme", 'b', 1.2, 0.22),
+            new Prop("cowboy", "un chapeau de cowboy", 'b', 1.5, 0.3),
+            new Prop("pirate", "un chapeau de pirate", 'b', 1.4, 0.3),
+            new Prop("bouffon", "un chapeau de bouffon", 'b', 1.4, 0.3),
+            new Prop("perruque-clown", "une perruque de clown", 'b', 1.6, 0.78),
+            new Prop("oreilles-ours", "des oreilles d'ours", 'b', 1.2, 0.28),
+            new Prop("serre-tete-etoiles", "un serre-tête à étoiles", 'b', 1.3, 0.3),
+            new Prop("antennes", "des antennes de martien", 'b', 1.1, 0.2),
+            new Prop("casquette-detective", "une casquette de détective", 'b', 1.3, 0.32),
+            new Prop("gendarme", "un chapeau de gendarme", 'b', 1.4, 0.3),
+            new Prop("haut-de-forme-etoile", "un haut-de-forme étoilé", 'b', 1.2, 0.22),
+            new Prop("cowboy-bleu", "un chapeau de cowboy bleu", 'b', 1.5, 0.3),
+            new Prop("oreilles-lapin-gris", "des oreilles de lapin gris", 'b', 1.15, 0.30),
+            new Prop("@etoiles", "une couronne d'étoiles", 'b', 1, 0),
+        };
+        private static readonly Prop[] Glasses =
+        {
+            null,
+            new Prop("lunettes-couleurs", "des lunettes de toutes les couleurs", 'c', 1.05, 0.40),
+            new Prop("lunettes-coeurs", "des lunettes cœurs", 'c', 1.05, 0.40),
+            new Prop("lunettes-etoiles", "des lunettes étoiles", 'c', 1.1, 0.40),
+            new Prop("lunettes-bleues", "des lunettes de soleil", 'c', 1.05, 0.40),
+            new Prop("lunettes-marron", "des lunettes de maîtresse", 'c', 1.05, 0.40),
+            new Prop("masque-violet", "un masque de bal violet", 'c', 1.1, 0.40),
+            new Prop("masque-rouge", "un masque de bal rouge", 'c', 1.1, 0.40),
+            new Prop("lunettes-yeux", "des lunettes à gros yeux", 'c', 1.0, 0.40),
+            new Prop("yeux-rigolos", "des yeux rigolos", 'c', 0.75, 0.40),
+            new Prop("cache-oeil", "un cache-œil de pirate", 'c', 0.8, 0.40),
+            new Prop("lunettes-groucho", "des lunettes à moustache", 'c', 1.0, 0.52),
+            new Prop("lunettes-coeurs-nez", "des lunettes cœurs et un nez rouge", 'c', 1.05, 0.46),
+            new Prop("lunettes-pixel", "des lunettes de star", 'c', 1.05, 0.40),
+        };
+        private static readonly Prop[] Mouths =
+        {
+            null,
+            new Prop("sourire", "un grand sourire", 'c', 0.5, 0.80),
+            new Prop("moustache-marron", "une moustache", 'c', 0.55, 0.72),
+            new Prop("langue", "une langue qui dépasse", 'c', 0.45, 0.82),
+            new Prop("barbe-rousse", "une barbe rousse", 't', 1.0, 0.62),
+            new Prop("bisou", "une bouche à bisous", 'c', 0.4, 0.80),
+            new Prop("moustache-noire", "une moustache noire", 'c', 0.5, 0.72),
+            new Prop("cri", "une bouche qui crie", 'c', 0.3, 0.82),
+            new Prop("barbe-noire", "une barbe noire", 't', 1.0, 0.62),
+            new Prop("moustache-orange", "une moustache orange", 'c', 0.55, 0.72),
+            new Prop("bouche-clown", "une bouche de clown", 'c', 0.55, 0.72),
+            new Prop("moustache-frisee", "une moustache frisée", 'c', 0.55, 0.72),
+            new Prop("petit-sourire", "un petit sourire", 'c', 0.35, 0.80),
+        };
+        private static readonly Prop[] Noses =
+        {
+            null,
+            new Prop("nez-rouge", "un nez de clown", 'c', 0.26, 0.62),
+            new Prop("@papillon", "un papillon sur le nez", 'c', 1, 0),
+            new Prop("@moustaches", "des moustaches de chat", 'c', 1, 0),
+        };
+        private static readonly Prop[] Necks =
+        {
+            null,
+            new Prop("noeud-rouge", "un nœud papillon rouge", 'c', 0.75, 1.18),
+            new Prop("cravate-rayee", "une cravate rayée", 't', 0.35, 1.02),
+            new Prop("noeud-arc-en-ciel", "un nœud papillon arc-en-ciel", 'c', 0.75, 1.18),
+            new Prop("cravate-pois", "une cravate à pois", 't', 0.35, 1.02),
+            new Prop("noeud-vert", "un nœud papillon vert", 'c', 0.75, 1.18),
+            new Prop("cravate-bleue", "une cravate bleue", 't', 0.35, 1.02),
+            new Prop("noeud-violet", "un nœud papillon violet", 'c', 0.75, 1.18),
+            new Prop("cravate-violette", "une cravate violette", 't', 0.35, 1.02),
+        };
+        private static readonly Prop[] Bubbles =
+        {
+            null,
+            new Prop("bulle-wow", "une bulle Waouh", 'r', 0.85, 0),
+            new Prop("bulle-paf", "une bulle Paf", 'r', 0.85, 0),
+            new Prop("bulle-boom", "une bulle Boum", 'r', 0.95, 0),
+            new Prop("bulle-oulala", "une bulle Oh là là", 'r', 0.95, 0),
+            new Prop("bulle-fun", "une bulle Fun", 'r', 0.95, 0),
+            new Prop("bulle-omg", "une bulle Oh mon Dieu", 'r', 0.95, 0),
+            new Prop("bulle-points", "une bulle qui réfléchit", 'r', 0.7, 0),
+            new Prop("bulle-vide", "une bulle vide", 'r', 0.85, 0),
+        };
         private static readonly string[] WorldNames = { "le monde normal", "le monde rose", "le monde bleu", "la nuit étoilée", "la vieille photo", "le monde arc-en-ciel" };
         private static readonly string[] DeformNames = { "le miroir normal", "tout large", "tout fin", "à l'envers", "le miroir qui tremble", "le miroir géant" };
-        private static readonly string[] SparkNames = { "des étoiles", "des cœurs", "des bulles" };
+        private static readonly string[] SparkNames = { "des étoiles", "des cœurs", "des bulles", "des confettis" };
+        private static readonly string[] ConfettiFiles = { "miroir-confetti-violet", "miroir-confetti-bleu", "miroir-confetti-jaune", "miroir-etoile-jaune", "miroir-etoile-bleue", "miroir-etoile-orange", "miroir-serpentin-vert", "miroir-serpentin-rouge" };
 
         public MagicMirrorGame(Action celebrate) : base(celebrate)
         {
@@ -121,12 +218,15 @@ namespace MesPremiersJeux.Games
             left.Children.Add(_album);
             root.Children.Add(left);
 
-            // --- Les tuiles (à droite) : chaque regard fait défiler l'option suivante ---
-            var rail = new StackPanel { Margin = new Thickness(4, 4, 10, 4), VerticalAlignment = VerticalAlignment.Center };
+            // --- Les tuiles (à droite, sur deux colonnes) : chaque regard fait défiler l'option suivante ---
+            var rail = new UniformGrid { Columns = 2, Margin = new Thickness(4, 4, 8, 4), VerticalAlignment = VerticalAlignment.Center };
             _tiles.Clear();
-            rail.Children.Add(Tile("Chapeau", Color.FromRgb(0xFF, 0x9F, 0x43), IconHat(), () => { _hat = (_hat + 1) % HatNames.Length; Redraw(); Speak(HatNames[_hat] + " !"); }));
-            rail.Children.Add(Tile("Lunettes", Color.FromRgb(0x3F, 0x8E, 0xF2), IconGlasses(), () => { _eyes = (_eyes + 1) % EyeNames.Length; Redraw(); Speak(EyeNames[_eyes] + " !"); }));
-            rail.Children.Add(Tile("Nez", Color.FromRgb(0xF2, 0x5F, 0x8F), IconNose(), () => { _nose = (_nose + 1) % NoseNames.Length; Redraw(); Speak(NoseNames[_nose] + " !"); }));
+            rail.Children.Add(Tile("Chapeau", Color.FromRgb(0xFF, 0x9F, 0x43), IconHat(), () => Next(ref _hat, Hats)));
+            rail.Children.Add(Tile("Lunettes", Color.FromRgb(0x3F, 0x8E, 0xF2), IconGlasses(), () => Next(ref _eyes, Glasses)));
+            rail.Children.Add(Tile("Bouche", Color.FromRgb(0xF2, 0x3B, 0x5F), IconMouth(), () => Next(ref _mouth, Mouths)));
+            rail.Children.Add(Tile("Nez", Color.FromRgb(0xF2, 0x5F, 0x8F), IconNose(), () => Next(ref _nose, Noses)));
+            rail.Children.Add(Tile("Nœud", Color.FromRgb(0x8E, 0x5A, 0xF2), IconBow(), () => Next(ref _neck, Necks)));
+            rail.Children.Add(Tile("Bulle", Color.FromRgb(0x5A, 0x8A, 0xA8), IconBubble(), () => Next(ref _bubble, Bubbles)));
             rail.Children.Add(Tile("Monde", Color.FromRgb(0x2E, 0xB8, 0x8A), IconRainbow(), () => { _world = (_world + 1) % WorldNames.Length; ApplyWorld(); Speak(WorldNames[_world] + " !"); }));
             rail.Children.Add(Tile("Miroir fou", Color.FromRgb(0x7E, 0x3F, 0xF2), IconWave(), () => { _deform = (_deform + 1) % DeformNames.Length; ApplyDeform(); Speak(DeformNames[_deform] + " !"); }));
             rail.Children.Add(Tile("Étincelles", Color.FromRgb(0xE0, 0xA8, 0x00), IconStar(), () => { _spark = (_spark + 1) % SparkNames.Length; Speak(SparkNames[_spark] + " ! Regarde le miroir !"); Sparkle(W / 2, H / 2); }));
@@ -235,23 +335,33 @@ namespace MesPremiersJeux.Games
         // ------------------------------------------------------------------
         //  Les déguisements, posés sur chaque visage
         // ------------------------------------------------------------------
+        private void Next(ref int index, Prop[] list)
+        {
+            index = (index + 1) % list.Length;
+            Redraw();
+            var p = list[index];
+            Speak(p == null ? "On enlève !" : p.Name + " !");
+        }
+
         private void Redraw()
         {
             _overlay.Children.Clear();
             foreach (var f in _faces)
             {
-                DrawHat(f);
-                DrawEyes(f);
-                DrawNose(f);
+                DrawProp(Necks[_neck], f);
+                DrawProp(Mouths[_mouth], f);
+                DrawProp(Glasses[_eyes], f);
+                DrawProp(Noses[_nose], f);
+                DrawProp(Hats[_hat], f);
+                DrawProp(Bubbles[_bubble], f);
             }
         }
 
         private static readonly Brush Ink = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A));
         private static readonly Brush Pink = new SolidColorBrush(Color.FromRgb(0xFF, 0x9F, 0xD6));
         private static readonly Brush Gold = new SolidColorBrush(Color.FromRgb(0xFF, 0xD2, 0x4D));
-        private static readonly Brush Red = new SolidColorBrush(Color.FromRgb(0xF2, 0x3B, 0x3B));
 
-        private void Add(Shape s, double left, double top) { Canvas.SetLeft(s, left); Canvas.SetTop(s, top); _overlay.Children.Add(s); }
+        private void Add(UIElement s, double left, double top) { Canvas.SetLeft(s, left); Canvas.SetTop(s, top); _overlay.Children.Add(s); }
 
         private Polygon Poly(Brush fill, params Point[] pts)
         {
@@ -260,15 +370,34 @@ namespace MesPremiersJeux.Games
             return p;
         }
 
-        private Ellipse Dot(Brush fill, double d, Brush stroke = null, double thick = 3) =>
-            new Ellipse { Width = d, Height = d, Fill = fill, Stroke = stroke ?? Ink, StrokeThickness = thick };
+        private Ellipse Dot(Brush fill, double d) => new Ellipse { Width = d, Height = d, Fill = fill, Stroke = Ink, StrokeThickness = 3 };
 
-        private void DrawHat(MirrorCamera.Face f)
+        private void DrawProp(Prop p, MirrorCamera.Face f)
+        {
+            if (p == null) return;
+            if (p.File.StartsWith("@")) { DrawVector(p.File, f); return; }
+            var src = Art.Find("miroir-" + p.File);
+            if (src == null) return;
+            double cx = f.X + f.W / 2;
+            double width = f.W * p.Wk;
+            double height = width * src.Height / Math.Max(1.0, src.Width);
+            var img = new Image { Source = src, Width = width, Height = height, Stretch = Stretch.Fill };
+            switch (p.Anchor)
+            {
+                case 'b': Add(img, cx - width / 2, f.Y + f.H * p.Yk - height); break;
+                case 't': Add(img, cx - width / 2, f.Y + f.H * p.Yk); break;
+                case 'r': Add(img, f.X + f.W * 0.95, f.Y - f.H * 0.35); break;
+                default: Add(img, cx - width / 2, f.Y + f.H * p.Yk - height / 2); break;
+            }
+        }
+
+        // Les quelques accessoires dessinés (oreilles de chat, couronne d'étoiles, papillon, moustaches de chat).
+        private void DrawVector(string kind, MirrorCamera.Face f)
         {
             double cx = f.X + f.W / 2, top = f.Y;
-            switch (_hat)
+            switch (kind)
             {
-                case 1: // oreilles de chat
+                case "@chat":
                     foreach (int side in new[] { -1, 1 })
                     {
                         double ex = cx + side * f.W * 0.32;
@@ -276,46 +405,7 @@ namespace MesPremiersJeux.Games
                         Add(Poly(Pink, new Point(ex - f.W * 0.08, top + f.H * 0.09), new Point(ex, top - f.H * 0.18), new Point(ex + f.W * 0.08, top + f.H * 0.09)), 0, 0);
                     }
                     break;
-                case 2: // oreilles de lapin
-                    foreach (int side in new[] { -1, 1 })
-                    {
-                        double ex = cx + side * f.W * 0.22, eh = f.H * 0.75, ew = f.W * 0.2;
-                        Add(new Ellipse { Width = ew, Height = eh, Fill = Brushes.White, Stroke = Ink, StrokeThickness = 3 }, ex - ew / 2, top - eh + f.H * 0.1);
-                        Add(new Ellipse { Width = ew * 0.5, Height = eh * 0.7, Fill = Pink }, ex - ew * 0.25, top - eh * 0.85 + f.H * 0.1);
-                    }
-                    break;
-                case 3: // couronne
-                    {
-                        double w = f.W * 0.9, h = f.H * 0.4, x0 = cx - w / 2, y0 = top - h * 0.75;
-                        var pts = new List<Point> { new Point(x0, y0 + h), new Point(x0, y0 + h * 0.35) };
-                        for (int i = 0; i < 4; i++) { pts.Add(new Point(x0 + w * (i + 0.5) / 4, y0)); pts.Add(new Point(x0 + w * (i + 1) / 4, y0 + h * 0.35)); }
-                        pts.Add(new Point(x0 + w, y0 + h));
-                        Add(Poly(Gold, pts.ToArray()), 0, 0);
-                        for (int i = 0; i < 4; i++) Add(Dot(i % 2 == 0 ? Red : new SolidColorBrush(Color.FromRgb(0x3F, 0x8E, 0xF2)), h * 0.22, Brushes.White, 2), x0 + w * (i + 0.5) / 4 - h * 0.11, y0 + h * 0.45);
-                        break;
-                    }
-                case 4: // chapeau de fête
-                    {
-                        double w = f.W * 0.6, h = f.H * 0.9, x0 = cx - w / 2, y0 = top - h + f.H * 0.12;
-                        var cone = Poly(new LinearGradientBrush(Color.FromRgb(0xFF, 0x6B, 0x6B), Color.FromRgb(0x7E, 0x3F, 0xF2), 90), new Point(x0, y0 + h), new Point(cx, y0), new Point(x0 + w, y0 + h));
-                        Add(cone, 0, 0);
-                        for (int i = 1; i <= 3; i++)
-                        {
-                            double yy = y0 + h * i / 4, half = w / 2 * i / 4;
-                            Add(new Line { X1 = cx - half, Y1 = yy, X2 = cx + half, Y2 = yy, Stroke = Gold, StrokeThickness = 4 }, 0, 0);
-                        }
-                        Add(Dot(Gold, f.W * 0.16), cx - f.W * 0.08, y0 - f.W * 0.08);
-                        break;
-                    }
-                case 5: // chapeau de sorcière
-                    {
-                        double w = f.W * 0.8, h = f.H * 1.0, y0 = top - h + f.H * 0.15;
-                        Add(new Ellipse { Width = f.W * 1.4, Height = f.H * 0.22, Fill = Ink, Stroke = new SolidColorBrush(Color.FromRgb(0x7E, 0x3F, 0xF2)), StrokeThickness = 3 }, cx - f.W * 0.7, y0 + h - f.H * 0.12);
-                        Add(Poly(new SolidColorBrush(Color.FromRgb(0x4A, 0x2A, 0x6A)), new Point(cx - w / 2, y0 + h), new Point(cx + w * 0.1, y0), new Point(cx + w / 2, y0 + h)), 0, 0);
-                        Add(new Rectangle { Width = w * 0.7, Height = f.H * 0.12, Fill = Gold, RadiusX = 4, RadiusY = 4 }, cx - w * 0.35, y0 + h - f.H * 0.2);
-                        break;
-                    }
-                case 6: // couronne d'étoiles
+                case "@etoiles":
                     for (int i = 0; i < 7; i++)
                     {
                         double a = Math.PI * (0.1 + 0.8 * i / 6), r = f.W * 0.72;
@@ -323,61 +413,9 @@ namespace MesPremiersJeux.Games
                         Add(st, cx - Math.Cos(a) * r, top + f.H * 0.15 - Math.Sin(a) * r);
                     }
                     break;
-            }
-        }
-
-        private void DrawEyes(MirrorCamera.Face f)
-        {
-            if (_eyes == 0) return;
-            double ey = f.Y + f.H * 0.4, r = f.W * 0.19;
-            double lx = f.X + f.W * 0.3, rx = f.X + f.W * 0.7;
-            switch (_eyes)
-            {
-                case 1:
-                    Add(new Ellipse { Width = 2 * r, Height = 2 * r, Stroke = Ink, StrokeThickness = 5, Fill = new SolidColorBrush(Color.FromArgb(0x30, 0x7E, 0x3F, 0xF2)) }, lx - r, ey - r);
-                    Add(new Ellipse { Width = 2 * r, Height = 2 * r, Stroke = Ink, StrokeThickness = 5, Fill = new SolidColorBrush(Color.FromArgb(0x30, 0x7E, 0x3F, 0xF2)) }, rx - r, ey - r);
-                    Add(new Line { X1 = lx + r, Y1 = ey, X2 = rx - r, Y2 = ey, Stroke = Ink, StrokeThickness = 5 }, 0, 0);
-                    break;
-                case 2:
-                    Add(new Rectangle { Width = 2.1 * r, Height = 1.5 * r, RadiusX = r * 0.5, RadiusY = r * 0.5, Fill = new SolidColorBrush(Color.FromArgb(0xDD, 0x20, 0x20, 0x30)), Stroke = Ink, StrokeThickness = 4 }, lx - 1.05 * r, ey - 0.7 * r);
-                    Add(new Rectangle { Width = 2.1 * r, Height = 1.5 * r, RadiusX = r * 0.5, RadiusY = r * 0.5, Fill = new SolidColorBrush(Color.FromArgb(0xDD, 0x20, 0x20, 0x30)), Stroke = Ink, StrokeThickness = 4 }, rx - 1.05 * r, ey - 0.7 * r);
-                    Add(new Line { X1 = lx + r, Y1 = ey - 0.3 * r, X2 = rx - r, Y2 = ey - 0.3 * r, Stroke = Ink, StrokeThickness = 5 }, 0, 0);
-                    break;
-                case 3:
-                    foreach (var x in new[] { lx, rx })
-                        Add(new System.Windows.Shapes.Path { Data = StarGeometry, Fill = new SolidColorBrush(Color.FromArgb(0x90, 0xFF, 0xD2, 0x4D)), Stroke = Ink, StrokeThickness = 0.4, RenderTransform = new ScaleTransform(r * 0.14, r * 0.14) }, x, ey);
-                    Add(new Line { X1 = lx + r * 0.6, Y1 = ey, X2 = rx - r * 0.6, Y2 = ey, Stroke = Ink, StrokeThickness = 5 }, 0, 0);
-                    break;
-                case 4:
-                    foreach (var x in new[] { lx, rx })
-                        Add(new System.Windows.Shapes.Path { Data = HeartGeometry, Fill = new SolidColorBrush(Color.FromArgb(0xA0, 0xFF, 0x5F, 0x8F)), Stroke = Ink, StrokeThickness = 0.4, RenderTransform = new ScaleTransform(r * 0.14, r * 0.14) }, x, ey - r * 0.2);
-                    Add(new Line { X1 = lx + r * 0.6, Y1 = ey, X2 = rx - r * 0.6, Y2 = ey, Stroke = Ink, StrokeThickness = 5 }, 0, 0);
-                    break;
-            }
-        }
-
-        private void DrawNose(MirrorCamera.Face f)
-        {
-            double nx = f.X + f.W / 2, ny = f.Y + f.H * 0.62;
-            switch (_nose)
-            {
-                case 1:
+                case "@papillon":
                     {
-                        double d = f.W * 0.24;
-                        Add(Dot(Red, d), nx - d / 2, ny - d / 2);
-                        Add(Dot(new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF)), d * 0.3, Brushes.Transparent, 0), nx - d * 0.3, ny - d * 0.35);
-                        break;
-                    }
-                case 2:
-                    {
-                        double w = f.W * 0.6, h = f.H * 0.14, y = ny + f.H * 0.14;
-                        Add(new System.Windows.Shapes.Path { Data = Geometry.Parse(Fmt("M {0},{1} C {2},{3} {4},{3} {5},{6} C {7},{8} {9},{10} {0},{1} C {11},{10} {12},{8} {13},{6} C {14},{3} {15},{3} {0},{1} Z",
-                            nx, y, nx - w * 0.15, y - h, nx - w * 0.4, nx - w * 0.5, y - h * 0.3, nx - w * 0.35, y + h * 0.2, nx - w * 0.15, y + h * 0.15, nx + w * 0.15, nx + w * 0.35, nx + w * 0.5, nx + w * 0.4, nx + w * 0.15)), Fill = Ink }, 0, 0);
-                        break;
-                    }
-                case 3:
-                    {
-                        double w = f.W * 0.22, h = f.H * 0.16;
+                        double nx = cx, ny = f.Y + f.H * 0.62, w = f.W * 0.22, h = f.H * 0.16;
                         var wing = new SolidColorBrush(Color.FromArgb(0xE0, 0xB3, 0x88, 0xFF));
                         Add(new Ellipse { Width = w, Height = h, Fill = wing, Stroke = Ink, StrokeThickness = 2, RenderTransform = new RotateTransform(-25) }, nx - w * 0.95, ny - h * 0.7);
                         Add(new Ellipse { Width = w, Height = h, Fill = wing, Stroke = Ink, StrokeThickness = 2, RenderTransform = new RotateTransform(25) }, nx + w * 0.05, ny - h * 0.5);
@@ -386,9 +424,9 @@ namespace MesPremiersJeux.Games
                         Add(new Ellipse { Width = w * 0.18, Height = h * 1.3, Fill = Ink }, nx - w * 0.09, ny - h * 0.5);
                         break;
                     }
-                case 4:
+                case "@moustaches":
                     {
-                        double d = f.W * 0.12;
+                        double nx = cx, ny = f.Y + f.H * 0.62, d = f.W * 0.12;
                         Add(Dot(Pink, d), nx - d / 2, ny - d / 2);
                         foreach (int side in new[] { -1, 1 })
                             for (int i = -1; i <= 1; i++)
@@ -474,8 +512,13 @@ namespace MesPremiersJeux.Games
                 Shape s;
                 double size = 10 + _rng.Next(18);
                 if (_spark == 0) s = new System.Windows.Shapes.Path { Data = StarGeometry, Fill = Gold, Stroke = new SolidColorBrush(Color.FromRgb(0xFF, 0x9F, 0x43)), StrokeThickness = 0.5 };
-                else if (_spark == 1) s = new System.Windows.Shapes.Path { Data = HeartGeometry, Fill = new SolidColorBrush(Color.FromRgb(0xFF, 0x5F, 0x8F)), Stroke = Red, StrokeThickness = 0.5 };
-                else s = new Ellipse { Width = 20, Height = 20, Stroke = new SolidColorBrush(Color.FromArgb(0xE0, 0xFF, 0xFF, 0xFF)), StrokeThickness = 2, Fill = new SolidColorBrush(Color.FromArgb(0x50, 0x8A, 0xD6, 0xFF)) };
+                else if (_spark == 1) s = new System.Windows.Shapes.Path { Data = HeartGeometry, Fill = new SolidColorBrush(Color.FromRgb(0xFF, 0x5F, 0x8F)), Stroke = new SolidColorBrush(Color.FromRgb(0xF2, 0x3B, 0x3B)), StrokeThickness = 0.5 };
+                else if (_spark == 2) s = new Ellipse { Width = 20, Height = 20, Stroke = new SolidColorBrush(Color.FromArgb(0xE0, 0xFF, 0xFF, 0xFF)), StrokeThickness = 2, Fill = new SolidColorBrush(Color.FromArgb(0x50, 0x8A, 0xD6, 0xFF)) };
+                else
+                {
+                    var src = Art.Find(ConfettiFiles[_rng.Next(ConfettiFiles.Length)]);
+                    s = new Rectangle { Width = 22, Height = 22, Fill = src != null ? (Brush)new ImageBrush(src) { Stretch = Stretch.Uniform } : Gold };
+                }
                 var sc = new ScaleTransform(0.2, 0.2);
                 var tr = new TranslateTransform();
                 var tg = new TransformGroup(); tg.Children.Add(sc); tg.Children.Add(tr);
@@ -501,15 +544,19 @@ namespace MesPremiersJeux.Games
             Speak("Roulement de tambour…");
             Schedule(900, () =>
             {
-                _hat = 1 + _rng.Next(HatNames.Length - 1);
-                _eyes = _rng.Next(EyeNames.Length);
-                _nose = _rng.Next(NoseNames.Length);
+                _hat = 1 + _rng.Next(Hats.Length - 1);
+                _eyes = _rng.Next(Glasses.Length);
+                _mouth = _rng.Next(Mouths.Length);
+                _nose = _rng.Next(3) == 0 ? _rng.Next(Noses.Length) : 0;
+                _neck = _rng.Next(2) == 0 ? _rng.Next(Necks.Length) : 0;
+                _bubble = _rng.Next(3) == 0 ? _rng.Next(Bubbles.Length) : 0;
                 _world = _rng.Next(WorldNames.Length);
                 _deform = _rng.Next(3) == 0 ? _rng.Next(DeformNames.Length) : 0;
                 Redraw(); ApplyWorld(); ApplyDeform();
                 SoundFx.Boom();
                 Sparkle(W / 2, H / 2);
-                Speak("Surprise ! " + HatNames[_hat] + ", " + EyeNames[_eyes] + " et " + NoseNames[_nose] + " !");
+                var parts = new[] { Hats[_hat]?.Name, Glasses[_eyes]?.Name, Mouths[_mouth]?.Name }.Where(x => x != null).ToList();
+                Speak("Surprise ! " + string.Join(", ", parts) + " !");
             });
         }
 
@@ -570,14 +617,14 @@ namespace MesPremiersJeux.Games
         private Button Tile(string label, Color color, UIElement icon, Action onClick)
         {
             var sp = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            var box = new Viewbox { Width = 44, Height = 44, Child = icon, Margin = new Thickness(0, 0, 12, 0) };
+            var box = new Viewbox { Width = 36, Height = 36, Child = icon, Margin = new Thickness(0, 0, 10, 0) };
             sp.Children.Add(box);
-            sp.Children.Add(new TextBlock { Text = label, FontSize = 24, FontWeight = FontWeights.ExtraBold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center });
+            sp.Children.Add(new TextBlock { Text = label, FontSize = 20, FontWeight = FontWeights.ExtraBold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center });
             var b = new Button
             {
                 Style = (Style)Application.Current.Resources["AnswerButton"],
                 Content = sp,
-                Width = 230, Height = 84,
+                Width = 172, Height = 92,
                 Background = new SolidColorBrush(color),
                 BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0xFF, 0xFF, 0xFF)),
                 Margin = new Thickness(4, 4, 4, 4),
@@ -618,6 +665,27 @@ namespace MesPremiersJeux.Games
         {
             var c = Icon();
             var e = new Ellipse { Width = 26, Height = 26, Fill = White }; Canvas.SetLeft(e, 11); Canvas.SetTop(e, 11); c.Children.Add(e);
+            return c;
+        }
+        private static UIElement IconMouth()
+        {
+            var c = Icon();
+            c.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M 6,18 C 14,44 34,44 42,18 Z"), Fill = White });
+            return c;
+        }
+        private static UIElement IconBow()
+        {
+            var c = Icon();
+            c.Children.Add(new Polygon { Points = new PointCollection { new Point(4, 12), new Point(22, 24), new Point(4, 36) }, Fill = White });
+            c.Children.Add(new Polygon { Points = new PointCollection { new Point(44, 12), new Point(26, 24), new Point(44, 36) }, Fill = White });
+            var k = new Ellipse { Width = 12, Height = 12, Fill = White }; Canvas.SetLeft(k, 18); Canvas.SetTop(k, 18); c.Children.Add(k);
+            return c;
+        }
+        private static UIElement IconBubble()
+        {
+            var c = Icon();
+            var e = new Ellipse { Width = 42, Height = 30, Fill = White }; Canvas.SetLeft(e, 3); Canvas.SetTop(e, 4); c.Children.Add(e);
+            c.Children.Add(new Polygon { Points = new PointCollection { new Point(12, 30), new Point(8, 44), new Point(24, 32) }, Fill = White });
             return c;
         }
         private static UIElement IconRainbow()
