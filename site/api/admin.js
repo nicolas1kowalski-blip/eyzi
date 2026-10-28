@@ -2,7 +2,7 @@
 // (créer la licence et l'envoyer), refuser, renvoyer un numéro.
 // Protégée par ADMIN_TOKEN (variable Vercel : une longue phrase secrète),
 // envoyé par le navigateur dans l'en-tête x-admin-token.
-import { supabaseAdmin, issueLicence, places } from '../lib/licences.js';
+import { supabaseAdmin, issueLicence, places, modulesText } from '../lib/licences.js';
 import { mailConfigured, sendLicence, refuse } from '../lib/mail.js';
 import catalogue from '../lib/activities.js';
 
@@ -77,7 +77,7 @@ export default async function handler(req, res) {
         supabase.from('usage_resume').select('*'),
         supabase.from('usage_par_famille').select('*'),
         supabase.from('usage_30_jours').select('*'),
-        supabase.from('licences').select('key, family, channel, max_tablets, enabled, expires_at, created_at'),
+        supabase.from('licences').select('key, family, channel, max_tablets, enabled, expires_at, created_at, modules'),
         supabase.from('activations').select('licence_key, machine, app_version, first_seen, last_seen, enabled'),
         supabase.from('usage').select('machine, activity, label, launches, seconds, day').eq('licence_key', TRIAL).order('day', { ascending: false }).limit(5000),
       ]);
@@ -127,6 +127,14 @@ export default async function handler(req, res) {
         .select('id, created_at, topic, name, email, kind, org, child, gear, tablets, message, recontact, status, licence_key, note')
         .eq('status', status).order('created_at', { ascending: false }).limit(200);
       if (error) throw error;
+      // Les mondes de chaque licence attribuée, pour les afficher et les changer.
+      const keys = (data || []).map((r) => r.licence_key).filter(Boolean);
+      const mods = {};
+      if (keys.length) {
+        const { data: lics } = await supabase.from('licences').select('key, modules').in('key', keys);
+        for (const l of lics || []) mods[l.key] = l.modules;
+      }
+      for (const r of data || []) r.modules = r.licence_key ? (mods[r.licence_key] || 'jouer,apprendre,parler') : null;
       const p = await places(supabase);
       res.status(200).json({ ok: true, requests: data || [], places: p, mail: mailConfigured() });
       return;
@@ -143,10 +151,19 @@ export default async function handler(req, res) {
 
     if (action === 'approve') {
       if (r.topic !== 'licence') { res.status(400).json({ ok: false, message: "Ce n'est pas une demande de licence." }); return; }
-      await issueLicence(supabase, r, id, { force: true });
+      await issueLicence(supabase, r, id, { force: true, modules: body.modules });
       let mailed = false;
       if (mailConfigured() && r.email) { try { await sendLicence(r); mailed = true; } catch (e) { console.error('mail licence', e?.message || e); } }
       res.status(200).json({ ok: true, licence: r.licenceKey, mailed, resent: r.resent });
+      return;
+    }
+    if (action === 'modules') {
+      // Changer les mondes d'une licence déjà attribuée.
+      if (!r.licenceKey) { res.status(400).json({ ok: false, message: 'Pas de licence attribuée.' }); return; }
+      const m = modulesText(body.modules);
+      const { error: mErr } = await supabase.from('licences').update({ modules: m }).eq('key', r.licenceKey);
+      if (mErr) throw mErr;
+      res.status(200).json({ ok: true, modules: m });
       return;
     }
     if (action === 'resend') {

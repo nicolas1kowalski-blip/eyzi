@@ -45,6 +45,7 @@ namespace MesPremiersJeux.Lib
         public bool NameAsked = false;   // le prénom a été demandé au premier démarrage sur cette tablette
         // 🔑 Licence (voir Lib/Licence.cs)
         public string LicenceKey = "", LicenceFamily = "", LicenceChannel = "prod", LicenceUntil = "", LicenceChecked = "";
+        public string LicenceModules = "jouer,apprendre,parler"; // les mondes compris dans la licence
         public int LicenceMax = 2, LicenceUsed = 0;
         public string UsageSent = "";     // dernier jour d'envoi des compteurs d'usage
         public string TrialStart = "";    // premier jour de l'essai sans licence (10 jours)
@@ -108,6 +109,7 @@ namespace MesPremiersJeux.Lib
                         case "LicenceKey": s.LicenceKey = val; break;
                         case "LicenceFamily": s.LicenceFamily = val; break;
                         case "LicenceChannel": s.LicenceChannel = val; break;
+                        case "LicenceModules": if (val.Trim().Length > 0) s.LicenceModules = val.Trim(); break;
                         case "LicenceUntil": s.LicenceUntil = val; break;
                         case "LicenceChecked": s.LicenceChecked = val; break;
                         case "LicenceMax": int.TryParse(val, out s.LicenceMax); break;
@@ -174,6 +176,7 @@ namespace MesPremiersJeux.Lib
                     "LicenceKey=" + (LicenceKey ?? ""),
                     "LicenceFamily=" + (LicenceFamily ?? ""),
                     "LicenceChannel=" + (LicenceChannel ?? "prod"),
+                    "LicenceModules=" + (LicenceModules ?? "jouer,apprendre,parler"),
                     "LicenceUntil=" + (LicenceUntil ?? ""),
                     "LicenceChecked=" + (LicenceChecked ?? ""),
                     "LicenceMax=" + LicenceMax,

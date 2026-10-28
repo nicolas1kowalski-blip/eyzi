@@ -1104,11 +1104,26 @@ namespace MesPremiersJeux
         // ------------------------------------------------------------------
         //  🔑 Licence et 🔄 mises à jour
         // ------------------------------------------------------------------
-        private void RefreshLicenceText()
+        /// <summary>Les mondes compris dans la licence : les autres disparaissent (portes, pastilles).</summary>
+        private void ApplyModules()
         {
             try
             {
-                LicenceText.Text = "Licence : " + Licence.Describe(_settings);
+                bool j = Licence.HasModule(_settings, "jouer"), a = Licence.HasModule(_settings, "apprendre"), p = Licence.HasModule(_settings, "parler");
+                if (TabJouer != null) TabJouer.Visibility = j ? Visibility.Visible : Visibility.Collapsed;
+                if (TabApprendre != null) TabApprendre.Visibility = a ? Visibility.Visible : Visibility.Collapsed;
+                if (TabParler != null) TabParler.Visibility = p ? Visibility.Visible : Visibility.Collapsed;
+                _accueil?.SetWorlds(j, a, p);
+            }
+            catch { }
+        }
+
+        private void RefreshLicenceText()
+        {
+            ApplyModules();
+            try
+            {
+                LicenceText.Text = "Licence : " + Licence.Describe(_settings) + " · mondes : " + Licence.ModulesText(_settings);
                 VersionText.Text = "Eyzi bêta · version " + Updater.Current + (Updater.IsDevBuild ? " (compilée à la main : pas de mise à jour automatique)" : " · canal " + (Licence.IsTest(_settings) ? "TEST" : "prod"));
             }
             catch { }
@@ -1844,6 +1859,12 @@ namespace MesPremiersJeux
         /// <summary>Entre dans un monde, par sa porte (son écran d'accueil).</summary>
         private void SelectWorld(string world)
         {
+            if (!Licence.HasModule(_settings, world))
+            {
+                Speech.Say("Ce monde n'est pas dans la licence.");
+                Select("accueil");
+                return;
+            }
             switch (world)
             {
                 case "jouer": (_views["games"] as GamesView)?.ShowRoot(); Select("games"); Speech.Say("Le monde des jeux !"); break;

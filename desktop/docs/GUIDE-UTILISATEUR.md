@@ -42,6 +42,8 @@ Sur le même écran, choisissez un **mot de passe famille** (6 caractères au mo
 
 La licence est vérifiée en ligne à l'activation, puis au plus une fois par jour. Sans réseau, elle reste valable **30 jours**.
 
+Elle comprend un ou plusieurs **mondes** : Jouer, Apprendre, Parler. Les licences de la bêta comprennent les trois. Un monde qui n'est pas dans la licence n'apparaît pas (ni sa porte sur l'accueil, ni sa pastille dans le menu du haut) ; les réglages indiquent les mondes compris. Si l'éditeur change les mondes d'une licence, l'application le voit à sa prochaine vérification en ligne (au plus tard le lendemain).
+
 Elle est limitée à un **nombre de tablettes** (deux, en général). Quand elles sont toutes prises, une nouvelle tablette est refusée : sur l'ancienne, réglages → **🚫 Libérer cette tablette** rend la place. Les réglages affichent toujours « tablettes : 1/2 ».
 
 ### Le prénom de l'enfant
@@ -180,7 +182,7 @@ Le canal est porté par la licence. **↩ Version précédente** réinstalle la 
 ## 9. Pour l'éditeur : donner l'application à une autre famille
 
 1. **Créer une licence** dans le serveur (Supabase → SQL) :
-   `select public.create_licence('Famille Martin', 'prod', 2);` — le nom, le canal (`test` ou `prod`), le nombre de tablettes, et une date de fin facultative en 4ᵉ paramètre. La fonction renvoie le numéro `EYZ-…` à transmettre.
+   `select public.create_licence('Famille Martin', 'prod', 2);` — le nom, le canal (`test` ou `prod`), le nombre de tablettes, une date de fin facultative en 4ᵉ paramètre, et en 5ᵉ les mondes compris (`'jouer,apprendre,parler'` par défaut ; par exemple `'jouer,apprendre'` pour une licence sans le monde Parler). La fonction renvoie le numéro `EYZ-…` à transmettre. Pour changer les mondes d'une licence existante : `update public.licences set modules = 'jouer,parler' where key = 'EYZ-…';` ou, plus simple, la page admin du site (cases à cocher puis « Enregistrer les mondes »).
 2. **Donner** à la famille : l'adresse eyzi.fr, le numéro de licence, ce guide (eyzi.fr/guide.html). Elle choisit elle-même son mot de passe famille.
 3. **Publier une version** : chaque poussée de code compile une version *test* (pré-version) sur GitHub. Pour la passer en *prod* : GitHub → Releases → Edit → décocher « Set as a pre-release » → cocher « Set as the latest release ». Les tablettes prod la reçoivent au prochain démarrage.
 4. **Révoquer** une licence : dans la table `licences`, passer `enabled` à `false` ; la tablette perd l'accès au plus tard 30 jours après (ou à sa prochaine vérification en ligne).

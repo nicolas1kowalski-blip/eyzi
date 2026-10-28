@@ -21,6 +21,8 @@
   .req dl{display:grid;grid-template-columns:170px 1fr;gap:4px 12px;margin:0 0 10px;font-size:15px}
   .req dt{color:var(--muted)}
   .req dd{margin:0;white-space:pre-wrap}
+  .mods{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:10px 0 4px;font-size:15px}
+  .mods label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
   .req .key{font-family:ui-monospace,Consolas,monospace;font-size:17px;background:var(--code);padding:4px 10px;border-radius:8px}
   .acts{display:flex;gap:8px;flex-wrap:wrap}
   .acts button{border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:15px}
@@ -98,10 +100,22 @@
         + '<dl>'+rows.map(function(r){return '<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>';}).join('')+'</dl>'
         + '<div class="acts"></div><div class="rmsg"></div>';
       var acts = el.querySelector('.acts'), rmsg = el.querySelector('.rmsg');
+      // Les mondes compris dans la licence (à la carte ; tout coché = licence complète).
+      var mods = null;
+      if (isLic) {
+        mods = document.createElement('div'); mods.className = 'mods';
+        var cur = (q.modules || 'jouer,apprendre,parler').split(',');
+        mods.innerHTML = '<span>Mondes :</span>' + [['jouer','🎮 Jouer'],['apprendre','🎓 Apprendre'],['parler','💬 Parler']].map(function(m){
+          return '<label><input type="checkbox" value="'+m[0]+'"'+(cur.indexOf(m[0])>=0?' checked':'')+'> '+m[1]+'</label>';
+        }).join('');
+        acts.parentNode.insertBefore(mods, acts);
+      }
+      function chosen(){ return mods ? Array.prototype.map.call(mods.querySelectorAll('input:checked'), function(i){ return i.value; }) : null; }
       function btn(label, cls, fn){ var b=document.createElement('button'); b.className=cls; b.textContent=label; b.onclick=async function(){ b.disabled=true; try { await fn(); } catch(e){ show(rmsg,'err',e.message); } b.disabled=false; }; acts.appendChild(b); }
       if (q.status === 'new') {
         if (isLic) btn('✅ Valider : créer la licence et l\'envoyer', 'ok', async function(){
-          var r = await api('POST', {action:'approve', id:q.id});
+          var m = chosen(); if (m && !m.length) { show(rmsg,'err','Coche au moins un monde.'); return; }
+          var r = await api('POST', {action:'approve', id:q.id, modules:m});
           show(rmsg,'ok','Licence '+r.licence+(r.resent?' (déjà attribuée à cette adresse, renvoyée)':' créée')+(r.mailed?' et envoyée par e-mail.':'. E-mail NON envoyé : à transmettre à la main.'));
           setTimeout(load, 1200);
         });
@@ -113,6 +127,10 @@
         });
         if (isLic) btn('✕ Refuser sans e-mail', 'no', async function(){ await api('POST', {action:'refuse', id:q.id, notify:false}); load(); });
       } else {
+        if (q.licence_key) btn('💾 Enregistrer les mondes', 'no', async function(){
+          var m = chosen(); if (!m.length) { show(rmsg,'err','Coche au moins un monde.'); return; }
+          var r = await api('POST',{action:'modules', id:q.id, modules:m}); show(rmsg,'ok','Mondes de la licence : '+r.modules+' (pris en compte à la prochaine vérification de l\'application).');
+        });
         if (q.licence_key) btn('📧 Renvoyer le numéro', 'no', async function(){ var r = await api('POST',{action:'resend', id:q.id}); show(rmsg, r.mailed?'ok':'err', r.mailed?'Numéro renvoyé à '+q.email:'E-mail non envoyé (SMTP non configuré ?)'); });
         btn('↩ Remettre en attente', 'no', async function(){ await api('POST',{action:'reopen', id:q.id}); load(); });
       }

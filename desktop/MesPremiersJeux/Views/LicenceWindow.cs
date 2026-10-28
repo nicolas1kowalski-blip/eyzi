@@ -113,7 +113,7 @@ namespace MesPremiersJeux.Views
                 if (pass.Length > 0 && pass.Length < 6) { _msg.Text = "⚠ Le mot de passe famille doit faire au moins 6 caractères."; _ok.IsEnabled = true; return; }
                 if (pass != (_settings.FamilyPassphrase ?? "")) { _settings.FamilyPassphrase = pass; _settings.CloudLastSync = ""; _settings.CloudLastFingerprint = ""; _settings.Save(); }
                 _msg.Foreground = new SolidColorBrush(Color.FromRgb(0x2E, 0x9E, 0x4F));
-                _msg.Text = "✅ Licence activée : " + Licence.Describe(_settings);
+                _msg.Text = "✅ Licence activée : " + Licence.Describe(_settings) + " · " + Licence.ModulesText(_settings);
                 await System.Threading.Tasks.Task.Delay(900);
                 DialogResult = true;
                 Close();

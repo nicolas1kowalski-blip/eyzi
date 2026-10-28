@@ -358,3 +358,56 @@ alter table public.licence_requests add column if not exists topic text not null
 alter table public.licence_requests add column if not exists gear text;
 alter table public.licence_requests add column if not exists recontact boolean not null default false;
 alter table public.licence_requests enable row level security;
+
+
+-- ---------------------------------------------------------------------------
+-- 8) MODULES À LA CARTE : chaque licence porte la liste de ses mondes
+--    (jouer, apprendre, parler). Les licences existantes gardent les trois.
+--    L'application ne montre que les mondes compris ; l'éditeur choisit les
+--    modules à la validation (page admin du site) et peut les changer ensuite.
+-- ---------------------------------------------------------------------------
+alter table public.licences add column if not exists modules text not null default 'jouer,apprendre,parler';
+
+drop function if exists public.create_licence(text, text, int, date);
+create or replace function public.create_licence(p_family text, p_channel text default 'prod', p_max int default 2, p_expires date default null, p_modules text default 'jouer,apprendre,parler')
+returns text language plpgsql security definer as $$
+declare k text := public.new_licence_key();
+begin
+  insert into public.licences(key, family, channel, max_tablets, expires_at, modules) values (k, p_family, p_channel, p_max, p_expires, coalesce(nullif(p_modules, ''), 'jouer,apprendre,parler'));
+  return k;
+end $$;
+
+-- activate_licence renvoie aussi « modules ».
+create or replace function public.activate_licence(p_key text, p_machine text, p_version text default null)
+returns json language plpgsql security definer as $$
+declare lic public.licences%rowtype; act public.activations%rowtype; n int;
+begin
+  select * into lic from public.licences where key = public.norm_key(p_key);
+  if not found then
+    return json_build_object('ok', false, 'message', 'Numéro de licence inconnu.');
+  end if;
+  if not lic.enabled then
+    return json_build_object('ok', false, 'family', lic.family, 'message', 'Cette licence a été désactivée.');
+  end if;
+  if lic.expires_at is not null and lic.expires_at < current_date then
+    return json_build_object('ok', false, 'family', lic.family, 'message', 'Cette licence a expiré le ' || to_char(lic.expires_at, 'DD/MM/YYYY') || '.');
+  end if;
+  select * into act from public.activations where licence_key = lic.key and machine = p_machine;
+  if found and not act.enabled then
+    return json_build_object('ok', false, 'family', lic.family, 'message', 'Cette tablette a été désactivée pour la licence ' || lic.family || '. Demandez à l''éditeur de la réactiver, ou libérez une autre tablette.');
+  end if;
+  select count(*) into n from public.activations where licence_key = lic.key and machine <> p_machine and enabled;
+  if act.licence_key is null and n >= lic.max_tablets then
+    return json_build_object('ok', false, 'family', lic.family, 'message', 'Cette licence est déjà utilisée sur ' || n || ' tablette(s), le maximum. Sur une ancienne tablette : réglages → « Libérer cette tablette ».');
+  end if;
+  insert into public.activations(licence_key, machine, app_version) values (lic.key, p_machine, p_version)
+    on conflict (licence_key, machine) do update set last_seen = now(), app_version = excluded.app_version;
+  perform public.ensure_cloud_identity(lic.key);
+  select * into lic from public.licences where key = lic.key;
+  return json_build_object('ok', true, 'family', lic.family, 'channel', lic.channel, 'max_tablets', lic.max_tablets, 'modules', lic.modules,
+                           'used_tablets', n + 1,
+                           'expires_at', lic.expires_at, 'message', 'Bienvenue, ' || lic.family || ' !',
+                           'cloud_email', 'famille-' || replace(lower(lic.key), '-', '') || '@mpj.local',
+                           'cloud_secret', lic.cloud_secret);
+end $$;
+grant execute on function public.activate_licence(text, text, text) to anon, authenticated;

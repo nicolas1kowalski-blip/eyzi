@@ -37,6 +37,13 @@ export async function places(supabase) {
 /// Attribue une licence à une demande. r = { name, email, kind, tablets }.
 /// Renseigne r.licenceKey, r.resent, r.placesLeft. Avec force=false (mode
 /// automatique), rien n'est créé s'il ne reste pas de place.
+export const ALL_MODULES = ['jouer', 'apprendre', 'parler'];
+/** La liste des mondes d'une licence, nettoyée ; vide ou absente = tout. */
+export function modulesText(list) {
+  const m = Array.isArray(list) ? list.map((x) => String(x).toLowerCase()).filter((x) => ALL_MODULES.includes(x)) : [];
+  return (m.length ? m : ALL_MODULES).join(',');
+}
+
 export async function issueLicence(supabase, r, requestId, { force = false } = {}) {
   const maxTablets = Math.min(Math.max(1, r.tablets || 1), r.kind === 'famille' ? 2 : 10);
 
@@ -62,6 +69,7 @@ export async function issueLicence(supabase, r, requestId, { force = false } = {
     const k = newKey();
     const { error } = await supabase.from('licences').insert({
       key: k, family: r.name, channel: 'prod', max_tablets: maxTablets, enabled: true,
+      modules: modulesText(opts.modules),
       expires_at: betaUntil() || null, note: (force ? 'validée depuis admin' : 'créée par le site (bêta)') + ' pour ' + (r.email || '?'),
     });
     if (!error) key = k; else if (error.code !== '23505') throw error;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -162,9 +163,32 @@ namespace MesPremiersJeux.Lib
             int.TryParse(Cloud.JsonGet(json, "used_tablets") ?? "1", out s.LicenceUsed);
             s.CloudEmail = Cloud.JsonGet(json, "cloud_email") ?? s.CloudEmail;
             s.CloudSecret = Cloud.JsonGet(json, "cloud_secret") ?? s.CloudSecret;
+            var mods = (Cloud.JsonGet(json, "modules") ?? "").Trim();
+            s.LicenceModules = mods.Length > 0 ? mods.ToLowerInvariant() : "jouer,apprendre,parler"; // ancien serveur : tout
             Apply(s, key, Cloud.JsonGet(json, "family") ?? "", (Cloud.JsonGet(json, "channel") ?? "prod").ToLowerInvariant(), max,
                   (Cloud.JsonGet(json, "expires_at") ?? "").Split('T')[0], true);
             return null;
+        }
+
+        public static readonly string[] AllModules = { "jouer", "apprendre", "parler" };
+
+        /// <summary>Le monde « m » fait-il partie de la licence ? (essai, licences maîtres : tout.)</summary>
+        public static bool HasModule(Settings s, string m)
+        {
+            if (s == null) return true;
+            if (!s.LicenceOk || IsMaster(s.LicenceKey) || string.IsNullOrWhiteSpace(s.LicenceKey)) return true;
+            var list = (s.LicenceModules ?? "").Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            return list.Length == 0 || Array.IndexOf(list, m) >= 0;
+        }
+
+        /// <summary>Les mondes compris, en toutes lettres (pour l'écran de licence).</summary>
+        public static string ModulesText(Settings s)
+        {
+            var names = new List<string>();
+            if (HasModule(s, "jouer")) names.Add("Jouer");
+            if (HasModule(s, "apprendre")) names.Add("Apprendre");
+            if (HasModule(s, "parler")) names.Add("Parler");
+            return names.Count == 3 ? "tous les mondes" : names.Count == 0 ? "aucun monde" : string.Join(" + ", names);
         }
 
         private static void Apply(Settings s, string key, string family, string channel, int max, string until, bool ok)
