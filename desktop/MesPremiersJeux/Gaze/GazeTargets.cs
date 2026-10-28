@@ -40,10 +40,23 @@ namespace MesPremiersJeux.Gaze
             return false;
         }
 
+        /// <summary>
+        /// Cible de PRÉCISION (jeux qui travaillent la visée) : l'aimant du regard
+        /// ne l'attire pas de loin, il faut poser le regard DEDANS. Le reste de
+        /// l'écran garde son aimant habituel.
+        /// </summary>
+        public static readonly DependencyProperty PreciseProperty =
+            DependencyProperty.RegisterAttached("Precise", typeof(bool), typeof(GazeTargets),
+                new PropertyMetadata(false));
+
+        public static void SetPrecise(DependencyObject el, bool value) => el.SetValue(PreciseProperty, value);
+        public static bool GetPrecise(DependencyObject el) => (bool)el.GetValue(PreciseProperty);
+
         public sealed class Target
         {
             public FrameworkElement Element;
             public Rect ScreenRect; // pixels écran (physiques)
+            public bool Precise;    // sans aimant : le regard doit être dedans
         }
 
         /// <summary>
@@ -94,7 +107,7 @@ namespace MesPremiersJeux.Gaze
                         var br = fe.PointToScreen(new Point(fe.ActualWidth, fe.ActualHeight));
                         var r = new Rect(tl, br);
                         if (r.Width >= 8 && r.Height >= 8)
-                            list.Add(new Target { Element = fe, ScreenRect = r });
+                            list.Add(new Target { Element = fe, ScreenRect = r, Precise = GetPrecise(fe) });
                     }
                     catch { /* élément pas encore connecté à l'écran */ }
                     return; // le contenu d'une cible n'est pas une cible séparée

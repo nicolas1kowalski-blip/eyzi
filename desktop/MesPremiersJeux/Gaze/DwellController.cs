@@ -75,6 +75,7 @@ namespace MesPremiersJeux.Gaze
 
         // --- Aimant à cibles + fixation « intelligente » ---
         private const double SnapRadius = 80;        // px : le regard proche d'un bouton est attiré dessus
+        private const double PreciseSnapRadius = 10; // px : cible « de précision » : presque pas d'aimant
         private const double GraceSeconds = 0.35;    // un écart bref ne remet PAS la progression à zéro
         private const double SaccadePxPerSec = 1100; // au-delà = mouvement brusque : progression en pause
 
@@ -757,6 +758,7 @@ namespace MesPremiersJeux.Gaze
                     double dx = Math.Max(Math.Max(r.Left - screen.X, 0), screen.X - r.Right);
                     double dy = Math.Max(Math.Max(r.Top - screen.Y, 0), screen.Y - r.Bottom);
                     double d = Math.Sqrt(dx * dx + dy * dy);
+                    if (tg.Precise && d > PreciseSnapRadius) continue; // il faut viser dedans
                     if (d < nearDist) { near = tg; nearDist = d; }
                 }
             }

@@ -137,6 +137,9 @@ namespace MesPremiersJeux.Games
             // Bouton INVISIBLE : le visage vit directement dans la scène, sans
             // carte blanche — le halo doré du regard montre la cible.
             var face = SceneButton(new ContentControl { Content = visual }, FaceSize, FaceSize);
+            // Cible de précision : l'aimant du regard ne l'attrape pas de loin, il
+            // faut poser le regard sur le visage — c'est tout l'intérêt du jeu.
+            Gaze.GazeTargets.SetPrecise(face, true);
             face.RenderTransformOrigin = new Point(0.5, 0.5);
             var captured = face;
             face.Click += (s, e) => ThrowPie(captured, fx, fy, fi);
