@@ -35,10 +35,20 @@ namespace MesPremiersJeux.Views
                     ("🐦", "Oiseaux chanteurs", c => new BirdSongGame(c)),
                     ("🎆", "Feux d'artifice", c => new FireworksGame(c)),
                     ("🧽", "Fenêtre magique", c => new MagicWindowGame(c)),
-                    ("🥧", "Tartes à la crème", c => new PieFaceGame(c)),
                     ("✨", "Bulles magiques", c => new MagicGame(c)),
                     ("🎈", "Ballons 3D", c => new BalloonsGame(c)),
                     ("🪞", "Miroir magique", c => new MagicMirrorGame(c)),
+                },
+            },
+            new Theme
+            {
+                Icon = "🎪", Name = "Fête foraine", Tint = Color.FromRgb(0xFF, 0xE9, 0xD6),
+                Games = new (string, string, Func<Action, UserControl>)[]
+                {
+                    ("🎯", "Chamboule-tout", c => new ChambouleGame(c)),
+                    ("🎣", "La pêche", c => new FishingGame(c)),
+                    ("🥔", "Patatou", c => new PotatoGame(c)),
+                    ("🥧", "Tartes à la crème", c => new PieFaceGame(c)),
                 },
             },
             new Theme
