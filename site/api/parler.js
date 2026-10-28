@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
     const client = new Anthropic({ apiKey });
     const response = await client.beta.messages.create({
-      model: 'claude-opus-5-5',
+      model: 'claude-haiku-5-5',
       max_tokens: 600,
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
