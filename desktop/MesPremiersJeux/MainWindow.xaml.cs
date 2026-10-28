@@ -37,6 +37,7 @@ namespace MesPremiersJeux
         {
             Views.Splash.Status("Préparation des activités…");
             InitializeComponent();
+            Emoji.FixTree(TopBar); // les emojis des onglets en couleur
             WireAdminButton();
             // Mode immersif : masque/affiche la barre du haut pendant une activité.
             Chrome.Changed += () => Dispatcher.Invoke(() =>

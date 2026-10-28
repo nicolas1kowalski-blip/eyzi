@@ -84,6 +84,9 @@ namespace MesPremiersJeux.Lib
                     VerticalAlignment = VerticalAlignment.Center,
                 };
             }
+            // L'emoji en couleur (Twemoji) s'il existe, sinon le caractère.
+            var pic = Emoji.Picture((emojiFallback ?? "").Trim(), size * 0.9);
+            if (pic != null) { pic.HorizontalAlignment = HorizontalAlignment.Center; pic.VerticalAlignment = VerticalAlignment.Center; return pic; }
             return new TextBlock
             {
                 Text = emojiFallback,

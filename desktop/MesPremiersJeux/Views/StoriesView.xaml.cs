@@ -570,14 +570,16 @@ namespace MesPremiersJeux.Views
                     },
                 };
                 content.Children.Add(ribbon);
-                content.Children.Add(new TextBlock
+                var info = new TextBlock
                 {
                     Text = "📖 " + b.Pages.Count + (b.Pages.Count > 1 ? " pages" : " page") + (b.Questions.Count > 0 ? "   ·   🎯 quiz" : ""),
                     FontSize = 17,
                     Foreground = new SolidColorBrush(Color.FromRgb(0x6B, 0x5B, 0x8A)),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Margin = new Thickness(0, 8, 0, 0),
-                });
+                };
+                Emoji.Fix(info);
+                content.Children.Add(info);
 
                 // Livres personnalisés : boutons Modifier / Supprimer (mode admin).
                 if (b.Dir != null && AdminMode.IsActive)
@@ -724,6 +726,7 @@ namespace MesPremiersJeux.Views
         {
             _book = book;
             _title.Text = "✨ " + book.Title + " ✨";
+            Emoji.Fix(_title);
             _bg.Source = null;
             _bg.Visibility = Visibility.Collapsed;
             if (book.BackgroundPath != null)
@@ -764,7 +767,9 @@ namespace MesPremiersJeux.Views
         private static void SetNavContent(Button btn, string glyph, string label)
         {
             var sp = new StackPanel();
-            sp.Children.Add(new TextBlock { Text = glyph, FontSize = 36, HorizontalAlignment = HorizontalAlignment.Center });
+            var g = new TextBlock { Text = glyph, FontSize = 36, HorizontalAlignment = HorizontalAlignment.Center };
+            Emoji.Fix(g);
+            sp.Children.Add(g);
             sp.Children.Add(new TextBlock { Text = label, FontSize = 16, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center, Foreground = Dark, Margin = new Thickness(0, -2, 0, 0) });
             btn.Content = sp;
         }
@@ -1482,7 +1487,9 @@ namespace MesPremiersJeux.Views
         private Button VfCard(string glyph, string label, Brush bg, bool correct)
         {
             var inner = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            inner.Children.Add(new TextBlock { Text = glyph, FontSize = 84, HorizontalAlignment = HorizontalAlignment.Center });
+            var gl2 = new TextBlock { Text = glyph, FontSize = 84, HorizontalAlignment = HorizontalAlignment.Center };
+            Emoji.Fix(gl2);
+            inner.Children.Add(gl2);
             inner.Children.Add(new TextBlock { Text = label, FontSize = 32, FontWeight = FontWeights.Bold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center });
             var card = QuizCard(inner, bg);
             card.Click += (s, e) => AnswerQuestion(correct, card);
@@ -1527,7 +1534,9 @@ namespace MesPremiersJeux.Views
         private static UIElement BigGlyph(string glyph, string label)
         {
             var sp = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            sp.Children.Add(new TextBlock { Text = glyph, FontSize = 76, HorizontalAlignment = HorizontalAlignment.Center });
+            var gl = new TextBlock { Text = glyph, FontSize = 76, HorizontalAlignment = HorizontalAlignment.Center };
+            Emoji.Fix(gl);
+            sp.Children.Add(gl);
             sp.Children.Add(new TextBlock { Text = label, FontSize = 26, FontWeight = FontWeights.Bold, Foreground = Dark, HorizontalAlignment = HorizontalAlignment.Center });
             return sp;
         }

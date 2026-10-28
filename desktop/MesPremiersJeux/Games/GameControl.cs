@@ -208,11 +208,11 @@ namespace MesPremiersJeux.Games
                 if (_started)
                 {
                     // Revenu dans la page après en être sorti : on repart d'un tour neuf.
-                    if (Closed) { Closed = false; try { NewRound(); } catch { } }
+                    if (Closed) { Closed = false; try { NewRound(); Emoji.Fix(Question); } catch { } }
                     return;
                 }
                 _started = true;
-                try { NewRound(); }
+                try { NewRound(); Emoji.Fix(Question); }
                 catch (Exception ex)
                 {
                     Question.Text = "Oups, ce jeu a un souci.";
@@ -421,6 +421,7 @@ namespace MesPremiersJeux.Games
             modelHeight = Math.Min(modelHeight, 80); // bulle compacte : le jeu garde la place
             if (model != null)
             {
+                Emoji.FixTree(model);
                 _consigne.Children.Add(new Border
                 {
                     CornerRadius = new CornerRadius(30),
@@ -796,6 +797,7 @@ namespace MesPremiersJeux.Games
         /// <summary>Dispose une « scène » centrale et une rangée de réponses en bas.</summary>
         protected void SetBody(UIElement stage, UIElement answers)
         {
+            Emoji.FixTree(stage); Emoji.FixTree(answers);
             AutoPage(stage);
             Body.Children.Clear();
             var dp = new DockPanel { LastChildFill = true };
@@ -822,6 +824,7 @@ namespace MesPremiersJeux.Games
         /// <summary>Remplit le corps avec un contenu unique (grilles, etc.).</summary>
         protected void SetBody(UIElement content)
         {
+            Emoji.FixTree(content);
             AutoPage(content);
             Body.Children.Clear();
             Body.Children.Add(FitBox(content));
@@ -840,6 +843,7 @@ namespace MesPremiersJeux.Games
         /// dont chaque carte occupe sa cellule au maximum).</summary>
         protected void SetBodyFill(UIElement content)
         {
+            Emoji.FixTree(content);
             AutoPage(content);
             Body.Children.Clear();
             if (content is FrameworkElement fe)

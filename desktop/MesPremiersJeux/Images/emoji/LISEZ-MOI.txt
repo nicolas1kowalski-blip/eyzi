@@ -1,0 +1,3 @@
+Images d'emojis : Twemoji (https://github.com/jdecked/twemoji), © Twitter / contributeurs,
+licence CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+Seuls les emojis utilisés par Eyzi sont livrés ici. Nom de fichier = code Unicode (sans FE0F).

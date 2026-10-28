@@ -1,0 +1,6 @@
+Banque de pictogrammes « Mulberry Symbols » (https://mulberrysymbols.org, Steve Lee / Straight Street),
+licence CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/) : usage et modification libres,
+y compris commerciaux, à condition de citer la source et de partager les symboles modifiés sous la même licence.
+Convertis ici en PNG 256 px (palette) depuis les SVG d'origine ; l'index pictos.csv reprend les libellés
+anglais et français fournis par Mulberry (le français est une traduction automatique, à relire au fil de l'usage).
+Pas encore livrés dans l'application : réservés au futur monde « Parler ».
