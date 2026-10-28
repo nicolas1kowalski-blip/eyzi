@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using MesPremiersJeux.Lib;
 
@@ -347,6 +348,75 @@ namespace MesPremiersJeux.Learning
             else pool = pool.OrderBy(_ => Rng.Next()).ToList();
             foreach (var p in pool) { if (set.Count >= count) break; set.Add(p); }
             return set.OrderBy(_ => Rng.Next()).ToList();
+        }
+
+        // ------------------------------------------------------------------
+        //  Puzzles : une image découpée en grille (décors fournis, ou les photos
+        //  de la famille présentes sur la tablette — jamais fournies par l'éditeur).
+        // ------------------------------------------------------------------
+        private static readonly string[] Decors =
+        {
+            "decor-ferme", "decor-jungle", "decor-ocean", "decor-neige", "decor-robots", "decor-montgolfieres",
+            "decor-foret", "decor-mare", "decor-montagnes", "decor-espace", "decor-bonbons", "decor-oiseaux", "decor-ocean-epave",
+        };
+
+        /// <summary>Une image à découper, recadrée au centre en 4:3 : une photo de la famille une fois sur deux s'il y en a, sinon un décor.</summary>
+        public static BitmapSource Photo(BitmapSource sauf = null)
+        {
+            for (int tries = 0; tries < 6; tries++)
+            {
+                BitmapSource src = null;
+                try
+                {
+                    var fam = Rng.Next(2) == 0 ? UserContent.LoadFamily() : null;
+                    if (fam != null && fam.Count > 0) src = UserContent.LoadBitmap(Un(fam).Path, 1200);
+                    else src = Art.Find(Un(Decors)) as BitmapSource;
+                }
+                catch { src = null; }
+                if (src == null || src == sauf || src.PixelWidth < 200 || src.PixelHeight < 150) continue;
+                int w = src.PixelWidth, h = src.PixelHeight;
+                int cw = Math.Min(w, h * 4 / 3), chh = Math.Min(h, w * 3 / 4);
+                try { var c = new CroppedBitmap(src, new Int32Rect((w - cw) / 2, (h - chh) / 2, cw, chh)); c.Freeze(); return c; }
+                catch { return src; }
+            }
+            return Art.Find(Decors[0]) as BitmapSource;
+        }
+
+        private static Int32Rect Cellule(BitmapSource src, int cols, int rows, int index)
+        {
+            int cw = src.PixelWidth / cols, ch = src.PixelHeight / rows;
+            return new Int32Rect((index % cols) * cw, (index / cols) * ch, cw, ch);
+        }
+
+        /// <summary>La pièce « index » du puzzle, éventuellement tournée.</summary>
+        public static FrameworkElement Piece(BitmapSource src, int cols, int rows, int index, double size = 170, double rotation = 0)
+        {
+            var img = new Image { Source = new CroppedBitmap(src, Cellule(src, cols, rows, index)), Stretch = Stretch.Uniform };
+            double ratio = (src.PixelHeight / (double)rows) / (src.PixelWidth / (double)cols); // hauteur / largeur d'une pièce
+            var bd = new Border { Child = img, BorderBrush = Ink, BorderThickness = new Thickness(3), Width = ratio <= 1 ? size : size / ratio, Height = ratio <= 1 ? size * ratio : size, Background = Brushes.White };
+            if (rotation != 0) { bd.RenderTransformOrigin = new Point(0.5, 0.5); bd.RenderTransform = new RotateTransform(rotation); }
+            return new Grid { Width = size, Height = size, Children = { bd }, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        }
+
+        /// <summary>Le puzzle avec ses trous : chaque trou montre son marqueur (ou « ? » s'il n'y en a pas).</summary>
+        public static FrameworkElement Puzzle(BitmapSource src, int cols, int rows, IDictionary<int, FrameworkElement> trous, double width = 720)
+        {
+            double cw = width / cols, ch = cw * (src.PixelHeight / (double)rows) / (src.PixelWidth / (double)cols);
+            var g = new UniformGrid { Columns = cols, Rows = rows, Width = width, Height = ch * rows };
+            for (int i = 0; i < cols * rows; i++)
+            {
+                FrameworkElement cell;
+                if (trous != null && trous.TryGetValue(i, out var marque))
+                    cell = new Border
+                    {
+                        Background = new SolidColorBrush(Color.FromRgb(0xFF, 0xF3, 0xC4)), BorderBrush = Ink, BorderThickness = new Thickness(2),
+                        Child = marque ?? new TextBlock { Text = "?", FontSize = ch * 0.6, FontWeight = FontWeights.ExtraBold, Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0x5A, 0x2C)), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+                    };
+                else
+                    cell = new Border { BorderBrush = new SolidColorBrush(Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF)), BorderThickness = new Thickness(1), Child = new Image { Source = new CroppedBitmap(src, Cellule(src, cols, rows, i)), Stretch = Stretch.Fill } };
+                g.Children.Add(cell);
+            }
+            return new Border { Child = g, BorderBrush = Ink, BorderThickness = new Thickness(4), Background = Brushes.White };
         }
 
         public static T Un<T>(IList<T> l) => l[Rng.Next(l.Count)];

@@ -26,7 +26,7 @@ namespace MesPremiersJeux.Learning
 
             // Les nombres : P1 de chaque compétence, puis P2, puis P3 (comme les unités d'un chemin).
             var cN = new[] { Denombrer(), Chiffres(), Comparer(), Composer(), Suite(), Probleme() };
-            var cF = new[] { FormesC(), Grandeurs(), Suites(), Classer() };
+            var cF = new[] { FormesC(), Grandeurs(), Suites(), Classer(), Puzzles() };
             foreach (var chemin in new[] { (nombres, cN), (formes, cF) })
                 for (int p = 1; p <= 3; p++)
                     foreach (var c in chemin.Item2)
@@ -565,6 +565,65 @@ namespace MesPremiersJeux.Learning
             var ex = new ExerciceChoix { Consigne = "Quel nombre manque dans la suite ?", Scene = () => V.Rangee(items.Select(n => new Func<FrameworkElement>(() => V.Chiffre(n, 100))).ToList(), trou, 100) };
             int bon = items[trou];
             foreach (var k in V.Nombres(bon, 3, Math.Max(0, bon - 3), bon + 3, true)) { int kk = k; ex.Reponses.Add(new Carte { Visuel = () => V.Chiffre(kk), Bonne = kk == bon, Dit = kk.ToString() }); }
+            return ex;
+        }
+
+        private static Competence Puzzles() => C("formes.puzzles", "Puzzles", "🧩",
+            P(1,
+                A("a", "deux pièces côte à côte", () => PieceManquante(2, 1, 2, "autre")),
+                A("b", "deux pièces l'une sur l'autre", () => PieceManquante(1, 2, 2, "autre"))),
+            P(2,
+                A("a", "quatre pièces", () => PieceManquante(2, 2, 3, "meme")),
+                A("b", "où va la pièce ?", () => OuVaLaPiece(2, 2, 2)),
+                A("c", "six pièces", () => PieceManquante(3, 2, 3, "meme"))),
+            P(3,
+                A("a", "neuf pièces", () => PieceManquante(3, 3, 4, "meme")),
+                A("b", "la pièce à l'endroit", () => PieceManquante(3, 3, 3, "tournee")),
+                A("c", "où va la pièce ? (trois cases)", () => OuVaLaPiece(3, 3, 3))));
+
+        /// <summary>La pièce qui manque, parmi des pièces d'une autre image, de la même image, ou la bonne pièce tournée.</summary>
+        private static ExerciceChoix PieceManquante(int cols, int rows, int count, string distracteurs)
+        {
+            var src = V.Photo(); int n = cols * rows; int trou = V.Rng.Next(n);
+            var ex = new ExerciceChoix { Consigne = "Quelle pièce manque au puzzle ?", Scene = () => V.Puzzle(src, cols, rows, new Dictionary<int, FrameworkElement> { [trou] = null }), Bravo = "Oui ! Le puzzle est fini !" };
+            ex.Reponses.Add(new Carte { Visuel = () => V.Piece(src, cols, rows, trou), Bonne = true, Dit = "" });
+            if (distracteurs == "autre")
+            {
+                var autre = V.Photo(src);
+                foreach (var i in V.Melange(Enumerable.Range(0, n)).Take(count - 1)) { int k = i; ex.Reponses.Add(new Carte { Visuel = () => V.Piece(autre, cols, rows, k), Bonne = false }); }
+            }
+            else if (distracteurs == "tournee")
+            {
+                foreach (var rot in V.Melange(new[] { 90.0, 180.0, 270.0 }).Take(count - 1)) { double r = rot; ex.Reponses.Add(new Carte { Visuel = () => V.Piece(src, cols, rows, trou, 170, r), Bonne = false }); }
+            }
+            else
+            {
+                foreach (var i in V.Melange(Enumerable.Range(0, n).Where(i => i != trou)).Take(count - 1)) { int k = i; ex.Reponses.Add(new Carte { Visuel = () => V.Piece(src, cols, rows, k), Bonne = false }); }
+            }
+            ex.Reponses = V.Melange(ex.Reponses);
+            return ex;
+        }
+
+        /// <summary>Où va la pièce ? Les trous portent une forme de couleur ; l'enfant regarde la forme de la bonne case.</summary>
+        private static ExerciceChoix OuVaLaPiece(int cols, int rows, int nTrous)
+        {
+            var src = V.Photo(); int n = cols * rows;
+            var trous = V.Melange(Enumerable.Range(0, n)).Take(nTrous).ToList(); int bon = trous[0];
+            var marques = new[] { ("rond", V.Couleurs[0].C, "le rond rouge"), ("carre", V.Couleurs[1].C, "le carré bleu"), ("triangle", V.Couleurs[2].C, "le triangle jaune") };
+            var attrib = new Dictionary<int, (string F, Color C, string Nom)>();
+            for (int i = 0; i < trous.Count; i++) attrib[trous[i]] = marques[i];
+            var ex = new ExerciceChoix
+            {
+                Consigne = "Où va cette pièce ? Regarde la forme de la bonne case.",
+                Scene = () =>
+                {
+                    var dict = new Dictionary<int, FrameworkElement>();
+                    foreach (var kv in attrib) dict[kv.Key] = V.Forme(kv.Value.F, kv.Value.C, 90);
+                    return V.CoteACote(V.Piece(src, cols, rows, bon, 230), V.Puzzle(src, cols, rows, dict, 640));
+                },
+                Bravo = "Oui ! C'est là !",
+            };
+            foreach (var t in V.Melange(trous)) { var m = attrib[t]; ex.Reponses.Add(new Carte { Visuel = () => V.Forme(m.F, m.C, 150), Bonne = t == bon, Dit = m.Nom }); }
             return ex;
         }
 
