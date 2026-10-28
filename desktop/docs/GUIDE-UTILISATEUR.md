@@ -100,6 +100,17 @@ Tout en haut, toujours visibles :
 ### Parler, Oui, Non
 Les boutons **💬 Parler** (en bas à droite) et **✅ Oui / ✗ Non** (en bas à gauche) sont à l'écran sur l'accueil et dans les menus. « Parler » ouvre le tableau de communication : je veux, j'ai mal, j'aime, encore, fini, ma journée, et au niveau 2 « Je fais une phrase ». **Pendant une activité** (jeu, histoire, coloriage), Oui / Non disparaissent (les jeux ont leurs propres réponses) et Parler reste, en plus petit et plus discret : c'est le canal d'urgence de l'enfant (j'ai mal, stop, fini). Ces deux comportements se règlent dans l'administration, page Enfant & jeux ; on peut aussi cacher les tuiles tout le temps. On peut aussi les **déplacer** : à la souris ou au doigt sur un écran tactile, attrapez la tuile et glissez-la où vous voulez ; elle reste à cet endroit, même après un redémarrage (un simple clic ou un regard garde son effet normal).
 
+### L'écoute : « Dis Eyzi »
+Dans le monde Parler, la tablette peut **écouter la personne qui parle à l'enfant**, afficher la phrase en grand, la redire en mots simples, et proposer aussitôt des réponses à regarder : « Tu veux du jus ou de l'eau ? » devient les tuiles *Du jus*, *De l'eau*, *Autre chose*. L'enfant regarde une tuile, la tablette la dit.
+
+Trois réglages (administration, page Nuage, carte 👂 Écoute) :
+
+- **Éteinte** : rien n'écoute, c'est le réglage de départ.
+- **Bouton** : dans Parler, un bouton **👂 J'écoute** ; on appuie, on parle, la tablette transcrit la phrase.
+- **Mot-clé** : la tablette veille, partout dans l'application, sur les mots **« Dis Eyzi »**, puis écoute la phrase qui suit (« Dis Eyzi, tu veux du jus ou de l'eau ? »). Le mot-clé est reconnu **sur la tablette** : rien ne part avant qu'il soit dit. Un voyant dans le bandeau d'écoute montre l'état : vert, je veille ; rouge, j'écoute ; bleu, j'attends le bouton.
+
+Il faut la **clé Azure Speech** de la page Voix (la même ressource fait la voix et l'écoute ; la reconnaissance se facture à l'usage, le mot-clé est gratuit). Les réponses proposées viennent d'une intelligence artificielle via eyzi.fr : seul le **texte** de la phrase est envoyé, jamais le son ; la case « Proposer des réponses » peut être décochée, la tablette propose alors des réponses simples (oui, non, les deux côtés d'un « ou », encore, autre chose). Une famille qui ne veut pas d'un micro qui veille laisse l'écoute sur Éteinte ou sur Bouton.
+
 ### Écouter ou choisir : la règle
 La voix appartient à l'écran. Trois sortes de phrases :
 

@@ -465,6 +465,20 @@
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
+                                    <TextBlock Text="👂 Écoute (monde Parler)" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Mode" Style="{StaticResource Label}" />
+                                    <ComboBox x:Name="ListenModeCombo" Style="{StaticResource Pick}" SelectionChanged="Listen_Changed">
+                                        <ComboBoxItem Content="Éteinte" Tag="off" />
+                                        <ComboBoxItem Content="Bouton 👂 dans Parler : on appuie, la tablette écoute une phrase" Tag="bouton" />
+                                        <ComboBoxItem Content="Mot-clé « Dis Eyzi », partout : la tablette veille en local, puis écoute la phrase" Tag="motcle" />
+                                    </ComboBox>
+                                    <CheckBox x:Name="ListenAnswersCheck" Content="Proposer des réponses (la phrase entendue, en texte seulement, est envoyée à eyzi.fr qui demande des réponses à une IA)" FontSize="14" Margin="0,8,0,0" Click="Listen_Changed" />
+                                    <TextBlock x:Name="ListenHint" Style="{StaticResource Hint}"
+                                               Text="Utilise la clé Azure Speech ci-dessus (page Voix). La reconnaissance se fait en ligne et se facture à l'usage ; le mot-clé est détecté sur la tablette, rien ne part avant qu'il soit dit." />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
                                     <TextBlock Text="🔑 Licence et mises à jour" Style="{StaticResource CardTitle}" />
                                     <TextBlock x:Name="LicenceText" Style="{StaticResource Hint}" Margin="0" FontSize="14.5" Foreground="#FF0B1A33" />
                                     <UniformGrid Columns="2">

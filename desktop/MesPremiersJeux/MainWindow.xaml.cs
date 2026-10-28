@@ -309,6 +309,7 @@ namespace MesPremiersJeux
                 if (!okLic) { Lib.Log.Write("licence", "Pas de licence : fermeture"); Close(); return; }
             }
             RefreshLicenceText();
+            if (Licence.HasModule(_settings, "parler")) Listening.Start(_settings);
             _ = Licence.RecheckAsync(_settings).ContinueWith(t => Dispatcher.Invoke(RefreshLicenceText));
             _ = Usage.SendDailyAsync(_settings).ContinueWith(t => { if (t.Result != null) Lib.Log.Write("usage", "Envoi : " + t.Result); });
             Updater.Cleanup();
@@ -414,6 +415,18 @@ namespace MesPremiersJeux
                 AzureVoiceCombo.Items.Add(new ComboBoxItem { Content = label, Tag = name });
             foreach (ComboBoxItem it in AzureVoiceCombo.Items)
                 if ((string)it.Tag == _settings.AzureVoice) { AzureVoiceCombo.SelectedItem = it; break; }
+            // L'écoute (Parler).
+            foreach (ComboBoxItem it in ListenModeCombo.Items)
+                if ((string)it.Tag == (_settings.ListenMode ?? "off")) { ListenModeCombo.SelectedItem = it; break; }
+            if (ListenModeCombo.SelectedItem == null) ListenModeCombo.SelectedIndex = 0;
+            ListenAnswersCheck.IsChecked = _settings.ListenAnswers;
+            ListenHint.Text += Listening.KeywordAvailable ? " Mot-clé installé : « Dis Eyzi »." : " Le fichier du mot-clé (Voix\\eyzi.table) n'est pas installé : seul le bouton marche pour l'instant.";
+            Listening.Heard += text => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (!Licence.HasModule(_settings, "parler")) return;
+                Select("parler");
+                (_views["parler"] as ParlerView)?.ShowHeard(text);
+            }));
             try
             {
                 EnglishVoiceText.Text = "🇬🇧 Anglais : " + Speech.EnglishMode() +
@@ -1822,6 +1835,15 @@ namespace MesPremiersJeux
             }
             catch (Exception ex) { Lib.Log.Write("nuage", "Envoi à la fermeture : " + ex.Message); }
         }
+        private void Listen_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null || ListenModeCombo == null) return;
+            if (ListenModeCombo.SelectedItem is ComboBoxItem it) _settings.ListenMode = (string)it.Tag;
+            _settings.ListenAnswers = ListenAnswersCheck.IsChecked == true;
+            _settings.Save();
+            Listening.Start(_settings);
+        }
+
         private void Azure_Changed(object sender, RoutedEventArgs e)
         {
             if (_settings == null || AzureKeyBox == null) return;
@@ -1834,6 +1856,7 @@ namespace MesPremiersJeux
             AzureTts.Key = _settings.AzureKey;
             AzureTts.Region = _settings.AzureRegion;
             AzureTts.Voice = _settings.AzureVoice;
+            Listening.Start(_settings); // l'écoute utilise la même clé
         }
 
         private void Tab_Click(object sender, RoutedEventArgs e)
