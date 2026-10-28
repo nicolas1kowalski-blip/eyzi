@@ -40,6 +40,11 @@ namespace MesPremiersJeux.Views
             GazeGate.Push();
             Closed += (s, e) => GazeGate.Pop();
 
+            Build();
+        }
+
+        private void Build()
+        {
             var root = new StackPanel { Margin = new Thickness(26) };
 
             Title2(root, "⭐ La tirelire");
@@ -103,6 +108,8 @@ namespace MesPremiersJeux.Views
             }
             Line(root, "Trois réussites d'affilée font monter le niveau ; deux erreurs le redescendent, sans jamais le dire à l'enfant.");
 
+            AddLearningSection(root);
+
             AddGazeSection(root);
             AddCommSection(root);
 
@@ -121,6 +128,55 @@ namespace MesPremiersJeux.Views
 
             Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         }
+
+        // ------------------------------------------------------------------
+        //  🧭 Les apprentissages : acquis, en cours, à consolider (Mes leçons)
+        // ------------------------------------------------------------------
+        private void AddLearningSection(Panel root)
+        {
+            Title2(root, "🧭 Les apprentissages (Mes leçons)");
+            Line(root, "Une compétence est acquise quand chacun de ses axes (des exercices différents qui prouvent la même chose) a été réussi au premier regard " +
+                       MesPremiersJeux.Learning.Acquisition.SeuilAxe + " fois sur " + MesPremiersJeux.Learning.Acquisition.Fenetre + ", sur deux jours différents, puis que le défi (" +
+                       MesPremiersJeux.Learning.Acquisition.DefiSeuil + " sur " + MesPremiersJeux.Learning.Acquisition.DefiExercices + ", sans aide) est réussi. Elle est ensuite révisée à 3, 7, 21 jours puis 2 mois.");
+            bool rien = true;
+            foreach (var chemin in MesPremiersJeux.Learning.Catalogue.Chemins)
+            {
+                var noeuds = chemin.Noeuds.Where(n => MesPremiersJeux.Learning.Acquisition.EtatDe(n) != MesPremiersJeux.Learning.Etat.NonCommence).ToList();
+                if (noeuds.Count == 0) continue;
+                rien = false;
+                int acquis = chemin.Noeuds.Count(MesPremiersJeux.Learning.Acquisition.EstAcquis);
+                Line(root, chemin.Icone + " " + chemin.Nom + " : " + acquis + " compétence" + (acquis > 1 ? "s" : "") + " acquise" + (acquis > 1 ? "s" : "") + " sur " + chemin.Noeuds.Count + " nœuds.");
+                foreach (var n in noeuds)
+                {
+                    var etat = MesPremiersJeux.Learning.Acquisition.EtatDe(n);
+                    string icon = etat == MesPremiersJeux.Learning.Etat.Acquis ? "✅" : etat == MesPremiersJeux.Learning.Etat.AConsolider ? "🔧" : etat == MesPremiersJeux.Learning.Etat.EnValidation ? "🎯" : "🌱";
+                    var axes = string.Join(" · ", n.Def.Axes.Select(a => { var j = MesPremiersJeux.Learning.Acquisition.Jauge(n, a.Id); return a.Id + " " + j.Ok + "/" + Math.Max(j.Total, 1) + (MesPremiersJeux.Learning.Acquisition.AxeValide(n, a.Id) ? " ✓" : ""); }));
+                    var rev = MesPremiersJeux.Learning.Acquisition.ProchaineRevision(n);
+                    string extra = etat == MesPremiersJeux.Learning.Etat.Acquis || etat == MesPremiersJeux.Learning.Etat.AConsolider
+                        ? (rev.HasValue ? " · révision le " + rev.Value.ToString("dd/MM") : "") + (MesPremiersJeux.Learning.Acquisition.DecisionManuelle(n) == "acquis" ? " (marqué acquis par l'accompagnant)" : "")
+                        : " · axes : " + axes;
+                    var row = new DockPanel { Margin = new Thickness(12, 2, 0, 2), LastChildFill = true };
+                    var acts = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+                    DockPanel.SetDock(acts, Dock.Right);
+                    var cap = n;
+                    if (etat != MesPremiersJeux.Learning.Etat.Acquis)
+                    {
+                        var ok = new Button { Content = "✔ acquis", FontSize = 13, Padding = new Thickness(6, 2, 6, 2), Margin = new Thickness(6, 0, 0, 0), ToolTip = "Marquer acquis à la main (noté dans le bilan)" };
+                        ok.Click += (s, e) => { MesPremiersJeux.Learning.Acquisition.Forcer(cap, "acquis"); Refresh(); };
+                        acts.Children.Add(ok);
+                    }
+                    var raz = new Button { Content = "↺", FontSize = 13, Padding = new Thickness(6, 2, 6, 2), Margin = new Thickness(6, 0, 0, 0), ToolTip = "Remettre à zéro cette compétence à ce palier" };
+                    raz.Click += (s, e) => { if (MessageBox.Show("Remettre à zéro « " + cap.Titre + " » ?", "Eyzi", MessageBoxButton.YesNo) == MessageBoxResult.Yes) { MesPremiersJeux.Learning.Acquisition.Forcer(cap, "nonacquis"); Refresh(); } };
+                    acts.Children.Add(raz);
+                    row.Children.Add(acts);
+                    row.Children.Add(new TextBlock { Text = icon + " " + n.Titre + " : " + Games.LessonControl.Libelle(etat) + extra, FontSize = 15, Foreground = Dark, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center });
+                    root.Children.Add(row);
+                }
+            }
+            if (rien) Line(root, "(rien encore : les leçons se trouvent dans le monde Apprendre → Mes leçons)");
+        }
+
+        private void Refresh() => Build();
 
         // ------------------------------------------------------------------
         //  👁 Le regard : comment l'enfant sélectionne (7 derniers jours)

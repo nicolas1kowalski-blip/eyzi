@@ -188,6 +188,7 @@ namespace MesPremiersJeux.Lib
     {
         public static readonly Dictionary<string, string> Games = new Dictionary<string, string>
         {
+            ["LessonControl"] = "Mes leçons",
             ["NameGame"] = "Mon prénom", ["LettersGame"] = "Les lettres", ["AlphabetBookGame"] = "L'abécédaire",
             ["SyllableGame"] = "Les syllabes", ["SoundHouseGame"] = "La maison des sons", ["EyeWriteGame"] = "J'écris !",
             ["NumberPartyGame"] = "Fête des nombres", ["NumbersGame"] = "Les nombres", ["CompleteGame"] = "Le panier",

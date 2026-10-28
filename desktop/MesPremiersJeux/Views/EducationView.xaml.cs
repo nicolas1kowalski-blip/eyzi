@@ -125,6 +125,10 @@ namespace MesPremiersJeux.Views
                 tile.Click += (s, e) => OpenTheme(theme);
                 Cats.Children.Add(tile);
             }
+            // Mes leçons : le chemin des compétences (acquis / en cours), à côté des activités existantes.
+            var le = MenuKit.ThemeTile("🧭", "Mes leçons", Color.FromRgb(0xE2, 0xF6, 0xEA), "🔢  🔷  ⭐");
+            le.Click += (s, e) => { _fromRoot = true; Play(c => new LearningView(c)); };
+            Cats.Children.Add(le);
             // Le monde Apprendre, c'est aussi les histoires et le parcours du jour.
             var st = MenuKit.ThemeTile("📖", "Histoires", Color.FromRgb(0xFF, 0xEF, 0xDC), "📚  🎃  🍂");
             st.Click += (s, e) => Navigate?.Invoke("stories");
@@ -136,6 +140,9 @@ namespace MesPremiersJeux.Views
 
         /// <summary>Vers un autre écran du monde Apprendre (histoires, parcours).</summary>
         public event Action<string> Navigate;
+
+        // L'activité a été ouverte depuis les thèmes (pas depuis un thème) : le retour y revient.
+        private bool _fromRoot;
 
         /// <summary>Revient à la porte du monde : les thèmes.</summary>
         public void ShowRoot()
@@ -191,6 +198,7 @@ namespace MesPremiersJeux.Views
         {
             GameHost.Children.Clear();
             PlayRoot.Visibility = Visibility.Collapsed;
+            if (_fromRoot) { _fromRoot = false; MenuRoot.Visibility = Visibility.Visible; MesPremiersJeux.Lib.Chrome.Immersive = false; return; }
             ListRoot.Visibility = Visibility.Visible; // retour aux activités du thème
             MesPremiersJeux.Lib.Chrome.Immersive = false;
         }
