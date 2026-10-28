@@ -1,6 +1,6 @@
 # Référentiel d'apprentissage — cycle 1 (petite, moyenne, grande section)
 
-*Document de travail à relire avant tout code. Version 1, 28 octobre 2026.*
+*Document de travail à relire avant tout code. Version 2, 28 octobre 2026 : ajout des axes, des états acquis / en cours / à consolider, des leçons et du chemin.*
 
 Ce référentiel décrit ce que le monde **Apprendre** d'Eyzi va proposer pour le cycle 1 de l'école maternelle, en s'inspirant du programme officiel (Éduscol, programme de l'école maternelle de 2021, cinq domaines). Il sert de plan : chaque compétence a ses paliers, son moteur d'exercice, ses exemples, et ce qui existe déjà dans l'application.
 
@@ -12,7 +12,9 @@ Ce référentiel décrit ce que le monde **Apprendre** d'Eyzi va proposer pour l
 
 **Peu de moteurs, beaucoup de contenu.** Sept moteurs d'exercice génériques, réutilisés dans tous les domaines. Le contenu (mots, images, sons, consignes) est dans des **packs** de données, que l'on peut ajouter ou corriger sans toucher à l'application. Les pictos viennent de Mulberry et Twemoji, les photos et dessins de la banque d'images existante, la voix de Piper.
 
-**L'application s'ajuste.** Le mécanisme existant (`Adaptive` : trois niveaux, montée après 3 réussites d'affilée, descente après 2 échecs) s'applique à chaque compétence. Une réponse compte comme réussie si c'est la bonne au premier regard ; une erreur fait répéter la consigne et retire une cible fausse (on ne bloque jamais l'enfant).
+**Acquis ou pas, prouvé sous plusieurs angles.** Chaque compétence est validée par plusieurs **axes** (des exercices différents qui prouvent la même chose), à des jours différents, puis par un défi sans aide, et elle est révisée dans le temps. Les états sont : non commencé, en cours, en validation, acquis, à consolider. Le détail est en section 9. Une réponse compte comme réussie si c'est la bonne au premier regard ; une erreur fait répéter la consigne et retire une cible fausse (on ne bloque jamais l'enfant).
+
+**Des leçons courtes, à la Duolingo.** L'enfant lance une leçon de trois à cinq minutes qui mélange la compétence du moment, des révisions et des réussites faciles, sur un chemin de nœuds par domaine. Le mécanisme existant (`Adaptive`) continue de régler la difficulté fine à l'intérieur d'un exercice.
 
 **Une consigne, toujours dite.** Chaque exercice commence par une consigne orale courte, répétable d'un regard (bouton 🔊), avec le modèle montré quand c'est possible (« Regarde : ça, c'est un carré »).
 
@@ -135,12 +137,64 @@ Le niveau automatique de ces compétences règle les **tailles de cibles et temp
 
 On le garde comme bonus, rattaché au domaine 1 : les mots de politesse, les animaux, les couleurs et les nombres. Pas de paliers supplémentaires pour le cycle 1.
 
-## 9. Le suivi et le bilan
+## 9. Acquis, en cours, non acquis : comment une compétence est validée
 
-- **Par compétence** : le palier atteint (P1 à P3), le niveau automatique dans ce palier, le nombre de réussites, la date du dernier exercice.
-- **Par domaine** : un pourcentage de compétences au palier P3, affiché en toutes lettres (« Les nombres : palier GS atteint pour 4 compétences sur 6 »).
-- **Le bilan accompagnant** (fenêtre 📊 Bilan existante) gagne une page « Apprentissages » avec ces lignes, et un bouton **Exporter** vers un fichier texte ou PDF lisible par l'enseignant, l'AESH ou l'équipe du PPS.
-- **Ce que l'on ne mesure pas** : la compréhension profonde. Un bon score par le regard peut venir de l'essai-erreur ; c'est pourquoi seule la bonne réponse au premier regard compte comme une réussite, et pourquoi le bilan montre le nombre d'essais.
+Une compétence n'est pas acquise parce que l'enfant a réussi un exercice. Elle est acquise quand il la réussit **sous plusieurs formes différentes, à des moments différents**, et qu'il la garde dans le temps. C'est le principe de Duolingo transposé : des leçons courtes et mélangées, une validation par plusieurs angles, et des révisions espacées.
+
+### Les axes
+
+Chaque palier d'une compétence est défini par **2 à 4 axes** : des façons différentes de prouver la même chose. Réussir un seul axe, c'est peut-être avoir appris l'exercice par cœur ; réussir tous les axes, c'est maîtriser la compétence.
+
+| Compétence (palier) | Axe A | Axe B | Axe C | Axe D |
+|---|---|---|---|---|
+| Dénombrer (P2, jusqu'à 6) | Compter une collection et choisir le chiffre | Montrer la collection qui a 4 objets (sens inverse) | Apparier collection ↔ doigts ↔ dé | Collection en désordre, objets différents |
+| Les formes (P2) | « Où est le triangle ? » parmi 4 formes | Trier rond / carré / triangle | Trouver le triangle dans un dessin (toit de la maison) | Formes de tailles et couleurs variées |
+| Comprendre un mot (P2) | Choisir l'image parmi 4 (pictos) | Même mot en photo | Oui / non : « c'est un chat ? » | Le mot dans une phrase : « montre ce que le chat mange » |
+| Les contraires (P2) | Apparier plein / vide | Choisir : « lequel est vide ? » | Trier plein / vide avec des objets variés | — |
+| La journée (P2) | Ordonner matin, midi, soir | Choisir : « que fait-on le matin ? » | Oui / non : « on dort le midi ? » | — |
+
+Les axes changent aussi la **forme** : pictos puis photos puis dessins, position des bonnes réponses jamais la même, cibles proches (distracteurs ressemblants) au dernier axe.
+
+### Les cinq états
+
+| État | Signifie | Côté enfant |
+|---|---|---|
+| **Non commencé** | Jamais proposé | Nœud grisé sur le chemin |
+| **En cours** | Découverte : exercices guidés, modèle montré, erreurs sans conséquence | Nœud coloré |
+| **En validation** | Tous les axes ont été vus ; chaque axe compte ses réussites | Nœud avec une jauge |
+| **Acquis** | Tous les axes validés puis le défi réussi | Nœud doré avec une étoile |
+| **À consolider** | Acquis, mais une révision ratée ou pas revu depuis trop longtemps | Nœud doré fissuré |
+
+### Les règles
+
+- Une réussite = la bonne réponse **au premier regard**. Après une erreur, l'exercice continue (on retire une mauvaise cible et on répète la consigne) mais il ne compte pas.
+- Un **axe est validé** quand 4 des 5 derniers essais sont des réussites, répartis sur **au moins deux jours différents**.
+- Quand tous les axes sont validés, l'application propose le **défi** : 6 exercices qui mélangent tous les axes, sans aide, sans modèle. 5 réussites sur 6 : la compétence passe **Acquis**, avec une petite fête. Sinon, l'axe raté revient en validation.
+- Un acquis est **révisé** à 3 jours, 7 jours, 21 jours puis 2 mois (répétition espacée) : un ou deux exercices glissés dans une leçon. Une révision ratée passe la compétence **À consolider** ; une révision réussie remet le compteur. Deux révisions réussies d'affilée après une consolidation : de nouveau Acquis.
+- Le palier suivant s'ouvre quand le palier précédent est Acquis. L'accompagnant peut l'ouvrir plus tôt, ou marquer une compétence Acquis ou Non acquis à la main (c'est noté « par l'accompagnant » dans le bilan).
+
+### La leçon
+
+L'enfant ne choisit pas un exercice, il lance une **leçon** : 6 à 10 exercices de 20 à 40 secondes chacun, trois à cinq minutes au total, composés automatiquement :
+
+- environ 60 % sur la compétence en cours, en alternant les axes ;
+- environ 20 % de révisions dues (acquis à revoir) ;
+- environ 20 % de choses déjà réussies, pour finir sur une réussite.
+
+Chaque leçon se termine par un petit récapitulatif : les étoiles, ce qui a été appris, le prochain nœud. Les leçons ne sont jamais chronométrées et il n'y a pas de « vie » à perdre : l'enfant ne peut pas échouer une leçon, seulement progresser moins vite.
+
+Pour l'accompagnant : une **série** de jours d'apprentissage (comme Duolingo), visible dans le bilan seulement, jamais imposée à l'enfant.
+
+### Le chemin
+
+Chaque domaine est un **chemin** de nœuds (une compétence à un palier chacun), dans l'ordre du référentiel, avec quelques embranchements (les nombres et les formes avancent en parallèle). L'enfant voit le chemin de son domaine avec ses nœuds gris, colorés, dorés ; il peut relancer un nœud doré pour le plaisir. L'accompagnant choisit le domaine du moment, ou laisse l'application alterner.
+
+### Le suivi et le bilan
+
+- **Par compétence** : l'état, le palier, chaque axe avec sa jauge (par exemple « axe B : 3 réussites sur 5 »), le nombre d'essais, la date du dernier exercice, les révisions à venir.
+- **Par domaine** : le nombre de compétences acquises par palier, en toutes lettres (« Les nombres : 4 compétences acquises au palier MS sur 6 »).
+- **Le bilan accompagnant** (fenêtre 📊 Bilan existante) gagne une page « Apprentissages » avec ces lignes, l'historique des changements d'état, et un bouton **Exporter** vers un fichier lisible par l'enseignant, l'AESH ou l'équipe du PPS, avec la correspondance aux attendus de fin de maternelle.
+- **Ce que l'on ne mesure pas** : la compréhension profonde. Les axes multiples et le défi sans aide réduisent la part de l'essai-erreur et de l'apprentissage par cœur, sans la supprimer : le bilan montre toujours le nombre d'essais derrière chaque réussite.
 
 ## 10. Le format des données
 
@@ -152,25 +206,40 @@ Chaque compétence est un fichier `JSON` dans `Apprendre/<domaine>/<competence>.
   "domaine": "Les nombres",
   "nom": "Dénombrer",
   "paliers": [
-    { "palier": 1, "ecole": "PS", "moteur": "compter", "max": 3, "reponses": 2,
-      "objets": ["pomme", "chat", "ballon", "etoile"],
-      "consigne": "Combien de {objet} ?" },
-    { "palier": 2, "ecole": "MS", "moteur": "compter", "max": 6, "reponses": 3 },
-    { "palier": 3, "ecole": "GS", "moteur": "compter", "max": 10, "reponses": 4, "groupes": true }
+    { "palier": 1, "ecole": "PS", "max": 3, "reponses": 2, "objets": ["pomme", "chat", "ballon", "etoile"],
+      "axes": [
+        { "id": "a", "moteur": "compter", "consigne": "Combien de {objet} ?" },
+        { "id": "b", "moteur": "choisir", "variante": "collection", "consigne": "Montre {n} {objet}" }
+      ] },
+    { "palier": 2, "ecole": "MS", "max": 6, "reponses": 3,
+      "axes": [
+        { "id": "a", "moteur": "compter", "consigne": "Combien de {objet} ?" },
+        { "id": "b", "moteur": "choisir", "variante": "collection", "consigne": "Montre {n} {objet}" },
+        { "id": "c", "moteur": "apparier", "variante": "collection-doigts-de" },
+        { "id": "d", "moteur": "compter", "disposition": "desordre", "objets": "varies" }
+      ] },
+    { "palier": 3, "ecole": "GS", "max": 10, "reponses": 4, "groupes": true,
+      "axes": [ { "id": "a", "moteur": "compter" }, { "id": "b", "moteur": "choisir", "variante": "collection" },
+                { "id": "c", "moteur": "apparier", "variante": "collection-chiffre" }, { "id": "d", "moteur": "compter", "disposition": "desordre" } ] }
   ]
 }
 ```
 
-Et un exercice « Choisir » avec un pack de vocabulaire :
+Une compétence « Comprendre un mot » avec ses axes et un pack de vocabulaire :
 
 ```json
 {
   "id": "oral.vocabulaire",
   "nom": "Comprendre un mot",
   "paliers": [
-    { "palier": 1, "ecole": "PS", "moteur": "choisir", "cibles": 2, "pack": "mots-p1" },
-    { "palier": 2, "ecole": "MS", "moteur": "choisir", "cibles": 4, "pack": "mots-p2" },
-    { "palier": 3, "ecole": "GS", "moteur": "choisir", "cibles": 6, "pack": "mots-p3", "distracteurs": "proches" }
+    { "palier": 1, "ecole": "PS", "cibles": 2, "pack": "mots-p1",
+      "axes": [ { "id": "a", "moteur": "choisir", "images": "pictos" }, { "id": "b", "moteur": "choisir", "images": "photos" } ] },
+    { "palier": 2, "ecole": "MS", "cibles": 4, "pack": "mots-p2",
+      "axes": [ { "id": "a", "moteur": "choisir", "images": "pictos" }, { "id": "b", "moteur": "choisir", "images": "photos" },
+                { "id": "c", "moteur": "ouinon", "consigne": "C'est {mot} ?" }, { "id": "d", "moteur": "choisir", "variante": "phrase" } ] },
+    { "palier": 3, "ecole": "GS", "cibles": 6, "pack": "mots-p3", "distracteurs": "proches",
+      "axes": [ { "id": "a", "moteur": "choisir", "images": "pictos" }, { "id": "b", "moteur": "choisir", "images": "photos" },
+                { "id": "c", "moteur": "ouinon" }, { "id": "d", "moteur": "choisir", "variante": "phrase" } ] }
   ]
 }
 ```
@@ -184,9 +253,12 @@ Un pack (`packs/mots-p1.json`) est une liste de mots avec leur image (picto Mulb
 ]
 ```
 
+L'état de chaque compétence est enregistré sur la tablette (et synchronisé dans le nuage de la famille comme les autres contenus) : pour chaque axe, les cinq derniers essais avec leur date, l'état, la date du prochain rappel, et les décisions de l'accompagnant.
+
 ## 11. Ce qu'il reste à décider
 
 1. **Le nom des paliers côté enfant.** Rien (juste des étoiles), ou un symbole par palier (graine, pousse, fleur) ?
+1 bis. **Les seuils.** 4 réussites sur 5 par axe, sur deux jours ; défi 5 sur 6 ; révisions à 3, 7, 21 jours puis 2 mois. Réglables par l'accompagnant ou fixes ?
 2. **L'ordre de construction.** Je propose : les nombres et les formes (domaine 4) d'abord, parce que les moteurs Compter et Compléter y sont clairs ; puis l'oral (vocabulaire, phrases, phonologie) ; puis le temps et l'espace ; puis l'écrit ; puis le vivant et les objets.
 3. **Les voix.** La consigne par Piper suffit-elle, ou préfères-tu une voix plus expressive pour les consignes (pré-générée, donc sans clé à distribuer) ?
 4. **La relecture par une enseignante.** Ce document peut être envoyé tel quel (eyzi.fr/referentiel.html si tu veux que je le publie).
