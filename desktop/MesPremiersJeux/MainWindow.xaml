@@ -468,6 +468,18 @@
                         <StackPanel x:Name="PageNuage" Style="{StaticResource Page}">
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
+                                    <TextBlock Text="🔒 Sécurité" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Code d'accès à l'administration (4 chiffres ; vide = aucun)" Style="{StaticResource Label}" />
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Content="Enregistrer" Style="{StaticResource AdminBtn}" Margin="8,0,0,0" Click="AdminPin_Click" />
+                                        <TextBox x:Name="AdminPinBox" FontSize="22" MaxLength="4" Padding="10,6" VerticalContentAlignment="Center" />
+                                    </DockPanel>
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="Une fois le code enregistré, l'appui long sur ⚙ demande ce code, à taper à la souris ou au doigt (le regard est en pause). Sans code, l'appui long suffit." />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
                                     <TextBlock Text="🔑 Licence et mises à jour" Style="{StaticResource CardTitle}" />
                                     <TextBlock x:Name="LicenceText" Style="{StaticResource Hint}" Margin="0" FontSize="14.5" Foreground="#FF0B1A33" />
                                     <UniformGrid Columns="2">

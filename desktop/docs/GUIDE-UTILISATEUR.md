@@ -122,7 +122,7 @@ Le panneau est rangé en six pages (menu à gauche) :
 - **🧒 Enfant & jeux** : prénom, niveau des jeux, pause après N minutes, tuiles « Parler » et « Oui / Non » (visibles ou non, bouton pour les remettre à leur place), « Je choisis ».
 - **🔊 Voix** : voix Windows et hauteur, voix naturelle Azure, écouter un exemple, **🎙 Enregistrer vos voix**.
 - **📁 Contenu** : **🔧 outils d'édition** (une fois le panneau fermé, les outils pour ajouter, modifier ou supprimer les livres, coloriages et photos apparaissent dans les activités ; le regard reste en pause tant que la case est cochée), photos de famille, dossier du contenu, exporter / importer.
-- **☁️ Licence & nuage** : licence, mises à jour, version précédente, libérer la tablette, synchronisation entre tablettes.
+- **☁️ Licence & nuage** : **🔒 code d'accès** à l'administration (4 chiffres, optionnel : une fois réglé, l'appui long sur ⚙ demande ce code, à taper à la souris ou au doigt, le regard étant en pause ; trois erreurs ferment la fenêtre), licence, mises à jour, version précédente, libérer la tablette, synchronisation entre tablettes.
 - **📊 Suivi** : bilan de la semaine, bilan de la session, rapport du regard.
 - **🛠 Avancé** (versions de test seulement) : état technique du pilote, journal, réglages du serveur.
 

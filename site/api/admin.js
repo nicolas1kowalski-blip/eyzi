@@ -15,13 +15,55 @@ function authorized(req) {
   return diff === 0;
 }
 
+// Contre la devinette du jeton (personne ou robot) : après 5 échecs depuis une
+// même adresse, 15 minutes de blocage ; chaque échec attend une seconde avant de
+// répondre ; tout est journalisé (adresse, navigateur). Mémoire de l'instance :
+// Vercel peut en avoir plusieurs, c'est un filet, pas un coffre — le vrai coffre
+// est la longueur du jeton (mettez une longue phrase).
+const attempts = new Map(); // ip → { fails, until }
+const MAX_FAILS = 5, LOCK_MS = 15 * 60 * 1000;
+
+function clientIp(req) {
+  const fwd = String(req.headers['x-forwarded-for'] || '');
+  return (fwd.split(',')[0] || req.socket?.remoteAddress || '?').trim();
+}
+
+function isBot(req) {
+  const ua = String(req.headers['user-agent'] || '');
+  return !ua || /bot|crawl|spider|scrap|python|curl|wget|java\/|go-http|libwww|httpclient|gptbot|claudebot|ccbot|anthropic|perplexity|bytespider/i.test(ua);
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   if (!process.env.ADMIN_TOKEN || String(process.env.ADMIN_TOKEN).length < 12) {
     res.status(503).json({ ok: false, message: "ADMIN_TOKEN n'est pas réglé dans Vercel (12 caractères minimum)." });
     return;
   }
-  if (!authorized(req)) { res.status(401).json({ ok: false, message: 'Jeton incorrect.' }); return; }
+  const ip = clientIp(req);
+  if (isBot(req)) {
+    console.warn('[admin] robot refusé', ip, String(req.headers['user-agent'] || '').slice(0, 120));
+    res.status(404).end();
+    return;
+  }
+  const a = attempts.get(ip) || { fails: 0, until: 0 };
+  if (a.until > Date.now()) {
+    const min = Math.ceil((a.until - Date.now()) / 60000);
+    res.status(429).json({ ok: false, message: `Trop d'essais. Réessayez dans ${min} min.` });
+    return;
+  }
+  if (!authorized(req)) {
+    a.fails += 1;
+    if (a.fails >= MAX_FAILS) { a.until = Date.now() + LOCK_MS; a.fails = 0; }
+    attempts.set(ip, a);
+    console.warn('[admin] jeton incorrect', ip, String(req.headers['user-agent'] || '').slice(0, 120), a.until ? 'BLOQUÉ 15 min' : `${a.fails}/${MAX_FAILS}`);
+    await sleep(1000);
+    res.status(401).json({ ok: false, message: a.until ? "Trop d'essais : accès bloqué 15 minutes." : 'Jeton incorrect.' });
+    return;
+  }
+  if (a.fails || a.until) attempts.delete(ip);
   const supabase = supabaseAdmin();
   if (!supabase) { res.status(503).json({ ok: false, message: 'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquants.' }); return; }
 

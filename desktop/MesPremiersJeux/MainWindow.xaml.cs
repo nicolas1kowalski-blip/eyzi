@@ -207,6 +207,20 @@ namespace MesPremiersJeux
             ApplyTiles();
         }
 
+        private void AdminPin_Click(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null) return;
+            var v = (AdminPinBox.Text ?? "").Trim();
+            if (v.Length != 0 && (v.Length != 4 || !v.All(char.IsDigit)))
+            {
+                MessageBox.Show(this, "Le code doit faire exactement 4 chiffres (ou rester vide pour ne pas en mettre).", "Code d'accès");
+                return;
+            }
+            _settings.AdminPin = v;
+            _settings.Save();
+            MessageBox.Show(this, v.Length == 0 ? "Plus de code : l'appui long sur ⚙ suffit." : "Code enregistré : il sera demandé à la prochaine ouverture de l'administration.", "Code d'accès");
+        }
+
         private void StoryLittle_Changed(object sender, RoutedEventArgs e)
         {
             if (_settings == null) return;
@@ -904,6 +918,21 @@ namespace MesPremiersJeux
         {
             if (AdminHost.Visibility == Visibility.Visible) return;
             GazeGate.Push();                      // regard en pause tant que c'est ouvert
+            // 🔒 Code parent (si réglé) : tapé à la souris ou au doigt, regard déjà en pause.
+            var pin = _settings?.AdminPin ?? "";
+            if (pin.Length == 4)
+            {
+                var pw = new Views.PinWindow(pin) { Owner = this };
+                bool ok = pw.ShowDialog() == true;
+                if (!ok)
+                {
+                    GazeGate.Pop();
+                    Lib.Log.Write("app", "Administration : code refusé ou annulé");
+                    FlashStatus("Code incorrect.");
+                    return;
+                }
+            }
+            if (AdminPinBox != null) AdminPinBox.Text = pin;
             _modalBeforeAdmin = GazeTargets.ModalRoot;
             GazeTargets.ModalRoot = AdminHost;    // aucune cible du jeu derrière
             // La page « Avancé » (état technique, serveur, journal) n'existe

@@ -3,19 +3,33 @@
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
+    },
+    {
+      "source": "/admin.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive, nosnippet" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(admin\\.html|api/admin)",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": ".*([Bb]ot|[Cc]rawl|[Ss]pider|[Ss]crap|python-requests|curl/|[Ww]get/|[Aa]nthropic|[Bb]ytespider).*" }
+      ],
+      "destination": "/introuvable"
     }
   ]
 }
