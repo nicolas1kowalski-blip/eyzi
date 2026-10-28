@@ -73,8 +73,16 @@ namespace MesPremiersJeux.Learning
             var pasFacile = new List<Pas>();
             for (int i = 0; i < nFacile + (nRev - pasRev.Count); i++)
             {
-                Noeud src = acquis.Count > 0 ? Aleatoire(acquis)
-                    : noeud.Palier > 1 ? new Noeud { Competence = noeud.Competence, Palier = 1 } : noeud;
+                // Sans acquis : le palier le plus bas de la même compétence (s'il existe), sinon le nœud lui-même.
+                // (« Composer », « La suite des nombres », « Petits problèmes » commencent en MS : pas de palier PS.)
+                Noeud src = noeud;
+                if (acquis.Count > 0) src = Aleatoire(acquis);
+                else
+                {
+                    var bas = noeud.Competence.Paliers.Where(pl => pl.Numero < noeud.Palier).OrderBy(pl => pl.Numero).FirstOrDefault();
+                    if (bas != null) src = new Noeud { Competence = noeud.Competence, Palier = bas.Numero };
+                }
+                if (src.Def == null || src.Def.Axes.Count == 0) src = noeud;
                 var a = Aleatoire(src.Def.Axes);
                 var ex = Fabriquer(src, a);
                 if (ex != null) pasFacile.Add(new Pas { Exercice = ex, Noeud = src, Axe = a.Id, Genre = src.Key == noeud.Key ? Genre.Noeud : Genre.Facile });
