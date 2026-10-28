@@ -39,8 +39,8 @@ namespace MesPremiersJeux.Games
             _flying = false;
             _down = 0; _balls = 0;
             _level = Math.Min(2, Adaptive.Level("chamboule"));
-            _rows = 3 + _level;                       // 3 rangées (6 boîtes) → 4 (10) → 5 (15)
-            _size = new[] { 150.0, 118.0, 92.0 }[_level];
+            _rows = 3 + _level;
+            _size = new[] { 140.0, 112.0, 90.0 }[_level];
             Question.Text = "🎪 Chamboule-tout";
             SetConsigne(new TextBlock { Text = "🎯📦" }, () => "Regarde une boîte… et la balle part ! Fais tout tomber !");
 
@@ -73,29 +73,116 @@ namespace MesPremiersJeux.Games
             return b;
         }
 
+        private static readonly string[] Layouts = { "pyramide", "mur", "tours", "deux-pyramides", "chateau" };
+        private string _layout = "pyramide";
+        private readonly List<Button> _gaps = new List<Button>();
+        private readonly List<(Button Btn, Can A, Can B)> _gapLinks = new List<(Button, Can, Can)>();
+
+        // Les positions (colonne en demi-boîtes, rangée) de chaque disposition.
+        private List<(double Col, int Row)> Positions(string layout, int level)
+        {
+            var p = new List<(double, int)>();
+            switch (layout)
+            {
+                case "mur":
+                {
+                    int cols = 3 + level, rows = 3;
+                    for (int r = 0; r < rows; r++) for (int c = 0; c < cols; c++) p.Add((c + (r % 2 == 1 ? 0.5 : 0), r));
+                    break;
+                }
+                case "tours":
+                {
+                    int towers = 2 + level, height = 3;
+                    for (int t = 0; t < towers; t++) for (int r = 0; r < height + (t % 2); r++) p.Add((t * 1.9, r));
+                    break;
+                }
+                case "deux-pyramides":
+                {
+                    int n = 2 + level;
+                    for (int side = 0; side < 2; side++)
+                        for (int r = 0; r < n; r++) for (int c = 0; c < n - r; c++) p.Add((side * (n + 0.8) + c + r * 0.5, r));
+                    break;
+                }
+                case "chateau":
+                {
+                    int n = 2 + level;
+                    for (int r = 0; r < n; r++) for (int c = 0; c < n - r; c++) p.Add((1.6 + c + r * 0.5, r));
+                    for (int r = 0; r < n + 1; r++) { p.Add((0, r)); p.Add((n + 2.2, r)); }
+                    break;
+                }
+                default:
+                {
+                    int n = 3 + level;
+                    for (int r = 0; r < n; r++) for (int c = 0; c < n - r; c++) p.Add((c + r * 0.5, r));
+                    break;
+                }
+            }
+            return p;
+        }
+
         private void BuildPyramid()
         {
             foreach (var c in _cans) _canvas.Children.Remove(c.Btn);
-            _cans.Clear();
-            double size = _size, gap = 6;
+            foreach (var g in _gaps) _canvas.Children.Remove(g);
+            _cans.Clear(); _gaps.Clear(); _gapLinks.Clear();
+            _layout = Layouts[_rng.Next(Layouts.Length)];
+            double size = _size, gap = size * 0.35;          // de la place ENTRE les boîtes : on peut viser l'interstice
+            double step = size + gap;
+            var pos = Positions(_layout, _level);
+            double minCol = pos.Min(q => q.Col), maxCol = pos.Max(q => q.Col);
+            double totalW = (maxCol - minCol) * step + size;
+            double left = W / 2 - totalW / 2;
             double baseY = H - 180 - size;
-            double cx = W / 2;
-            for (int r = 0; r < _rows; r++)
+            int seed = 0;
+            foreach (var (col, row) in pos)
             {
-                int n = _rows - r;
-                double rowW = n * size + (n - 1) * gap;
-                for (int i = 0; i < n; i++)
+                var can = new Can { Row = row, Col = (int)Math.Round(col * 2), X = left + (col - minCol) * step, Y = baseY - row * (size + 2) };
+                can.Btn = CanButton(size, seed++);
+                Gaze.GazeTargets.SetPrecise(can.Btn, _level >= 1); // dès le niveau 1 : il faut viser dedans
+                Gaze.GazeTargets.SetDwellFactor(can.Btn, 0.6);     // on vise vite : 40 % de fixation en moins
+                var captured = can;
+                can.Btn.Click += (s, e) => Throw(Aim(new Point(captured.X + _size / 2, captured.Y + _size / 2)));
+                Canvas.SetLeft(can.Btn, can.X); Canvas.SetTop(can.Btn, can.Y);
+                _canvas.Children.Add(can.Btn);
+                _cans.Add(can);
+            }
+            // Les interstices : entre deux boîtes voisines d'une même rangée, une cible
+            // invisible ; la balle qui y passe fait tomber les deux.
+            foreach (var a in _cans)
+            {
+                var b = _cans.FirstOrDefault(o => o != a && Math.Abs(o.Y - a.Y) < 1 && o.X > a.X && o.X - (a.X + size) > size * 0.2 && o.X - (a.X + size) < size * 0.6);
+                if (b == null) continue;
+                double gx = a.X + size, gw = b.X - gx;
+                var tpl = new ControlTemplate(typeof(Button));
+                var border = new FrameworkElementFactory(typeof(Border));
+                border.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+                tpl.VisualTree = border;
+                var g = new Button { Template = tpl, Width = gw, Height = size, Focusable = false, Cursor = System.Windows.Input.Cursors.Hand };
+                Gaze.GazeTargets.SetPrecise(g, true);
+                Gaze.GazeTargets.SetDwellFactor(g, 0.6);
+                double cx = gx + gw / 2, cy = a.Y + size / 2;
+                g.Click += (s, e) => Throw(Aim(new Point(cx, cy)));
+                Canvas.SetLeft(g, gx); Canvas.SetTop(g, a.Y);
+                Panel.SetZIndex(g, 5);
+                _canvas.Children.Add(g);
+                _gaps.Add(g);
+                _gapLinks.Add((g, a, b));
+            }
+        }
+
+        /// <summary>Là où la balle part : le point regardé s'il est tout près de la cible, sinon le centre de la cible.</summary>
+        private Point Aim(Point center)
+        {
+            try
+            {
+                if ((DateTime.Now - LastGazeAt).TotalMilliseconds < 400)
                 {
-                    var can = new Can { Row = r, Col = i, X = cx - rowW / 2 + i * (size + gap), Y = baseY - r * (size + 2) };
-                    can.Btn = CanButton(size, r * 7 + i);
-                    Gaze.GazeTargets.SetPrecise(can.Btn, _level >= 1); // dès le niveau 1 : il faut viser dedans
-                    var captured = can;
-                    can.Btn.Click += (s, e) => Throw(captured);
-                    Canvas.SetLeft(can.Btn, can.X); Canvas.SetTop(can.Btn, can.Y);
-                    _canvas.Children.Add(can.Btn);
-                    _cans.Add(can);
+                    var p = _canvas.PointFromScreen(LastGazeScreen);
+                    if ((p - center).Length < _size * 0.9) return p;
                 }
             }
+            catch { }
+            return center;
         }
 
         // Une boîte-personnage : un cylindre coloré avec un petit visage (FaceArt).
@@ -125,13 +212,13 @@ namespace MesPremiersJeux.Games
         private static SolidColorBrush Lighten(Color c, double k) =>
             new SolidColorBrush(Color.FromRgb((byte)(c.R + (255 - c.R) * k), (byte)(c.G + (255 - c.G) * k), (byte)(c.B + (255 - c.B) * k)));
 
-        private void Throw(Can target)
+        private void Throw(Point aim)
         {
-            if (Locked || _flying || target.Down) return;
+            if (Locked || _flying) return;
             _flying = true;
             _balls++;
             SoundFx.Whistle();
-            double sx = W / 2, sy = H + 40, tx = target.X + _size / 2, ty = target.Y + _size / 2;
+            double sx = W / 2, sy = H + 40, tx = aim.X, ty = aim.Y;
             var ball = new Ellipse
             {
                 Width = 70, Height = 70,
@@ -151,8 +238,12 @@ namespace MesPremiersJeux.Games
             Schedule(520, () =>
             {
                 _canvas.Children.Remove(ball);
+                // Tout ce que la balle touche tombe : une boîte, ou les deux de chaque côté de l'interstice.
+                double reach = _size * 0.5 + 30;
+                var hit = _cans.Where(c => !c.Down && Math.Abs(c.X + _size / 2 - tx) < reach && Math.Abs(c.Y + _size / 2 - ty) < reach).ToList();
+                if (hit.Count == 0) { SoundFx.Puff(); Speak(new[] { "Raté !", "À côté !", "Encore !" }[_rng.Next(3)]); _flying = false; UpdateScore(); return; }
                 SoundFx.Boom();
-                Knock(target);
+                foreach (var c in hit) Knock(c);
                 _flying = false;
                 UpdateScore();
                 if (_cans.All(c => c.Down))
@@ -166,6 +257,7 @@ namespace MesPremiersJeux.Games
                     Celebrate();
                     Schedule(3000, NewRound);
                 }
+                else if (hit.Count >= 2) Speak("Deux d'un coup ! Bien visé !");
                 else if (_down == 1) Speak("Et une ! Continue !");
                 else if (_rng.Next(3) == 0) Speak(new[] { "Boum !", "Elle tombe !", "Bien visé !", "Encore une !" }[_rng.Next(4)]);
             });
@@ -189,12 +281,16 @@ namespace MesPremiersJeux.Games
             var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(300)) { BeginTime = TimeSpan.FromMilliseconds(600) };
             fade.Completed += (s, e) => btn.Visibility = Visibility.Hidden;
             btn.BeginAnimation(OpacityProperty, fade);
-            // Au-dessus : les boîtes posées sur celle-ci (rangée r+1, colonnes col-1 et col).
-            foreach (var above in _cans.Where(a => a.Row == c.Row + 1 && (a.Col == c.Col - 1 || a.Col == c.Col) && !a.Down).ToList())
+            // Au-dessus : les boîtes posées sur celle-ci (juste la rangée du dessus, qui la chevauchent).
+            foreach (var above in _cans.Where(a => !a.Down && a.Row == c.Row + 1 && Math.Abs((a.Y + _size) - c.Y) < 6 && Math.Min(a.X + _size, c.X + _size) - Math.Max(a.X, c.X) > _size * 0.2).ToList())
                 Schedule(120, () => Knock(above));
         }
 
-        private void UpdateScore() => _score.Text = $"Boîtes tombées : {_down} / {_cans.Count}   ·   Niveau {_level + 1}";
+        private void UpdateScore()
+        {
+            _score.Text = $"Boîtes tombées : {_down} / {_cans.Count}   ·   Balles : {_balls}   ·   Niveau {_level + 1}";
+            foreach (var (btn, a, b) in _gapLinks) if (a.Down && b.Down) btn.IsHitTestVisible = false;
+        }
 
         private void Confetti()
         {

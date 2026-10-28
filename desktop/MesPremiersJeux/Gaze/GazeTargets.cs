@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls.Primitives;
@@ -52,11 +53,24 @@ namespace MesPremiersJeux.Gaze
         public static void SetPrecise(DependencyObject el, bool value) => el.SetValue(PreciseProperty, value);
         public static bool GetPrecise(DependencyObject el) => (bool)el.GetValue(PreciseProperty);
 
+        /// <summary>
+        /// FACTEUR DE FIXATION d'une cible : 1 = le temps réglé, 0.6 = 40 % plus
+        /// rapide (jeux d'adresse où l'on vise vite), 1.5 = plus lent. Ne change
+        /// que le temps nécessaire sur CETTE cible, rien d'autre.
+        /// </summary>
+        public static readonly DependencyProperty DwellFactorProperty =
+            DependencyProperty.RegisterAttached("DwellFactor", typeof(double), typeof(GazeTargets),
+                new PropertyMetadata(1.0));
+
+        public static void SetDwellFactor(DependencyObject el, double value) => el.SetValue(DwellFactorProperty, value);
+        public static double GetDwellFactor(DependencyObject el) => (double)el.GetValue(DwellFactorProperty);
+
         public sealed class Target
         {
             public FrameworkElement Element;
             public Rect ScreenRect; // pixels écran (physiques)
             public bool Precise;    // sans aimant : le regard doit être dedans
+            public double DwellFactor = 1.0;
         }
 
         /// <summary>
@@ -107,7 +121,7 @@ namespace MesPremiersJeux.Gaze
                         var br = fe.PointToScreen(new Point(fe.ActualWidth, fe.ActualHeight));
                         var r = new Rect(tl, br);
                         if (r.Width >= 8 && r.Height >= 8)
-                            list.Add(new Target { Element = fe, ScreenRect = r, Precise = GetPrecise(fe) });
+                            list.Add(new Target { Element = fe, ScreenRect = r, Precise = GetPrecise(fe), DwellFactor = Math.Max(0.3, Math.Min(3.0, GetDwellFactor(fe))) });
                     }
                     catch { /* élément pas encore connecté à l'écran */ }
                     return; // le contenu d'une cible n'est pas une cible séparée

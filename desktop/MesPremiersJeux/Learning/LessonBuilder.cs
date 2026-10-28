@@ -46,7 +46,7 @@ namespace MesPremiersJeux.Learning
                 var ordre = new List<Axe>();
                 while (ordre.Count < Acquisition.DefiExercices) ordre.AddRange(Melange(axes));
                 foreach (var a in ordre.Take(Acquisition.DefiExercices))
-                    lecon.Pas.Add(new Pas { Exercice = a.Make(), Noeud = noeud, Axe = a.Id, Genre = Genre.Defi });
+                    { var ex = Fabriquer(noeud, a); if (ex != null) lecon.Pas.Add(new Pas { Exercice = ex, Noeud = noeud, Axe = a.Id, Genre = Genre.Defi }); }
                 return lecon;
             }
 
@@ -58,15 +58,15 @@ namespace MesPremiersJeux.Learning
             var jamaisVus = axes.Where(a => !Acquisition.AxeVu(noeud, a.Id)).ToList();
             var file = new List<Axe>(Melange(jamaisVus));
             while (file.Count < nNoeud) file.AddRange(Melange(axes));
-            var pasNoeud = file.Take(nNoeud).Select(a => new Pas { Exercice = a.Make(), Noeud = noeud, Axe = a.Id, Genre = Genre.Noeud }).ToList();
+            var pasNoeud = file.Take(nNoeud).Select(a => new Pas { Exercice = Fabriquer(noeud, a), Noeud = noeud, Axe = a.Id, Genre = Genre.Noeud }).Where(p => p.Exercice != null).ToList();
 
             // Les révisions dues, dans tous les chemins.
             var dues = Catalogue.Chemins.SelectMany(c => c.Noeuds).Where(n => n.Key != noeud.Key && Acquisition.RevisionDue(n)).ToList();
             var pasRev = Melange(dues).Take(nRev).Select(n =>
             {
                 var a = Aleatoire(n.Def.Axes);
-                return new Pas { Exercice = a.Make(), Noeud = n, Axe = a.Id, Genre = Genre.Revision };
-            }).ToList();
+                return new Pas { Exercice = Fabriquer(n, a), Noeud = n, Axe = a.Id, Genre = Genre.Revision };
+            }).Where(p => p.Exercice != null).ToList();
 
             // Les réussites faciles : des nœuds acquis (sinon le premier palier de la compétence, ou le nœud lui-même).
             var acquis = chemin.Noeuds.Where(n => n.Key != noeud.Key && Acquisition.EstAcquis(n)).ToList();
@@ -76,7 +76,8 @@ namespace MesPremiersJeux.Learning
                 Noeud src = acquis.Count > 0 ? Aleatoire(acquis)
                     : noeud.Palier > 1 ? new Noeud { Competence = noeud.Competence, Palier = 1 } : noeud;
                 var a = Aleatoire(src.Def.Axes);
-                pasFacile.Add(new Pas { Exercice = a.Make(), Noeud = src, Axe = a.Id, Genre = src.Key == noeud.Key ? Genre.Noeud : Genre.Facile });
+                var ex = Fabriquer(src, a);
+                if (ex != null) pasFacile.Add(new Pas { Exercice = ex, Noeud = src, Axe = a.Id, Genre = src.Key == noeud.Key ? Genre.Noeud : Genre.Facile });
             }
 
             // L'ordre : on commence par le nœud, on glisse les révisions au milieu, on finit facile.
@@ -95,6 +96,13 @@ namespace MesPremiersJeux.Learning
             var due = chemin.Noeuds.FirstOrDefault(Acquisition.RevisionDue);
             if (due != null) return due;
             return chemin.Noeuds.FirstOrDefault(n => Acquisition.Ouvert(n) && !Acquisition.EstAcquis(n)) ?? chemin.Noeuds.Last();
+        }
+
+        /// <summary>Un exercice neuf, ou null si le générateur a échoué (noté dans le journal, la leçon continue sans lui).</summary>
+        public static Exercice Fabriquer(Noeud n, Axe a)
+        {
+            try { return a.Make(); }
+            catch (Exception ex) { MesPremiersJeux.Lib.Log.Write("lecons", "Exercice impossible " + n.Key + " axe " + a.Id + " : " + ex.Message); return null; }
         }
 
         private static T Aleatoire<T>(IList<T> l) => l[Rng.Next(l.Count)];

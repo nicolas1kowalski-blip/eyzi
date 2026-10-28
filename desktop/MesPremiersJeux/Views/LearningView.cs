@@ -121,7 +121,8 @@ namespace MesPremiersJeux.Views
             }
             st.Children.Add(top);
             st.Children.Add(new TextBlock { Text = nd.Competence.Nom, FontSize = 22, FontWeight = FontWeights.Bold, Foreground = Dark, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 230, Margin = new Thickness(0, 6, 0, 0) });
-            st.Children.Add(new TextBlock { Text = nd.Def.Ecole + "  ·  " + LessonControl.Libelle(etat), FontSize = 16, Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x7A, 0x9A)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 0) });
+            string sous = ouvert ? nd.Def.Ecole + "  ·  " + LessonControl.Libelle(etat) : nd.Def.Ecole + "  ·  🔒 après le niveau " + nd.Competence.PalierN(nd.Palier - 1).Ecole;
+            st.Children.Add(new TextBlock { Text = sous, FontSize = 16, Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x7A, 0x9A)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 0) });
 
             // La jauge : la part des axes validés (en validation ou en cours).
             if (ouvert && (etat == Etat.EnCours || etat == Etat.EnValidation))
@@ -149,14 +150,26 @@ namespace MesPremiersJeux.Views
             else if (!ouvert) { btn.Opacity = 0.45; }
             else if (courant) { btn.BorderBrush = new SolidColorBrush(_chemin.Couleur); btn.BorderThickness = new Thickness(5); }
             if (ouvert) btn.Click += (s, e) => Demarrer(nd);
-            else btn.Click += (s, e) => Speech.Say("D'abord " + nd.Competence.Nom + ", niveau " + nd.Competence.PalierN(nd.Palier - 1).Ecole + " !");
+            else btn.Click += (s, e) => Speech.Say("Celui-là, c'est pour plus tard ! D'abord " + nd.Competence.Nom + ", niveau " + nd.Competence.PalierN(nd.Palier - 1).Ecole + ".");
             return btn;
         }
 
         private void Demarrer(Noeud nd)
         {
+            try { DemarrerLecon(nd); }
+            catch (Exception ex)
+            {
+                Log.Write("lecons", "Leçon impossible " + nd.Key + " : " + ex);
+                Speech.Say("Oups ! Cette leçon n'a pas voulu s'ouvrir. Essaie une autre.");
+                Montrer(_chemin);
+            }
+        }
+
+        private void DemarrerLecon(Noeud nd)
+        {
             _choisi = nd;
             var lecon = LessonBuilder.Composer(_chemin, nd);
+            if (lecon.Pas.Count == 0) throw new InvalidOperationException("aucun exercice");
             _lessonHost.Children.Clear();
             var ctl = new LessonControl(_celebrate, lecon, choix =>
             {

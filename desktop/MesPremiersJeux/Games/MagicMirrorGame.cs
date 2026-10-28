@@ -44,7 +44,8 @@ namespace MesPremiersJeux.Games
         private readonly List<Button> _tiles = new List<Button>();
         private readonly Random _rng = new Random();
 
-        private readonly List<MirrorCamera.Face> _faces = new List<MirrorCamera.Face>();
+        private readonly List<MirrorCamera.Face> _faces = new List<MirrorCamera.Face>();        // les visages AFFICHÉS (interpolés à chaque image)
+        private readonly List<MirrorCamera.Face> _targetFaces = new List<MirrorCamera.Face>();  // les visages DÉTECTÉS (une image sur trois, lissés)
         private DateTime _lastFaceAt = DateTime.MinValue;
         private DateTime _lastGreeting = DateTime.MinValue;
         private bool _greeted;
@@ -289,6 +290,18 @@ namespace MesPremiersJeux.Games
                         _status.Visibility = Visibility.Collapsed;
                     }
                     _bitmap.WritePixels(new Int32Rect(0, 0, w, h), pixels, w * 4, 0);
+                    // Les déguisements glissent vers la dernière détection à CHAQUE image
+                    // (15 par seconde) au lieu de sauter trois fois par seconde.
+                    if (_faces.Count == _targetFaces.Count && _faces.Count > 0)
+                    {
+                        const double k = 0.38;
+                        for (int i = 0; i < _faces.Count; i++)
+                        {
+                            var a = _faces[i]; var b = _targetFaces[i];
+                            _faces[i] = new MirrorCamera.Face { X = a.X + (b.X - a.X) * k, Y = a.Y + (b.Y - a.Y) * k, W = a.W + (b.W - a.W) * k, H = a.H + (b.H - a.H) * k };
+                        }
+                        Redraw();
+                    }
                 }
                 catch (Exception ex) { Log.Write("miroir", "Affichage : " + ex.Message); }
             }), DispatcherPriority.Render);
@@ -303,19 +316,24 @@ namespace MesPremiersJeux.Games
                 // L'image est en miroir : les visages aussi. Et on lisse, pour que les
                 // déguisements ne tremblent pas.
                 var mirrored = faces.Select(f => new MirrorCamera.Face { X = W - f.X - f.W, Y = f.Y, W = f.W, H = f.H }).OrderBy(f => f.X).ToList();
-                if (mirrored.Count == _faces.Count)
-                    for (int i = 0; i < _faces.Count; i++)
+                // Lissage des détections (la boîte du détecteur tremble d'une image à l'autre) :
+                // une petite différence est ignorée, une grande est suivie franchement.
+                if (mirrored.Count == _targetFaces.Count)
+                    for (int i = 0; i < _targetFaces.Count; i++)
                     {
-                        var a = _faces[i]; var b = mirrored[i];
-                        mirrored[i] = new MirrorCamera.Face { X = a.X * 0.5 + b.X * 0.5, Y = a.Y * 0.5 + b.Y * 0.5, W = a.W * 0.5 + b.W * 0.5, H = a.H * 0.5 + b.H * 0.5 };
+                        var a = _targetFaces[i]; var b = mirrored[i];
+                        double jump = Math.Abs(b.X - a.X) + Math.Abs(b.Y - a.Y) + Math.Abs(b.W - a.W);
+                        double k = jump < a.W * 0.06 ? 0.25 : 0.7;
+                        mirrored[i] = new MirrorCamera.Face { X = a.X + (b.X - a.X) * k, Y = a.Y + (b.Y - a.Y) * k, W = a.W + (b.W - a.W) * k, H = a.H + (b.H - a.H) * k };
                     }
                 if (mirrored.Count > 0)
                 {
                     _lastFaceAt = DateTime.Now;
-                    _faces.Clear(); _faces.AddRange(mirrored);
+                    _targetFaces.Clear(); _targetFaces.AddRange(mirrored);
+                    if (_faces.Count != mirrored.Count) { _faces.Clear(); _faces.AddRange(mirrored); }
                     Greet(mirrored.Count);
                 }
-                else if ((DateTime.Now - _lastFaceAt).TotalSeconds > 1.5) _faces.Clear();
+                else if ((DateTime.Now - _lastFaceAt).TotalSeconds > 1.5) { _faces.Clear(); _targetFaces.Clear(); }
                 Redraw();
             }));
         }

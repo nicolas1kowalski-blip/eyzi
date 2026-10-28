@@ -48,9 +48,20 @@ namespace MesPremiersJeux.Games
             Question.Text = (_lecon.EstDefi ? "⚡ Défi  " : "🧭 Leçon  ") + Points();
             Emoji.Fix(Question);
             var ex = Pas.Exercice;
-            if (ex is ExerciceChoix c) MontrerChoix(c);
-            else if (ex is ExerciceAttribution a) MontrerAttribution(a);
-            else if (ex is ExerciceOrdre o) MontrerOrdre(o);
+            try
+            {
+                if (ex is ExerciceChoix c) MontrerChoix(c);
+                else if (ex is ExerciceAttribution a) MontrerAttribution(a);
+                else if (ex is ExerciceOrdre o) MontrerOrdre(o);
+                else Suivant();
+            }
+            catch (Exception err)
+            {
+                // Un exercice qui casse ne casse pas la leçon : on le saute, noté dans le journal.
+                Log.Write("lecons", "Exercice " + Pas.Noeud.Key + " axe " + Pas.Axe + " : " + err);
+                Pas.Reussi = false;
+                Schedule(100, Suivant);
+            }
         }
 
         private string Points()

@@ -118,6 +118,17 @@ namespace MesPremiersJeux.Gaze
         /// <summary>Agitation mesurée du regard (px par tic, lissée).</summary>
         public double JitterPx => _jitterEma;
 
+        /// <summary>Le temps à atteindre sur la cible EN COURS : le temps effectif × le facteur de la cible (1 par défaut).</summary>
+        private double TargetDwellMs
+        {
+            get
+            {
+                double f = 1.0;
+                if (_curTargetEl != null) { var t = _targets.FirstOrDefault(x => ReferenceEquals(x.Element, _curTargetEl)); if (t != null) f = t.DwellFactor; }
+                return EffectiveDwellMs * f;
+            }
+        }
+
         /// <summary>Temps de fixation réellement appliqué (ms), bruit compris.</summary>
         public double EffectiveDwellMs
         {
@@ -619,7 +630,7 @@ namespace MesPremiersJeux.Gaze
                 var cur = _targets.FirstOrDefault(x => ReferenceEquals(x.Element, _curTargetEl));
                 // PUITS DE GRAVITÉ : plus la fixation est engagée, plus la cible
                 // en cours retient le regard (rayon élargi, hystérésis renforcée).
-                bool engaged = _progressSec * 1000.0 > EffectiveDwellMs * 0.15;
+                bool engaged = _progressSec * 1000.0 > TargetDwellMs * 0.15;
                 double keepRadius = SnapRadius * (engaged ? EngagedSnapBoost : 1.0);
                 double sticky = StickyMargin * (engaged ? EngagedStickyBoost : 1.0);
                 if (cur != null && RectDistance(cur.ScreenRect, screen) <= keepRadius)
@@ -654,7 +665,7 @@ namespace MesPremiersJeux.Gaze
                 _outSince = -1;
                 if (!saccade) _progressSec += dt;
                 ShowTargetVisuals();
-                if (_progressSec * 1000.0 >= EffectiveDwellMs)
+                if (_progressSec * 1000.0 >= TargetDwellMs)
                 {
                     var c = RectCenter(_curTargetRect);
 
@@ -788,13 +799,13 @@ namespace MesPremiersJeux.Gaze
             var center = new Point((tl.X + br.X) / 2, (tl.Y + br.Y) / 2);
             PlaceIndicator(center);
             if (_indicator.Visibility != Visibility.Visible) _indicator.Visibility = Visibility.Visible;
-            UpdateProgress(Math.Min(1.0, _progressSec * 1000.0 / EffectiveDwellMs));
+            UpdateProgress(Math.Min(1.0, _progressSec * 1000.0 / TargetDwellMs));
         }
 
         private void ClearTarget()
         {
             // Mesure : fixation bien entamée puis lâchée = « presque choisi ».
-            if (_curTargetEl != null && _progressSec * 1000.0 > EffectiveDwellMs * 0.6)
+            if (_curTargetEl != null && _progressSec * 1000.0 > TargetDwellMs * 0.6)
             {
                 try { Lib.GazeStats.RecordAbort(RectCenter(_curTargetRect)); } catch { }
             }

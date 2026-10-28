@@ -574,8 +574,13 @@ namespace MesPremiersJeux.Games
             _gazeIdx = -1;
         }
 
+        /// <summary>Le dernier point de regard valide (coordonnées écran) et son instant — pour les jeux qui visent là où l'enfant regarde.</summary>
+        protected Point LastGazeScreen { get; private set; }
+        protected DateTime LastGazeAt { get; private set; } = DateTime.MinValue;
+
         private void OnGazeSample(Point screen, bool valid)
         {
+            if (valid) { LastGazeScreen = screen; LastGazeAt = DateTime.Now; }
             if (_gazePads == null || Closed || !IsVisible) return;
             int hit = -1;
             if (valid)
