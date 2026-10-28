@@ -225,6 +225,7 @@ namespace MesPremiersJeux.Views
                 };
                 t.Start();
             };
+            Emoji.FixTree(root); // les emojis des cartes en couleur
         }
 
         // ------------------------------------------------------------------
@@ -354,7 +355,6 @@ namespace MesPremiersJeux.Views
         {
             string n = (Settings.Load().ChildName ?? "").Trim();
             _name = n.Length == 0 ? "Laura" : n;
-            Emoji.FixTree(root); // les emojis des cartes en couleur
         }
 
         /// <summary>Relit le prénom des réglages et met la page à jour.</summary>
