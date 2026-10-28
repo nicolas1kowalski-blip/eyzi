@@ -50,35 +50,20 @@
                                 <TextBlock Text="🏠  " FontSize="32" /><TextBlock Text="Accueil" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button x:Name="TabStories" Style="{StaticResource TabButton}" FontSize="26" MinWidth="190" Height="88" Click="Tab_Click" Tag="stories">
+                        <!-- Les trois MONDES : un regard pour passer de l'un à l'autre, depuis partout. -->
+                        <Button x:Name="TabJouer" Style="{StaticResource TabButton}" FontSize="26" MinWidth="200" Height="88" Margin="14,0,4,0" Click="Tab_Click" Tag="monde:jouer" Background="#FFFF9F43">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📖  " FontSize="32" /><TextBlock Text="Histoires" VerticalAlignment="Center" />
+                                <TextBlock Text="🎮  " FontSize="32" /><TextBlock Text="Jouer" VerticalAlignment="Center" FontWeight="ExtraBold" Foreground="White" />
                             </StackPanel>
                         </Button>
-                        <Button x:Name="TabGames" Style="{StaticResource TabButton}" FontSize="26" MinWidth="190" Height="88" Click="Tab_Click" Tag="games">
+                        <Button x:Name="TabApprendre" Style="{StaticResource TabButton}" FontSize="26" MinWidth="220" Height="88" Margin="4,0,4,0" Click="Tab_Click" Tag="monde:apprendre" Background="#FF2EB88A">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🎮  " FontSize="32" /><TextBlock Text="Jeux" VerticalAlignment="Center" />
+                                <TextBlock Text="🎓  " FontSize="32" /><TextBlock Text="Apprendre" VerticalAlignment="Center" FontWeight="ExtraBold" Foreground="White" />
                             </StackPanel>
                         </Button>
-                        <Button x:Name="TabEdu" Style="{StaticResource TabButton}" FontSize="26" MinWidth="190" Height="88" Click="Tab_Click" Tag="edu">
+                        <Button x:Name="TabParler" Style="{StaticResource TabButton}" FontSize="26" MinWidth="200" Height="88" Margin="4,0,4,0" Click="Tab_Click" Tag="monde:parler" Background="#FF7E3FF2">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🎓  " FontSize="32" /><TextBlock Text="Éducatif" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="TabColoring" Style="{StaticResource TabButton}" FontSize="26" MinWidth="190" Height="88" Click="Tab_Click" Tag="coloring">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🎨  " FontSize="32" /><TextBlock Text="Coloriage" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="TabMusic" Style="{StaticResource TabButton}" FontSize="26" MinWidth="190" Height="88" Click="Tab_Click" Tag="music">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🎵  " FontSize="32" /><TextBlock Text="Musique" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-                        <!-- Parcours : accessible depuis l'accueil seulement (onglet retiré de la barre). -->
-                        <Button x:Name="TabParcours" Visibility="Collapsed" Style="{StaticResource TabButton}" FontSize="26" MinWidth="190" Height="88" Click="Parcours_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📅  " FontSize="32" /><TextBlock Text="Parcours" VerticalAlignment="Center" />
+                                <TextBlock Text="💬  " FontSize="32" /><TextBlock Text="Parler" VerticalAlignment="Center" FontWeight="ExtraBold" Foreground="White" />
                             </StackPanel>
                         </Button>
                     </StackPanel>

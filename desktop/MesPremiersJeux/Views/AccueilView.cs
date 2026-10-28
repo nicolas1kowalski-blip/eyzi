@@ -182,12 +182,12 @@ namespace MesPremiersJeux.Views
             cards.Children.Add(giftCard);
 
             // Les grands boutons vers les activités.
-            var go = new UniformGrid { Columns = 4, Margin = new Thickness(0, 6, 0, 0), HorizontalAlignment = HorizontalAlignment.Center };
+            // Les trois PORTES : Jouer, Apprendre, Parler. Un regard, et on entre dans le monde.
+            var go = new UniformGrid { Columns = 3, Margin = new Thickness(0, 6, 0, 0), HorizontalAlignment = HorizontalAlignment.Center };
             column.Children.Add(go);
-            go.Children.Add(Go("🎮", "Jouer", "games"));
-            go.Children.Add(Go("📅", "Mon parcours", "parcours"));
-            go.Children.Add(Go("📖", "Histoires", "stories"));
-            go.Children.Add(Go("🎵", "Musique", "music"));
+            go.Children.Add(Door("🎮", "Jouer", "jeux · coloriage · musique", "monde:jouer", Color.FromRgb(0xFF, 0x9F, 0x43)));
+            go.Children.Add(Door("🎓", "Apprendre", "éducatif · histoires · parcours", "monde:apprendre", Color.FromRgb(0x2E, 0xB8, 0x8A)));
+            go.Children.Add(Door("💬", "Parler", "dire ce que je veux", "monde:parler", Color.FromRgb(0x7E, 0x3F, 0xF2)));
 
             // Le soleil / la lune : un regard dessus, et la nuit tombe (ou le jour se lève).
             root.Children.Add(OrbButton());
@@ -438,6 +438,25 @@ namespace MesPremiersJeux.Views
                 Background = new SolidColorBrush(tint),
                 Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new Thickness(12), Child = content },
             };
+            return b;
+        }
+
+        // Une grande porte colorée vers un monde.
+        private Button Door(string icon, string label, string sub, string id, Color color)
+        {
+            var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+            content.Children.Add(Art.ForEmoji(icon, 130));
+            content.Children.Add(new TextBlock { Text = label, FontSize = 44, FontWeight = FontWeights.ExtraBold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 6, 0, 0) });
+            content.Children.Add(new TextBlock { Text = sub, FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromArgb(0xE0, 0xFF, 0xFF, 0xFF)), HorizontalAlignment = HorizontalAlignment.Center });
+            var b = new Button
+            {
+                Style = (Style)Application.Current.Resources["MenuTile"],
+                Width = 390, Height = 250,
+                Background = new LinearGradientBrush(color, Color.FromArgb(0xFF, (byte)(color.R * 0.8), (byte)(color.G * 0.8), (byte)(color.B * 0.8)), 90),
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF)),
+                Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new Thickness(12), Child = content },
+            };
+            b.Click += (s, e) => Navigate?.Invoke(id);
             return b;
         }
 

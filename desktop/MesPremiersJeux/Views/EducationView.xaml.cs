@@ -125,6 +125,24 @@ namespace MesPremiersJeux.Views
                 tile.Click += (s, e) => OpenTheme(theme);
                 Cats.Children.Add(tile);
             }
+            // Le monde Apprendre, c'est aussi les histoires et le parcours du jour.
+            var st = MenuKit.ThemeTile("📖", "Histoires", Color.FromRgb(0xFF, 0xEF, 0xDC), "📚  🎃  🍂");
+            st.Click += (s, e) => Navigate?.Invoke("stories");
+            Cats.Children.Add(st);
+            var pa = MenuKit.ThemeTile("📅", "Mon parcours", Color.FromRgb(0xE8, 0xF0, 0xFF), "☀️  🧩  ⭐");
+            pa.Click += (s, e) => Navigate?.Invoke("parcours");
+            Cats.Children.Add(pa);
+        }
+
+        /// <summary>Vers un autre écran du monde Apprendre (histoires, parcours).</summary>
+        public event Action<string> Navigate;
+
+        /// <summary>Revient à la porte du monde : les thèmes.</summary>
+        public void ShowRoot()
+        {
+            if (PlayRoot.Visibility == Visibility.Visible) Back_Click(this, null); // le jeu en cours se range proprement
+            ListRoot.Visibility = Visibility.Collapsed;
+            MenuRoot.Visibility = Visibility.Visible;
         }
 
         private void OpenTheme(Theme t)

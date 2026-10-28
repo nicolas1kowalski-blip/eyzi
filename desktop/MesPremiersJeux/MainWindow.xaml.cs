@@ -71,14 +71,22 @@ namespace MesPremiersJeux
             _accueil = accueil;
             accueil.Navigate += id =>
             {
-                if (id == "parcours") Parcours_Click(this, null);
+                if (id.StartsWith("monde:")) SelectWorld(id.Substring(6));
+                else if (id == "parcours") Parcours_Click(this, null);
                 else Select(id);
             };
             accueil.ShopRequested += () => Shop_Click(this, null);
             _views["accueil"] = accueil;
             _views["stories"] = new StoriesView();
-            _views["games"] = new GamesView();
-            _views["edu"] = new EducationView();
+            var games = new GamesView();
+            games.Navigate += id => Select(id);               // Coloriage, Musique depuis le monde Jouer
+            _views["games"] = games;
+            var edu = new EducationView();
+            edu.Navigate += id => { if (id == "parcours") Parcours_Click(this, null); else Select(id); }; // Histoires, Parcours depuis Apprendre
+            _views["edu"] = edu;
+            var parler = new ParlerView();
+            parler.BackRequested += () => Select("accueil");
+            _views["parler"] = parler;
             _views["coloring"] = coloring;
             _views["music"] = new MusicView();
 
@@ -1815,15 +1823,63 @@ namespace MesPremiersJeux
 
         private void Tab_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement fe && fe.Tag is string id) Select(id);
+            if (!(sender is FrameworkElement fe) || !(fe.Tag is string id)) return;
+            if (id.StartsWith("monde:")) SelectWorld(id.Substring(6));
+            else Select(id);
+        }
+
+        // Les trois MONDES. Chaque écran appartient à un monde ; le monde de l'écran
+        // affiché est mis en avant dans la barre, et un regard suffit pour en changer.
+        private static string WorldOf(string id)
+        {
+            switch (id)
+            {
+                case "games": case "coloring": case "music": return "jouer";
+                case "edu": case "stories": case "parcours": return "apprendre";
+                case "parler": return "parler";
+                default: return "";
+            }
+        }
+
+        /// <summary>Entre dans un monde, par sa porte (son écran d'accueil).</summary>
+        private void SelectWorld(string world)
+        {
+            switch (world)
+            {
+                case "jouer": (_views["games"] as GamesView)?.ShowRoot(); Select("games"); Speech.Say("Le monde des jeux !"); break;
+                case "apprendre": (_views["edu"] as EducationView)?.ShowRoot(); Select("edu"); Speech.Say("Le monde pour apprendre !"); break;
+                case "parler": Select("parler"); break;
+                default: Select("accueil"); break;
+            }
         }
 
         private void Select(string id)
         {
-            Chrome.Immersive = false; // changer d'onglet réaffiche toujours la barre
+            Chrome.Immersive = false; // changer d'écran réaffiche toujours la barre
             Speech.ScreenChanged();   // la voix de l'écran quitté se tait (phrase en cours et en attente)
+            // Le monde Parler s'ouvre et se ferme comme un lieu.
+            if (_views.TryGetValue("parler", out var pv) && pv is ParlerView parler)
+            {
+                bool was = parler.Visibility == Visibility.Visible;
+                if (id == "parler" && !was) parler.Enter();
+                else if (id != "parler" && was) parler.Leave();
+            }
             foreach (var kv in _views) kv.Value.Visibility = kv.Key == id ? Visibility.Visible : Visibility.Collapsed;
+            HighlightWorld(WorldOf(id));
+            ApplyTiles();
             Usage.Screen(id);
+        }
+
+        private void HighlightWorld(string world)
+        {
+            if (TabJouer == null) return;
+            foreach (var (btn, key) in new[] { (TabJouer, "jouer"), (TabApprendre, "apprendre"), (TabParler, "parler") })
+            {
+                bool on = key == world;
+                btn.Opacity = on || world == "" ? 1.0 : 0.72;
+                btn.RenderTransformOrigin = new Point(0.5, 0.5);
+                btn.RenderTransform = new ScaleTransform(on ? 1.08 : 1.0, on ? 1.08 : 1.0);
+            }
         }
 
         private void Fullscreen_Click(object sender, RoutedEventArgs e)

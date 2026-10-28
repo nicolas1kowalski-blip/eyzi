@@ -106,6 +106,24 @@ namespace MesPremiersJeux.Views
                 tile.Click += (s, e) => OpenTheme(theme);
                 Cats.Children.Add(tile);
             }
+            // Le monde Jouer, c'est aussi le coloriage et la musique.
+            var col = MenuKit.ThemeTile("🎨", "Coloriage", Color.FromRgb(0xFF, 0xE6, 0xF4), "🖍️  🎨  🖼️");
+            col.Click += (s, e) => Navigate?.Invoke("coloring");
+            Cats.Children.Add(col);
+            var mus = MenuKit.ThemeTile("🎵", "Musique", Color.FromRgb(0xDE, 0xF7, 0xEA), "🎶  🎧  🎤");
+            mus.Click += (s, e) => Navigate?.Invoke("music");
+            Cats.Children.Add(mus);
+        }
+
+        /// <summary>Vers un autre écran du monde Jouer (coloriage, musique).</summary>
+        public event Action<string> Navigate;
+
+        /// <summary>Revient à la porte du monde : les thèmes.</summary>
+        public void ShowRoot()
+        {
+            if (PlayRoot.Visibility == Visibility.Visible) Back_Click(this, null); // le jeu en cours se range proprement
+            ListRoot.Visibility = Visibility.Collapsed;
+            MenuRoot.Visibility = Visibility.Visible;
         }
 
         private void OpenTheme(Theme t)
