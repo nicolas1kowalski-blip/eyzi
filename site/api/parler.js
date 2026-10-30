@@ -100,7 +100,10 @@ export default async function handler(req, res) {
     }
     if (tooMany(machine)) { res.status(429).json({ ok: false, message: 'Trop de demandes aujourd\'hui.' }); return; }
 
-    const client = new Anthropic({ apiKey });
+    // Une clé « toute organisation » doit nommer son espace de travail (ANTHROPIC_WORKSPACE_ID, wrkspc_…) ;
+    // une clé créée dans un espace de travail n'en a pas besoin.
+    const workspace = String(process.env.ANTHROPIC_WORKSPACE_ID || '').trim();
+    const client = new Anthropic({ apiKey, ...(workspace ? { defaultHeaders: { 'anthropic-workspace-id': workspace } } : {}) });
     // La forme d'appel qui a fonctionné (journal du 30/10, 19 h 25) : point d'entrée bêta.
     const t0 = Date.now();
     const response = await client.beta.messages.create({
