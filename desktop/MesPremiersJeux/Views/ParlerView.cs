@@ -152,6 +152,7 @@ namespace MesPremiersJeux.Views
             if (res.EnLigne) Grille(res);
             if (res.Simple != null && res.Simple != text) _heard.Text = "« " + text + " »\n" + res.Simple;
             MontrerEtat(Listening.Status);
+            if (!res.EnLigne && !string.IsNullOrEmpty(res.Erreur)) _state.Text = "Réponses en ligne indisponibles : " + res.Erreur;
             Speech.SayAlways(res.Simple ?? text);
         }
 

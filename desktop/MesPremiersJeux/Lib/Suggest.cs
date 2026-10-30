@@ -26,6 +26,7 @@ namespace MesPremiersJeux.Lib
             public string Simple;
             public List<Reponse> Reponses = new List<Reponse>();
             public bool EnLigne;
+            public string Erreur;           // pourquoi le serveur n'a pas répondu (affiché dans le bandeau)
         }
         public sealed class Echange { public string Question, Reponse; }
         public sealed class Mot { public string Cle, Label; }
@@ -49,7 +50,12 @@ namespace MesPremiersJeux.Lib
                 sb.Append("}");
                 var resp = await Http.PostAsync(Url, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
                 var json = await resp.Content.ReadAsStringAsync();
-                if (!resp.IsSuccessStatusCode) { Log.Write("ecoute", "Réponses : HTTP " + (int)resp.StatusCode + " " + json); return res; }
+                if (!resp.IsSuccessStatusCode)
+                {
+                    Log.Write("ecoute", "Réponses : HTTP " + (int)resp.StatusCode + " " + json);
+                    res.Erreur = "HTTP " + (int)resp.StatusCode + " " + (Cloud.JsonGet(json, "message") ?? "");
+                    return res;
+                }
                 var list = new List<Reponse>();
                 foreach (Match m in Regex.Matches(json, "\\{\\s*\"texte\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"\\s*(?:,\\s*\"emoji\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\")?\\s*(?:,\\s*\"cle\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\")?\\s*\\}"))
                 {
@@ -67,7 +73,7 @@ namespace MesPremiersJeux.Lib
                     Reponses = list, EnLigne = true,
                 };
             }
-            catch (Exception ex) { Log.Write("ecoute", "Réponses : " + ex.Message); return res; }
+            catch (Exception ex) { Log.Write("ecoute", "Réponses : " + ex.Message); res.Erreur = ex.Message; return res; }
         }
 
         /// <summary>Le type de phrase deviné sans serveur.</summary>
@@ -75,8 +81,11 @@ namespace MesPremiersJeux.Lib
         {
             var t = (q ?? "").Trim().ToLowerInvariant();
             if (t.Length == 0) return "autre";
-            if (Regex.IsMatch(t, @"\sou\s") && t.EndsWith("?")) return "choix";
-            if (Regex.IsMatch(t, @"^(qu'est[- ]ce|quoi|qui|où|ou est|quand|combien|comment|quel|quelle|quels|quelles|lequel|laquelle|avec qui|pourquoi)")) return "ouverte";
+            if (Regex.IsMatch(t, @"\sou\s") && (t.EndsWith("?") || Regex.IsMatch(t, @"^(tu|t'|veux|préf|qu)"))) return "choix";
+            // Une question ouverte : un mot interrogatif au début (« que veux-tu », « qu'est-ce que »)
+            // ou à la fin (« tu veux quoi ? », « tu veux manger quoi »).
+            if (Regex.IsMatch(t, @"^(que\b|qu'|quoi|qui\b|où\b|ou est|quand|combien|comment|quel|quelle|quels|quelles|lequel|laquelle|avec qui|pourquoi|dis[- ]moi)")) return "ouverte";
+            if (Regex.IsMatch(t, @"\b(quoi|qui|où|quand|combien|comment|lequel|laquelle)\s*\??$")) return "ouverte";
             if (t.EndsWith("?") || Regex.IsMatch(t, @"^(est[- ]ce que|tu |t'|on |il y a|c'est|ça |veux|as-tu|es-tu)")) return "fermee";
             if (Regex.IsMatch(t, @"^(on va|viens|donne|regarde|allez|c'est l'heure|il faut|on doit|attends|arrête|mets|prends)")) return "consigne";
             return "autre";
@@ -98,7 +107,18 @@ namespace MesPremiersJeux.Lib
                     Add("Autre chose", "💭");
                     break;
                 }
-                case "ouverte": Add("Manger", "🍽️"); Add("Boire", "🥤"); Add("Jouer", "🎮"); Add("Un câlin", "🤗"); Add("Dormir", "😴"); Add("Autre chose", "💭"); break;
+                case "ouverte":
+                {
+                    var t = (q ?? "").ToLowerInvariant();
+                    if (Regex.IsMatch(t, @"mang|goûter|gouter|repas|dîner|diner|déjeun|dejeun")) { Add("Du pain", "🍞"); Add("Une compote", "🍎"); Add("Un yaourt", "🥣"); Add("Des pâtes", "🍝"); Add("Un gâteau", "🍰"); Add("Autre chose", "💭"); }
+                    else if (Regex.IsMatch(t, @"boire|soif|bois")) { Add("De l'eau", "💧"); Add("Du jus", "🧃"); Add("Du lait", "🥛"); Add("Un chocolat", "☕"); Add("Autre chose", "💭"); }
+                    else if (Regex.IsMatch(t, @"\bmal\b|bobo|douleur")) { Add("La tête", "🤕"); Add("Le ventre", "🤢"); Add("La jambe", "🦵"); Add("Le bras", "💪"); Add("Les dents", "🦷"); Add("Nulle part", "🙂"); }
+                    else if (Regex.IsMatch(t, @"\bqui\b|avec qui")) { Add("Papa", "👨"); Add("Maman", "👩"); Add("Mamie", "👵"); Add("Papi", "👴"); Add("Personne", "🙅"); }
+                    else if (Regex.IsMatch(t, @"\boù\b|aller")) { Add("Dehors", "🌳"); Add("Dans ma chambre", "🛏️"); Add("Au parc", "🛝"); Add("Chez mamie", "🏡"); Add("Nulle part", "🏠"); }
+                    else if (Regex.IsMatch(t, @"comment ça va|comment tu vas|ça va")) { Add("Bien", "😊"); Add("Pas bien", "😢"); Add("Fatiguée", "😴"); Add("J'ai mal", "🤕"); Add("Contente", "🥳"); }
+                    else { Add("Jouer", "🎮"); Add("Une histoire", "📖"); Add("De la musique", "🎵"); Add("Dehors", "🌳"); Add("Un câlin", "🤗"); Add("Autre chose", "💭"); }
+                    break;
+                }
                 case "consigne": Add("D'accord", "👍"); Add("Non", "❌"); Add("Attends", "✋"); break;
                 case "fermee": Add("Oui", "✅"); Add("Non", "❌"); Add("Je ne sais pas", "🤷"); break;
                 default: Add("D'accord", "👍"); Add("Encore", "🔁"); Add("Je t'aime", "❤️"); break;
