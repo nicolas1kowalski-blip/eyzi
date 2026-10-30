@@ -27,6 +27,7 @@ namespace MesPremiersJeux.Lib
             public List<Reponse> Reponses = new List<Reponse>();
             public bool EnLigne;
             public string Erreur;           // pourquoi le serveur n'a pas répondu (affiché dans le bandeau)
+            public string Chrono;           // « IA 1,2 s · serveur 1,9 s · total 3,4 s » : pour savoir d'où vient la lenteur
         }
         public sealed class Echange { public string Question, Reponse; }
         public sealed class Mot { public string Cle, Label; }
@@ -57,8 +58,10 @@ namespace MesPremiersJeux.Lib
                 if (historique != null && historique.Count > 0)
                     sb.Append(",\"historique\":[").Append(string.Join(",", historique.Skip(Math.Max(0, historique.Count - 3)).Select(h => "{\"q\":\"" + Esc(h.Question) + "\",\"r\":\"" + Esc(h.Reponse ?? "") + "\"}"))).Append("]");
                 sb.Append("}");
+                var chrono = System.Diagnostics.Stopwatch.StartNew();
                 var resp = await Http.PostAsync(Url, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
                 var json = await resp.Content.ReadAsStringAsync();
+                chrono.Stop();
                 if (!resp.IsSuccessStatusCode)
                 {
                     Log.Write("ecoute", "Réponses : HTTP " + (int)resp.StatusCode + " " + json);
@@ -79,11 +82,15 @@ namespace MesPremiersJeux.Lib
                 if (list.Count == 0) return res;
                 var simple = Cloud.JsonGet(json, "simple");
                 var type = (Cloud.JsonGet(json, "type") ?? "").Trim();
+                double.TryParse(Cloud.JsonGet(json, "ia") ?? "", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var msIa);
+                double.TryParse(Cloud.JsonGet(json, "total") ?? "", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var msSrv);
+                var ch = string.Format(System.Globalization.CultureInfo.GetCultureInfo("fr-FR"), "IA {0:0.0} s · serveur {1:0.0} s · aller-retour {2:0.0} s", msIa / 1000.0, msSrv / 1000.0, chrono.ElapsedMilliseconds / 1000.0);
+                Log.Write("ecoute", "Réponses : " + ch);
                 return new Resultat
                 {
                     Type = type.Length > 0 ? type : res.Type,
                     Simple = string.IsNullOrWhiteSpace(simple) ? question : simple,
-                    Reponses = list, EnLigne = true,
+                    Reponses = list, EnLigne = true, Chrono = ch,
                 };
             }
             catch (Exception ex) { Log.Write("ecoute", "Réponses : " + ex.Message); res.Erreur = ex.Message; return res; }

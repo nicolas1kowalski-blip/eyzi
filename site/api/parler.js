@@ -62,6 +62,7 @@ Jamais de réponse blessante ni dangereuse.
 Le vocabulaire de l'enfant et, s'il y en a, les derniers échanges, sont donnés dans le message.`;
 
 export default async function handler(req, res) {
+  const tStart = Date.now();
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') { res.status(405).json({ ok: false, message: 'Méthode non autorisée.' }); return; }
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
@@ -119,7 +120,8 @@ export default async function handler(req, res) {
     if (response.stop_reason === 'refusal') { res.status(200).json({ ok: true, type: 'autre', simple: question, reponses: [] }); return; }
     let text = '';
     for (const block of response.content) if (block.type === 'text') text += block.text;
-    console.log('parler', Date.now() - t0, 'ms', response.stop_reason, text.length);
+    const msIa = Date.now() - t0;
+    console.log('parler', msIa, 'ms', response.stop_reason, text.length);
     const m = text.match(/\{[\s\S]*\}/);
     let parsed = null;
     try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
@@ -129,7 +131,7 @@ export default async function handler(req, res) {
       : [];
     const types = ['fermee', 'choix', 'ouverte', 'consigne', 'autre'];
     const type = types.includes(parsed?.type) ? parsed.type : 'autre';
-    res.status(200).json({ ok: true, type, simple: clean(parsed?.simple, 200) || question, reponses });
+    res.status(200).json({ ok: true, type, simple: clean(parsed?.simple, 200) || question, reponses, ms: { ia: msIa, total: Date.now() - tStart } });
   } catch (e) {
     console.error('parler', e);
     const detail = String(e?.message || e).slice(0, 200);

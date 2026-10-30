@@ -136,24 +136,48 @@ namespace MesPremiersJeux.Views
             while (_historique.Count > 3) _historique.RemoveAt(0);
             var histo = _historique.Take(_historique.Count - 1).ToList();
 
-            // 1. Tout de suite : la grille devinée (l'enfant n'attend pas le réseau).
             var secours = Suggest.Defaults(text);
-            Grille(secours);
-            _state.Text = "Je cherche de meilleures réponses…";
+            bool enLigne = _settings.ListenAnswers && !string.IsNullOrWhiteSpace(_settings.LicenceKey);
+            if (!enLigne)
+            {
+                // Sans réponses en ligne : la grille devinée, tout de suite.
+                Grille(secours);
+                _state.Text = "Réponses devinées (sans IA).";
+                Speech.SayAlways(text);
+                return;
+            }
 
-            // 2. Puis la grille adaptée, avec le vocabulaire de l'enfant et les derniers échanges.
+            // En ligne : on ATTEND l'IA, avec un chrono visible, pour savoir d'où vient le temps.
+            _answers.Children.Clear(); _answers.Columns = 1;
+            var attente = new TextBlock { Text = "L'IA cherche des réponses…", FontSize = 26, Foreground = Dark, Opacity = 0.7, Margin = new Thickness(8) };
+            _answers.Children.Add(attente);
+            var t0 = DateTime.Now;
+            var tick = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            tick.Tick += (s, e) => attente.Text = string.Format(System.Globalization.CultureInfo.GetCultureInfo("fr-FR"), "L'IA cherche des réponses… {0:0.0} s", (DateTime.Now - t0).TotalSeconds);
+            tick.Start();
+            Speech.SayAlways(text);
+
             Suggest.Resultat res;
             try
             {
                 var vocab = CommBoard.Vocabulaire().Select(m => new Suggest.Mot { Cle = m.Cle, Label = m.Label }).ToList();
                 res = await Suggest.Pour(_settings, text, vocab, histo);
             }
-            catch { res = secours; }
+            catch (Exception ex) { res = secours; res.Erreur = ex.Message; }
+            tick.Stop();
             if (_enCours?.Question != text) return; // une autre phrase est arrivée entre-temps
-            if (res.EnLigne) Grille(res);
-            if (res.Simple != null && res.Simple != text) _heard.Text = "« " + text + " »\n" + res.Simple;
-            MontrerEtat(Listening.Status);
-            if (!res.EnLigne && !string.IsNullOrEmpty(res.Erreur)) _state.Text = "Réponses en ligne indisponibles : " + res.Erreur;
+            if (res.EnLigne)
+            {
+                Grille(res);
+                if (res.Simple != null && res.Simple != text) _heard.Text = "« " + text + " »\n" + res.Simple;
+                _state.Text = "Réponses de l'IA · " + (res.Chrono ?? "");
+                if (res.Simple != null && res.Simple != text) Speech.SayAlways(res.Simple);
+            }
+            else
+            {
+                Grille(secours);
+                _state.Text = "Réponses devinées (IA indisponible" + (string.IsNullOrEmpty(res.Erreur) ? "" : " : " + res.Erreur) + ")";
+            }
             Speech.SayAlways(res.Simple ?? text);
         }
 
