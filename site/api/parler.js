@@ -90,11 +90,10 @@ export default async function handler(req, res) {
     if (tooMany(machine)) { res.status(429).json({ ok: false, message: 'Trop de demandes aujourd\'hui.' }); return; }
 
     const client = new Anthropic({ apiKey });
-    const response = await client.beta.messages.create({
+    // Haiku 5.5 : pas de repli serveur (réservé aux modèles Opus / Sonnet / Fable).
+    const response = await client.messages.create({
       model: 'claude-haiku-5-5',
       max_tokens: 600,
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
       output_config: { effort: 'low' },
       system: SYSTEM + `\nL'enfant s'appelle ${child} et a ${age} ans. Il est ${heure} h : c'est ${moment || 'la journée'}.` + (profil ? `\nCe que la famille dit de ${child} : ${profil}` : ''),
       messages: [{
@@ -111,6 +110,7 @@ export default async function handler(req, res) {
     const m = text.match(/\{[\s\S]*\}/);
     let parsed = null;
     try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
+    if (!parsed) { console.error('parler: réponse non JSON', text.slice(0, 300)); res.status(502).json({ ok: false, message: "Réponse de l'IA illisible : " + text.slice(0, 120) }); return; }
     const reponses = Array.isArray(parsed?.reponses)
       ? parsed.reponses.map((r) => ({ texte: clean(r?.texte, 60), emoji: clean(r?.emoji, 8), cle: clean(r?.cle, 40) })).filter((r) => r.texte).slice(0, 6)
       : [];
@@ -119,6 +119,7 @@ export default async function handler(req, res) {
     res.status(200).json({ ok: true, type, simple: clean(parsed?.simple, 200) || question, reponses });
   } catch (e) {
     console.error('parler', e);
-    res.status(500).json({ ok: false, message: 'Erreur du serveur.' });
+    const detail = String(e?.message || e).slice(0, 200);
+    res.status(500).json({ ok: false, message: 'Erreur du serveur : ' + detail });
   }
 }
