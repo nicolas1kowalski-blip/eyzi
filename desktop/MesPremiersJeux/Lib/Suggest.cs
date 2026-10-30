@@ -19,7 +19,7 @@ namespace MesPremiersJeux.Lib
     /// </summary>
     public static class Suggest
     {
-        public sealed class Reponse { public string Texte, Emoji, Cle; }
+        public sealed class Reponse { public string Texte, Emoji, Cle, Picto; }
         public sealed class Resultat
         {
             public string Type = "autre";   // fermee | choix | ouverte | consigne | autre
@@ -73,11 +73,13 @@ namespace MesPremiersJeux.Lib
                     return res;
                 }
                 var list = new List<Reponse>();
-                foreach (Match m in Regex.Matches(json, "\\{\\s*\"texte\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"\\s*(?:,\\s*\"emoji\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\")?\\s*(?:,\\s*\"cle\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\")?\\s*\\}"))
+                int iRep = json.IndexOf("\"reponses\"", StringComparison.Ordinal);
+                foreach (Match m in Regex.Matches(iRep >= 0 ? json.Substring(iRep) : json, @"\{[^{}]*\}"))
                 {
-                    var t = Regex.Unescape(m.Groups[1].Value).Trim();
+                    var obj = m.Value;
+                    var t = (Cloud.JsonGet(obj, "texte") ?? "").Trim();
                     if (t.Length == 0) continue;
-                    list.Add(new Reponse { Texte = t, Emoji = m.Groups[2].Success ? Regex.Unescape(m.Groups[2].Value) : "", Cle = m.Groups[3].Success ? Regex.Unescape(m.Groups[3].Value) : "" });
+                    list.Add(new Reponse { Texte = t, Emoji = Cloud.JsonGet(obj, "emoji") ?? "", Cle = Cloud.JsonGet(obj, "cle") ?? "", Picto = Cloud.JsonGet(obj, "picto") ?? "" });
                 }
                 if (list.Count == 0) return res;
                 var simple = Cloud.JsonGet(json, "simple");
@@ -129,7 +131,7 @@ namespace MesPremiersJeux.Lib
         public static Resultat Defaults(string q)
         {
             var r = new Resultat { Simple = q, Type = TypeDe(q) };
-            void Add(string t, string e) => r.Reponses.Add(new Reponse { Texte = t, Emoji = e, Cle = "" });
+            void Add(string t, string e) => r.Reponses.Add(new Reponse { Texte = t, Emoji = e, Cle = "", Picto = PictoDe(t) });
             switch (r.Type)
             {
                 case "choix":
@@ -167,6 +169,19 @@ namespace MesPremiersJeux.Lib
             }
             return r;
         }
+
+        // Les mots anglais des réponses de secours, pour la banque de pictos.
+        private static readonly Dictionary<string, string> PictoFr = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Oui"] = "yes", ["Non"] = "no", ["Je ne sais pas"] = "don't know", ["Les deux"] = "both", ["Autre chose"] = "other", ["D'accord"] = "ok", ["Attends"] = "wait", ["Encore"] = "again", ["Je t'aime"] = "love",
+            ["Du pain"] = "bread", ["Une compote"] = "apple", ["Un yaourt"] = "yogurt", ["Des pâtes"] = "pasta", ["Un gâteau"] = "cake", ["Une tartine"] = "toast", ["Des céréales"] = "cereal", ["Un chocolat chaud"] = "hot chocolate",
+            ["Une banane"] = "banana", ["Un pain au chocolat"] = "croissant", ["Un fruit"] = "fruit", ["De la purée"] = "mashed potato", ["Du poulet"] = "chicken", ["De l'eau"] = "water", ["Du jus"] = "juice", ["Du lait"] = "milk", ["Un chocolat"] = "hot chocolate",
+            ["La tête"] = "head", ["Le ventre"] = "tummy", ["La jambe"] = "leg", ["Le bras"] = "arm", ["Les dents"] = "teeth", ["Nulle part"] = "nowhere",
+            ["Papa"] = "dad", ["Maman"] = "mum", ["Mamie"] = "grandma", ["Papi"] = "grandad", ["Personne"] = "nobody",
+            ["Dehors"] = "outside", ["Dans ma chambre"] = "bedroom", ["Au parc"] = "park", ["Chez mamie"] = "house", ["Bien"] = "happy", ["Pas bien"] = "sad", ["Fatiguée"] = "tired", ["J'ai mal"] = "pain", ["Contente"] = "happy",
+            ["Jouer"] = "play", ["Une histoire"] = "book", ["De la musique"] = "music", ["Un câlin"] = "hug", ["Dormir"] = "sleep", ["Manger"] = "eat", ["Boire"] = "drink",
+        };
+        private static string PictoDe(string t) => PictoFr.TryGetValue(t ?? "", out var p) ? p : "";
 
         private static string Nettoie(string s)
         {

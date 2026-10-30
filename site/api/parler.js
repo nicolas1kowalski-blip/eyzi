@@ -35,7 +35,7 @@ function tooMany(machine) {
 }
 
 const SYSTEM = `Tu aides un enfant qui ne parle pas et qui répond avec ses yeux sur une tablette, en regardant une case parmi quelques-unes. Un adulte vient de lui parler. Tu renvoies UNIQUEMENT un objet JSON, sans texte autour, de la forme :
-{"type": "...", "simple": "...", "reponses": [{"texte": "...", "emoji": "...", "cle": "..."}]}
+{"type": "...", "simple": "...", "reponses": [{"texte": "...", "picto": "...", "emoji": "...", "cle": "..."}]}
 
 "type", la nature de ce qui a été dit :
 - "fermee" : une question à laquelle on répond oui ou non (« Tu as faim ? », « On va au parc ? »).
@@ -51,12 +51,13 @@ Elles doivent être RÉALISTES pour un enfant de cet âge, dans sa vie de tous l
 Les règles par type :
 - fermee : exactement 3 réponses : "Oui", "Non", puis une nuance utile ("Un peu", "Plus tard", "Je ne sais pas").
 - choix : chaque option proposée (dans l'ordre où l'adulte les a dites), puis "Les deux" si ça a un sens, puis "Autre chose". 6 au plus.
-- ouverte : 4 à 6 réponses concrètes et probables pour cet enfant, en PRIORITÉ prises dans son vocabulaire (ci-dessous) et dans ce que la famille dit de lui, puis "Autre chose".
+- ouverte : 6 à 8 réponses concrètes et probables pour cet enfant, en PRIORITÉ prises dans son vocabulaire (ci-dessous) et dans ce que la famille dit de lui, puis "Autre chose".
 - consigne : 3 réponses : "D'accord", "Non", "Attends".
 - autre : 3 réponses : "D'accord", "Encore", "Je t'aime".
 Jamais de réponse blessante ni dangereuse.
 
-"emoji" : un seul emoji courant qui illustre la réponse.
+"picto" : le NOM ANGLAIS simple de l'objet ou de l'action de la réponse, en minuscules, 1 ou 2 mots, au singulier, pour retrouver un pictogramme dans une banque anglaise (Mulberry Symbols) : "pasta", "yogurt", "toast", "hot chocolate", "hug", "sleep", "outside", "dad", "yes", "no". Pour "Autre chose" : "other".
+"emoji" : un seul emoji courant qui illustre la réponse (secours si le picto manque).
 "cle" : si la réponse correspond à un mot du vocabulaire de l'enfant (liste "cle: mot"), sa clé ; sinon "".
 
 Le vocabulaire de l'enfant et, s'il y en a, les derniers échanges, sont donnés dans le message.`;
@@ -133,15 +134,17 @@ export default async function handler(req, res) {
       // JSON coupé ou abîmé (réponse tronquée, virgule en trop…) : on récupère ce qui est complet.
       console.error('parler: JSON abîmé, récupération', response.stop_reason, text.length);
       const rep = [];
-      for (const mm of text.matchAll(/\{\s*"texte"\s*:\s*"((?:[^"\\]|\\.)*)"\s*(?:,\s*"emoji"\s*:\s*"((?:[^"\\]|\\.)*)")?\s*(?:,\s*"cle"\s*:\s*"((?:[^"\\]|\\.)*)")?\s*\}/g))
-        rep.push({ texte: mm[1], emoji: mm[2] || '', cle: mm[3] || '' });
+      for (const mm of text.matchAll(/\{[^{}]*\}/g)) {
+        const get = (k) => { const x = mm[0].match(new RegExp('"' + k + '"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"')); return x ? x[1] : ''; };
+        if (get('texte')) rep.push({ texte: get('texte'), picto: get('picto'), emoji: get('emoji'), cle: get('cle') });
+      }
       const ty = text.match(/"type"\s*:\s*"([a-z]+)"/);
       const si = text.match(/"simple"\s*:\s*"((?:[^"\\]|\\.)*)"/);
       parsed = { type: ty ? ty[1] : 'autre', simple: si ? si[1] : question, reponses: rep };
       if (!rep.length) { res.status(502).json({ ok: false, message: "Réponse de l'IA illisible (" + response.stop_reason + ") : " + text.slice(0, 120) }); return; }
     }
     const reponses = Array.isArray(parsed?.reponses)
-      ? parsed.reponses.map((r) => ({ texte: clean(r?.texte, 60), emoji: clean(r?.emoji, 8), cle: clean(r?.cle, 40) })).filter((r) => r.texte).slice(0, 6)
+      ? parsed.reponses.map((r) => ({ texte: clean(r?.texte, 60), picto: clean(r?.picto, 40), emoji: clean(r?.emoji, 8), cle: clean(r?.cle, 40) })).filter((r) => r.texte).slice(0, 8)
       : [];
     const types = ['fermee', 'choix', 'ouverte', 'consigne', 'autre'];
     const type = types.includes(parsed?.type) ? parsed.type : 'autre';
