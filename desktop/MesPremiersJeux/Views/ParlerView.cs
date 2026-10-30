@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using System.Linq;
 using MesPremiersJeux.Lib;
 
 namespace MesPremiersJeux.Views
@@ -27,6 +28,8 @@ namespace MesPremiersJeux.Views
         private readonly Button _ear;
         private readonly Ellipse _led;
         private Settings _settings;
+        private readonly List<Suggest.Echange> _historique = new List<Suggest.Echange>();
+        private Suggest.Echange _enCours;
         public event Action BackRequested;
 
         private static readonly Brush Dark = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A));
@@ -120,31 +123,67 @@ namespace MesPremiersJeux.Views
             _led.BeginAnimation(OpacityProperty, a);
         }
 
-        /// <summary>Une phrase entendue : on l'affiche et on propose des réponses.</summary>
+        /// <summary>Une phrase entendue : la grille de secours tout de suite, puis la grille adaptée au type de question.</summary>
         public async void ShowHeard(string text)
         {
             _settings = _settings ?? Settings.Load();
             _panel.Visibility = Visibility.Visible;
             _heard.Text = "« " + text + " »";
-            _answers.Children.Clear();
-            _answers.Columns = 1;
-            _answers.Children.Add(new TextBlock { Text = "Je cherche des réponses…", FontSize = 22, Foreground = Dark, Opacity = 0.6, Margin = new Thickness(8) });
+            // L'échange en cours entre dans l'historique (la réponse sera notée au choix de l'enfant).
+            _enCours = new Suggest.Echange { Question = text };
+            _historique.Add(_enCours);
+            while (_historique.Count > 3) _historique.RemoveAt(0);
+            var histo = _historique.Take(_historique.Count - 1).ToList();
+
+            // 1. Tout de suite : la grille devinée (l'enfant n'attend pas le réseau).
+            var secours = Suggest.Defaults(text);
+            Grille(secours);
+            _state.Text = "Je cherche de meilleures réponses…";
+
+            // 2. Puis la grille adaptée, avec le vocabulaire de l'enfant et les derniers échanges.
             Suggest.Resultat res;
-            try { res = await Suggest.Pour(_settings, text); } catch { res = Suggest.Defaults(text); }
+            try
+            {
+                var vocab = CommBoard.Vocabulaire().Select(m => new Suggest.Mot { Cle = m.Cle, Label = m.Label }).ToList();
+                res = await Suggest.Pour(_settings, text, vocab, histo);
+            }
+            catch { res = secours; }
+            if (_enCours?.Question != text) return; // une autre phrase est arrivée entre-temps
+            if (res.EnLigne) Grille(res);
             if (res.Simple != null && res.Simple != text) _heard.Text = "« " + text + " »\n" + res.Simple;
+            MontrerEtat(Listening.Status);
+            Speech.SayAlways(res.Simple ?? text);
+        }
+
+        /// <summary>La grille de réponses, adaptée au type : 3 grandes cases pour oui / non, les options d'un choix, jusqu'à 6 cases avec les pictos du tableau.</summary>
+        private void Grille(Suggest.Resultat res)
+        {
             _answers.Children.Clear();
-            _answers.Columns = Math.Max(1, Math.Min(6, res.Reponses.Count));
-            foreach (var r in res.Reponses)
+            int n = Math.Max(1, Math.Min(6, res.Reponses.Count));
+            bool grand = res.Type == "fermee" || res.Type == "consigne" || n <= 3;
+            _answers.Columns = n;
+            double w = grand ? 330 : n <= 4 ? 260 : 215, h = grand ? 210 : 170;
+            foreach (var r in res.Reponses.Take(6))
             {
                 var cap = r;
+                var mot = CommBoard.Trouver(r.Cle);
                 var st = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-                if (!string.IsNullOrWhiteSpace(r.Emoji)) st.Children.Add(Art.Visual("", r.Emoji.Trim(), 70));
-                st.Children.Add(new TextBlock { Text = r.Texte, FontSize = 26, FontWeight = FontWeights.Bold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = 220, Margin = new Thickness(0, 6, 0, 0) });
-                var b = new Button { Style = (Style)Application.Current.Resources["AnswerButton"], Content = st, Width = 240, Height = 170, Margin = new Thickness(8) };
+                FrameworkElement pic = null;
+                if (mot != null)
+                {
+                    try { pic = mot.Photo != null ? mot.Photo() : Art.Visual(mot.Img, mot.Emoji, grand ? 96 : 70); } catch { pic = null; }
+                    if (pic != null) { pic.Width = grand ? 110 : 80; pic.Height = grand ? 110 : 80; }
+                }
+                if (pic == null && !string.IsNullOrWhiteSpace(r.Emoji)) pic = Art.Visual("", r.Emoji.Trim(), grand ? 96 : 70);
+                if (pic != null) st.Children.Add(pic);
+                st.Children.Add(new TextBlock { Text = r.Texte, FontSize = grand ? 32 : 24, FontWeight = FontWeights.Bold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = w - 30, Margin = new Thickness(0, 6, 0, 0) });
+                var b = new Button { Style = (Style)Application.Current.Resources["AnswerButton"], Content = st, Width = w, Height = h, Margin = new Thickness(8) };
                 b.Click += (s, e) =>
                 {
-                    Speech.SayAlways(cap.Texte);
-                    GazeStats.RecordComm("ecoute");
+                    var dit = mot != null && !string.IsNullOrEmpty(mot.Dit) ? mot.Dit : cap.Texte;
+                    if (mot == null || !VoiceBank.Play("comm-" + mot.Cle)) Speech.SayAlways(dit);
+                    if (_enCours != null) _enCours.Reponse = cap.Texte;
+                    GazeStats.RecordComm("ecoute-" + res.Type);
                     var sc = new ScaleTransform(1, 1); b.RenderTransformOrigin = new Point(0.5, 0.5); b.RenderTransform = sc;
                     var pop = new DoubleAnimation(1, 1.08, TimeSpan.FromMilliseconds(200)) { AutoReverse = true };
                     sc.BeginAnimation(ScaleTransform.ScaleXProperty, pop); sc.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
@@ -152,7 +191,6 @@ namespace MesPremiersJeux.Views
                 _answers.Children.Add(b);
             }
             Emoji.FixTree(_answers);
-            Speech.SayAlways(res.Simple ?? text);
         }
 
         private void Masquer()

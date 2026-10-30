@@ -40,6 +40,8 @@ export default async function handler(req, res) {
   const machine = clean(body.machine, 80);
   const child = clean(body.child, 40) || "l'enfant";
   const question = clean(body.question, 300);
+  const vocab = Array.isArray(body.vocab) ? body.vocab.slice(0, 120).map((v) => ({ cle: clean(v?.cle, 40), mot: clean(v?.mot, 40) })).filter((v) => v.cle && v.mot) : [];
+  const historique = Array.isArray(body.historique) ? body.historique.slice(-3).map((h) => ({ q: clean(h?.q, 200), r: clean(h?.r, 60) })).filter((h) => h.q) : [];
   if (!/^EYZ-[A-Z0-9-]{10,}$/.test(key) || !machine || question.length < 2) { res.status(400).json({ ok: false, message: 'Demande incomplète.' }); return; }
 
   const apiKey = String(process.env.ANTHROPIC_API_KEY || '').trim();
@@ -64,18 +66,26 @@ export default async function handler(req, res) {
       fallbacks: 'default',
       output_config: { effort: 'low' },
       system: SYSTEM + `\nL'enfant s'appelle ${child}.`,
-      messages: [{ role: 'user', content: `L'adulte vient de dire : « ${question} »` }],
+      messages: [{
+        role: 'user',
+        content:
+          (vocab.length ? `Vocabulaire de l'enfant :\n${vocab.map((v) => `${v.cle}: ${v.mot}`).join('\n')}\n\n` : '') +
+          (historique.length ? `Derniers échanges :\n${historique.map((h) => `Adulte : « ${h.q} » → l'enfant a répondu : « ${h.r || '(rien)'} »`).join('\n')}\n\n` : '') +
+          `L'adulte vient de dire : « ${question} »`,
+      }],
     });
-    if (response.stop_reason === 'refusal') { res.status(200).json({ ok: true, simple: question, reponses: [] }); return; }
+    if (response.stop_reason === 'refusal') { res.status(200).json({ ok: true, type: 'autre', simple: question, reponses: [] }); return; }
     let text = '';
     for (const block of response.content) if (block.type === 'text') text += block.text;
     const m = text.match(/\{[\s\S]*\}/);
     let parsed = null;
     try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
     const reponses = Array.isArray(parsed?.reponses)
-      ? parsed.reponses.map((r) => ({ texte: clean(r?.texte, 60), emoji: clean(r?.emoji, 8) })).filter((r) => r.texte).slice(0, 6)
+      ? parsed.reponses.map((r) => ({ texte: clean(r?.texte, 60), emoji: clean(r?.emoji, 8), cle: clean(r?.cle, 40) })).filter((r) => r.texte).slice(0, 6)
       : [];
-    res.status(200).json({ ok: true, simple: clean(parsed?.simple, 200) || question, reponses });
+    const types = ['fermee', 'choix', 'ouverte', 'consigne', 'autre'];
+    const type = types.includes(parsed?.type) ? parsed.type : 'autre';
+    res.status(200).json({ ok: true, type, simple: clean(parsed?.simple, 200) || question, reponses });
   } catch (e) {
     console.error('parler', e);
     res.status(500).json({ ok: false, message: 'Erreur du serveur.' });

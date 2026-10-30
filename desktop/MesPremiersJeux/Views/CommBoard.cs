@@ -45,6 +45,34 @@ namespace MesPremiersJeux.Views
             public int MinLevel = 1; // la grille GRANDIT avec le niveau de l'enfant
         }
 
+        /// <summary>Un mot du vocabulaire de l'enfant, vu de l'extérieur (écoute, prédiction).</summary>
+        public sealed class Mot
+        {
+            public string Cle, Label, Dit, Img, Emoji;
+            public Func<FrameworkElement> Photo;
+        }
+
+        /// <summary>Tout le vocabulaire du tableau (photos de la famille comprises), sans doublon de clé.</summary>
+        public static List<Mot> Vocabulaire()
+        {
+            var res = new List<Mot>(); var vus = new HashSet<string>();
+            IEnumerable<Item> all = Essentials.Concat(Feelings).Concat(Wants).Concat(Body).Concat(Social).Concat(DayItems);
+            try { all = all.Concat(People()); } catch { }
+            foreach (var it in all)
+            {
+                if (it == null || string.IsNullOrEmpty(it.Key) || !vus.Add(it.Key)) continue;
+                res.Add(new Mot { Cle = it.Key, Label = it.Label, Dit = it.Say, Img = it.Img, Emoji = it.Emoji, Photo = it.Photo });
+            }
+            return res;
+        }
+
+        public static Mot Trouver(string cle)
+        {
+            if (string.IsNullOrEmpty(cle)) return null;
+            foreach (var m in Vocabulaire()) if (m.Cle == cle) return m;
+            return null;
+        }
+
         private static Item I(string key, string label, string say, string img, string emoji, bool alert = false) =>
             new Item { Key = key, Label = label, Say = say, Img = img, Emoji = emoji, Alert = alert };
 
