@@ -6,6 +6,11 @@
 // Garde-fous : licence et tablette connues (table activations), 300 phrases par
 // tablette et par jour (compteur en mémoire : par instance, indicatif), phrase
 // limitée à 300 caractères. La clé Anthropic reste ici (ANTHROPIC_API_KEY).
+//
+// RÉSERVÉ À L'ÉDITEUR pour l'instant : seules les licences du canal « test »
+// (celles de l'éditeur) et les numéros listés dans PARLER_LICENCES (séparés par
+// des virgules) obtiennent des réponses de Claude. Les familles (canal « prod »)
+// reçoivent un refus poli et la tablette garde sa grille devinée, sans réseau.
 import Anthropic from '@anthropic-ai/sdk';
 import { supabaseAdmin } from '../lib/licences.js';
 
@@ -51,9 +56,11 @@ export default async function handler(req, res) {
 
   try {
     // La licence existe, est active, et cette tablette y est enregistrée.
-    const { data: lic } = await supabase.from('licences').select('key, enabled, expires_at, modules').eq('key', key).maybeSingle();
+    const { data: lic } = await supabase.from('licences').select('key, enabled, expires_at, modules, channel').eq('key', key).maybeSingle();
     if (!lic || !lic.enabled || (lic.expires_at && new Date(lic.expires_at) < new Date())) { res.status(403).json({ ok: false, message: 'Licence inconnue ou terminée.' }); return; }
     if (lic.modules && !String(lic.modules).split(',').map((m) => m.trim()).includes('parler')) { res.status(403).json({ ok: false, message: 'Le monde Parler ne fait pas partie de cette licence.' }); return; }
+    const allowed = String(process.env.PARLER_LICENCES || '').toUpperCase().split(',').map((k) => k.trim()).filter(Boolean);
+    if (lic.channel !== 'test' && !allowed.includes(key)) { res.status(403).json({ ok: false, message: "Les réponses proposées sont réservées à l'éditeur pendant la bêta." }); return; }
     const { data: act } = await supabase.from('activations').select('machine, enabled').eq('licence_key', key).eq('machine', machine).maybeSingle();
     if (!act || act.enabled === false) { res.status(403).json({ ok: false, message: 'Tablette inconnue pour cette licence.' }); return; }
     if (tooMany(machine)) { res.status(429).json({ ok: false, message: 'Trop de demandes aujourd\'hui.' }); return; }
