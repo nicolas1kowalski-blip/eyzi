@@ -345,13 +345,6 @@ namespace MesPremiersJeux
             Views.Splash.Status("Démarrage du regard…");
             StartGazeSources();
             GazeStatus.Text = "👁  Regard actif";
-            // GRÂCE AU DÉMARRAGE : le regard est en pause 3 s après l'apparition de
-            // l'accueil. Sinon la fixation qui se trouvait déjà là (sur « Mon carnet »,
-            // par exemple) se remplit et ouvre quelque chose avant même qu'on ait regardé.
-            GazeGate.Push();
-            var grace = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-            grace.Tick += (s2, e2) => { grace.Stop(); GazeGate.Pop(); };
-            grace.Start();
             // L'écran de démarrage s'efface une fois la fenêtre principale dessinée.
             Views.Splash.Status("C'est prêt !");
             Dispatcher.BeginInvoke(new Action(Views.Splash.Close), System.Windows.Threading.DispatcherPriority.ContextIdle);
@@ -383,6 +376,14 @@ namespace MesPremiersJeux
 
             // Pause automatique du regard quand une fenêtre d'édition est ouverte.
             GazeGate.PauseChanged = paused => Dispatcher.Invoke(ApplyGazeMode);
+            // GRÂCE AU DÉMARRAGE : le regard est en pause 3 s après l'apparition de
+            // l'accueil. Sinon la fixation qui se trouvait déjà là (sur « Mon carnet »,
+            // par exemple) se remplit et ouvre quelque chose avant même qu'on ait regardé.
+            GazeGate.Push();
+            ApplyGazeMode();
+            var grace = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            grace.Tick += (s2, e2) => { grace.Stop(); GazeGate.Pop(); };
+            grace.Start();
 
             // Étoiles de récompense.
             RewardStore.Load();
