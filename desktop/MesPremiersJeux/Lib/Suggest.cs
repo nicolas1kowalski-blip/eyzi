@@ -42,7 +42,9 @@ namespace MesPremiersJeux.Lib
             {
                 var sb = new StringBuilder();
                 sb.Append("{\"key\":\"").Append(Esc(s.LicenceKey)).Append("\",\"machine\":\"").Append(Esc(Environment.MachineName))
-                  .Append("\",\"child\":\"").Append(Esc(s.ChildName ?? "")).Append("\",\"question\":\"").Append(Esc(question)).Append("\"");
+                  .Append("\",\"child\":\"").Append(Esc(s.ChildName ?? "")).Append("\",\"question\":\"").Append(Esc(question)).Append("\"")
+                  .Append(",\"age\":").Append(s.ChildAge).Append(",\"profil\":\"").Append(Esc(s.ChildProfile ?? "")).Append("\"")
+                  .Append(",\"heure\":").Append(DateTime.Now.Hour).Append(",\"moment\":\"").Append(Moment(DateTime.Now)).Append("\"");
                 if (vocabulaire != null && vocabulaire.Count > 0)
                     sb.Append(",\"vocab\":[").Append(string.Join(",", vocabulaire.Take(120).Select(m => "{\"cle\":\"" + Esc(m.Cle) + "\",\"mot\":\"" + Esc(m.Label) + "\"}"))).Append("]");
                 if (historique != null && historique.Count > 0)
@@ -74,6 +76,20 @@ namespace MesPremiersJeux.Lib
                 };
             }
             catch (Exception ex) { Log.Write("ecoute", "Réponses : " + ex.Message); res.Erreur = ex.Message; return res; }
+        }
+
+        /// <summary>Le moment de la journée, pour que les réponses collent à l'heure (petit-déjeuner, goûter…).</summary>
+        public static string Moment(DateTime t)
+        {
+            int h = t.Hour;
+            if (h < 6) return "la nuit";
+            if (h < 10) return "le petit-déjeuner, le matin";
+            if (h < 12) return "la matinée";
+            if (h < 14) return "le déjeuner";
+            if (h < 16) return "le début d'après-midi";
+            if (h < 18) return "le goûter";
+            if (h < 20) return "le dîner";
+            return "le soir, avant le coucher";
         }
 
         /// <summary>Le type de phrase deviné sans serveur.</summary>
@@ -110,7 +126,15 @@ namespace MesPremiersJeux.Lib
                 case "ouverte":
                 {
                     var t = (q ?? "").ToLowerInvariant();
-                    if (Regex.IsMatch(t, @"mang|goûter|gouter|repas|dîner|diner|déjeun|dejeun")) { Add("Du pain", "🍞"); Add("Une compote", "🍎"); Add("Un yaourt", "🥣"); Add("Des pâtes", "🍝"); Add("Un gâteau", "🍰"); Add("Autre chose", "💭"); }
+                    if (Regex.IsMatch(t, @"mang|goûter|gouter|repas|dîner|diner|déjeun|dejeun|petit[- ]déj"))
+                    {
+                        int h = DateTime.Now.Hour;
+                        bool matin = Regex.IsMatch(t, @"petit[- ]déj|matin") || (h < 10 && !Regex.IsMatch(t, @"dîner|diner|goûter|gouter|déjeuner"));
+                        bool gouter = Regex.IsMatch(t, @"goûter|gouter") || (h >= 15 && h < 18 && !Regex.IsMatch(t, @"dîner|diner|déjeuner|petit"));
+                        if (matin) { Add("Une tartine", "🍞"); Add("Des céréales", "🥣"); Add("Un chocolat chaud", "☕"); Add("Une banane", "🍌"); Add("Un yaourt", "🥛"); Add("Autre chose", "💭"); }
+                        else if (gouter) { Add("Une compote", "🍎"); Add("Un gâteau", "🍪"); Add("Un pain au chocolat", "🥐"); Add("Un yaourt", "🥣"); Add("Un fruit", "🍓"); Add("Autre chose", "💭"); }
+                        else { Add("Des pâtes", "🍝"); Add("De la purée", "🥔"); Add("Du poulet", "🍗"); Add("Un yaourt", "🥣"); Add("Une compote", "🍎"); Add("Autre chose", "💭"); }
+                    }
                     else if (Regex.IsMatch(t, @"boire|soif|bois")) { Add("De l'eau", "💧"); Add("Du jus", "🧃"); Add("Du lait", "🥛"); Add("Un chocolat", "☕"); Add("Autre chose", "💭"); }
                     else if (Regex.IsMatch(t, @"\bmal\b|bobo|douleur")) { Add("La tête", "🤕"); Add("Le ventre", "🤢"); Add("La jambe", "🦵"); Add("Le bras", "💪"); Add("Les dents", "🦷"); Add("Nulle part", "🙂"); }
                     else if (Regex.IsMatch(t, @"\bqui\b|avec qui")) { Add("Papa", "👨"); Add("Maman", "👩"); Add("Mamie", "👵"); Add("Papi", "👴"); Add("Personne", "🙅"); }

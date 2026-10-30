@@ -324,6 +324,11 @@
                                     <TextBlock Text="L'enfant" Style="{StaticResource CardTitle}" />
                                     <TextBlock Text="Prénom (activité « Mon prénom », messages)" Style="{StaticResource Label}" />
                                     <TextBox x:Name="ChildNameBox" Style="{StaticResource Field}" LostFocus="ChildName_Changed" />
+                                    <TextBlock Text="Âge" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="ChildAgeBox" Style="{StaticResource Field}" Width="90" HorizontalAlignment="Left" LostFocus="ChildProfile_Changed" />
+                                    <TextBlock Text="Ce qu'elle aime, ce qu'elle n'aime pas, ses habitudes (sert aux réponses proposées par l'écoute)" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="ChildProfileBox" Style="{StaticResource Field}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80" LostFocus="ChildProfile_Changed" />
+                                    <TextBlock Style="{StaticResource Hint}" Text="Par exemple : « Elle adore les compotes et les yaourts à la fraise, n'aime pas la soupe. Le matin, tartines et chocolat chaud. Ses jouets préférés : les Playmobil, les livres. Son doudou s'appelle Lapinou. » Ce texte ne quitte la tablette qu'avec une phrase à répondre, jamais autrement." />
                                     <TextBlock Text="Niveau des jeux" Style="{StaticResource Label}" />
                                     <ComboBox x:Name="LevelCombo" Style="{StaticResource Pick}" SelectionChanged="Level_Changed">
                                         <ComboBoxItem Tag="auto" Content="🤖 Automatique — monte quand elle réussit" />

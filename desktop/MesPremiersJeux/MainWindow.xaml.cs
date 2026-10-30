@@ -469,6 +469,8 @@ namespace MesPremiersJeux
             _dwell.SetQuickOffsetFromString(_settings.QuickOffset); // réglage éclair
             SyncDriverCombo(); // reflète le pilote choisi dans la liste
             ChildNameBox.Text = _settings.ChildName; // prénom (« Mon prénom »)
+            ChildAgeBox.Text = _settings.ChildAge.ToString();
+            ChildProfileBox.Text = _settings.ChildProfile ?? "";
 
             // 🎚 Le niveau : réglage, sauvegarde, et la voix quand elle monte.
             Level.Setting = _settings.Level ?? "auto";
@@ -1416,6 +1418,15 @@ namespace MesPremiersJeux
             }
             catch (Exception ex) { Lib.Log.Write("app", "Demande du prénom : " + ex.Message); }
             finally { GazeGate.Pop(); }
+        }
+
+        private void ChildProfile_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null || ChildAgeBox == null) return;
+            if (int.TryParse((ChildAgeBox.Text ?? "").Trim(), out var age) && age > 0 && age < 30) _settings.ChildAge = age;
+            else ChildAgeBox.Text = _settings.ChildAge.ToString();
+            _settings.ChildProfile = (ChildProfileBox.Text ?? "").Trim();
+            _settings.Save();
         }
 
         private void ChildName_Changed(object sender, RoutedEventArgs e)

@@ -29,6 +29,8 @@ namespace MesPremiersJeux.Lib
         public string GazeDriver = "";   // pilote du regard : auto | direct | pro | curseur
         public string QuickOffset = "";  // décalage du « réglage éclair » (x;y)
         public string ChildName = "Laura"; // prénom de l'enfant (activité « Mon prénom »)
+        public int ChildAge = 4;           // âge (réponses proposées adaptées)
+        public string ChildProfile = "";   // ce qu'elle aime, n'aime pas, ses habitudes (pour les réponses proposées)
         public string ContentDir = "";   // dossier du contenu (ex. OneDrive partagé entre tablettes)
         public string SpotifyClientId = "";     // « Client ID » de l'app Spotify du parent
         public string SpotifyRefreshToken = ""; // jeton de reconnexion Spotify (après login)
@@ -93,6 +95,8 @@ namespace MesPremiersJeux.Lib
                         case "GazeDriver": s.GazeDriver = val; break;
                         case "QuickOffset": s.QuickOffset = val; break;
                         case "ChildName": if (val.Length > 0) s.ChildName = val; break;
+                        case "ChildAge": if (int.TryParse(val, out var age) && age > 0 && age < 30) s.ChildAge = age; break;
+                        case "ChildProfile": s.ChildProfile = val.Replace("\\n", "\n"); break;
                         case "ContentDir": s.ContentDir = val; break;
                         case "SpotifyClientId": s.SpotifyClientId = val; break;
                         case "SpotifyRefreshToken": s.SpotifyRefreshToken = val; break;
@@ -164,6 +168,8 @@ namespace MesPremiersJeux.Lib
                     "GazeDriver=" + (GazeDriver ?? "auto"),
                     "QuickOffset=" + (QuickOffset ?? ""),
                     "ChildName=" + (ChildName ?? "Laura"),
+                    "ChildAge=" + ChildAge,
+                    "ChildProfile=" + (ChildProfile ?? "").Replace("\r", "").Replace("\n", "\\n"),
                     "ContentDir=" + (ContentDir ?? ""),
                     "CommButton=" + (CommButton ? "1" : "0"),
                     "AutoDwell=" + (AutoDwell ? "1" : "0"),
