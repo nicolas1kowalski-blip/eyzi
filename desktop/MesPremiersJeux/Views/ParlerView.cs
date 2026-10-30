@@ -99,6 +99,7 @@ namespace MesPremiersJeux.Views
             // Le bandeau d'écoute n'est là que si l'écoute est réglée.
             _panel.Visibility = (_settings.ListenMode ?? "off") != "off" ? Visibility.Visible : Visibility.Collapsed;
             MontrerEtat(Listening.Status);
+            if ((_settings.ListenMode ?? "off") != "off") Suggest.Reveiller(_settings); // le site se réveille pendant qu'on parle
         }
 
         /// <summary>On quitte le monde.</summary>

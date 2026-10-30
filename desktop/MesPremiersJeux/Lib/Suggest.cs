@@ -34,6 +34,13 @@ namespace MesPremiersJeux.Lib
         private static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
         public static string Url = "https://eyzi.fr/api/parler";
 
+        /// <summary>Réveille la fonction du site (démarrage à froid) pour que la première phrase ne traîne pas.</summary>
+        public static void Reveiller(Settings s)
+        {
+            if (s == null || !s.ListenAnswers || string.IsNullOrWhiteSpace(s.LicenceKey)) return;
+            _ = Task.Run(async () => { try { await Http.PostAsync(Url, new StringContent("{\"ping\":1}", Encoding.UTF8, "application/json")); } catch { } });
+        }
+
         public static async Task<Resultat> Pour(Settings s, string question, IList<Mot> vocabulaire = null, IList<Echange> historique = null)
         {
             var res = Defaults(question);

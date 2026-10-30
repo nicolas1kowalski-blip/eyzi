@@ -19,6 +19,7 @@ export const maxDuration = 30;
 
 const MAX_PER_DAY = 300;
 const counters = new Map(); // machine → { day, n }
+const checked = new Map();  // key|machine → instant de la dernière vérification réussie (10 min)
 
 function clean(v, max) {
   return String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
@@ -64,6 +65,8 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') { res.status(405).json({ ok: false, message: 'Méthode non autorisée.' }); return; }
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+  // Réveil : la tablette appelle ici en entrant dans Parler, pour que la fonction soit chaude à la première vraie phrase.
+  if (body.ping) { res.status(200).json({ ok: true, pong: true }); return; }
   const key = clean(body.key, 40).toUpperCase();
   const machine = clean(body.machine, 80);
   const child = clean(body.child, 40) || "l'enfant";
@@ -82,14 +85,18 @@ export default async function handler(req, res) {
   if (!supabase) { res.status(503).json({ ok: false, message: 'Serveur non configuré.' }); return; }
 
   try {
-    // La licence existe, est active, et cette tablette y est enregistrée.
-    const { data: lic } = await supabase.from('licences').select('key, enabled, expires_at, modules, channel').eq('key', key).maybeSingle();
-    if (!lic || !lic.enabled || (lic.expires_at && new Date(lic.expires_at) < new Date())) { res.status(403).json({ ok: false, message: 'Licence inconnue ou terminée.' }); return; }
-    if (lic.modules && !String(lic.modules).split(',').map((m) => m.trim()).includes('parler')) { res.status(403).json({ ok: false, message: 'Le monde Parler ne fait pas partie de cette licence.' }); return; }
-    const allowed = String(process.env.PARLER_LICENCES || '').toUpperCase().split(',').map((k) => k.trim()).filter(Boolean);
-    if (lic.channel !== 'test' && !allowed.includes(key)) { res.status(403).json({ ok: false, message: "Les réponses proposées sont réservées à l'éditeur pendant la bêta." }); return; }
-    const { data: act } = await supabase.from('activations').select('machine, enabled').eq('licence_key', key).eq('machine', machine).maybeSingle();
-    if (!act || act.enabled === false) { res.status(403).json({ ok: false, message: 'Tablette inconnue pour cette licence.' }); return; }
+    // La licence existe, est active, et cette tablette y est enregistrée (vérifié au plus une fois par 10 minutes).
+    const ck = key + '|' + machine;
+    if (!(checked.get(ck) > Date.now() - 10 * 60 * 1000)) {
+      const { data: lic } = await supabase.from('licences').select('key, enabled, expires_at, modules, channel').eq('key', key).maybeSingle();
+      if (!lic || !lic.enabled || (lic.expires_at && new Date(lic.expires_at) < new Date())) { res.status(403).json({ ok: false, message: 'Licence inconnue ou terminée.' }); return; }
+      if (lic.modules && !String(lic.modules).split(',').map((m) => m.trim()).includes('parler')) { res.status(403).json({ ok: false, message: 'Le monde Parler ne fait pas partie de cette licence.' }); return; }
+      const allowed = String(process.env.PARLER_LICENCES || '').toUpperCase().split(',').map((k) => k.trim()).filter(Boolean);
+      if (lic.channel !== 'test' && !allowed.includes(key)) { res.status(403).json({ ok: false, message: "Les réponses proposées sont réservées à l'éditeur pendant la bêta." }); return; }
+      const { data: act } = await supabase.from('activations').select('machine, enabled').eq('licence_key', key).eq('machine', machine).maybeSingle();
+      if (!act || act.enabled === false) { res.status(403).json({ ok: false, message: 'Tablette inconnue pour cette licence.' }); return; }
+      checked.set(ck, Date.now());
+    }
     if (tooMany(machine)) { res.status(429).json({ ok: false, message: 'Trop de demandes aujourd\'hui.' }); return; }
 
     const client = new Anthropic({ apiKey });
