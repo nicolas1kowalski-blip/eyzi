@@ -106,7 +106,6 @@ export default async function handler(req, res) {
     const response = await client.messages.create({
       model: 'claude-haiku-5-5',
       max_tokens: 1500,
-      thinking: { type: 'disabled' },   // des réponses courtes, tout de suite
       output_config: { effort: 'low' },
       system: SYSTEM + `\nL'enfant s'appelle ${child} et a ${age} ans. Il est ${heure} h : c'est ${moment || 'la journée'}.` + (profil ? `\nCe que la famille dit de ${child} : ${profil}` : ''),
       messages: [{
