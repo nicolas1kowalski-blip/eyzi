@@ -101,11 +101,13 @@ export default async function handler(req, res) {
     if (tooMany(machine)) { res.status(429).json({ ok: false, message: 'Trop de demandes aujourd\'hui.' }); return; }
 
     const client = new Anthropic({ apiKey });
-    // Haiku 5.5 : pas de repli serveur (réservé aux modèles Opus / Sonnet / Fable).
+    // La forme d'appel qui a fonctionné (journal du 30/10, 19 h 25) : point d'entrée bêta.
     const t0 = Date.now();
-    const response = await client.messages.create({
+    const response = await client.beta.messages.create({
       model: 'claude-haiku-5-5',
       max_tokens: 1500,
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default',
       output_config: { effort: 'low' },
       system: SYSTEM + `\nL'enfant s'appelle ${child} et a ${age} ans. Il est ${heure} h : c'est ${moment || 'la journée'}.` + (profil ? `\nCe que la famille dit de ${child} : ${profil}` : ''),
       messages: [{
