@@ -205,11 +205,25 @@ namespace MesPremiersJeux.Views
             }
         }
 
-        /// <summary>Le visuel d'une réponse : la photo ou l'image du tableau, sinon le picto Mulberry, sinon l'emoji.</summary>
+        // Les réponses de tous les jours ont TOUJOURS le même visuel (le même que le tableau), quoi que dise l'IA.
+        private static readonly Dictionary<string, (string Img, string Emoji)> Fixes = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["oui"] = ("comm-oui", "✅"), ["non"] = ("comm-non", "❌"), ["je ne sais pas"] = ("", "🤷"), ["les deux"] = ("", "🤲"), ["autre chose"] = ("", "💭"),
+            ["d'accord"] = ("comm-oui", "👍"), ["ok"] = ("comm-oui", "👍"), ["attends"] = ("", "✋"), ["encore"] = ("comm-encore", "🔁"), ["plus tard"] = ("", "⏰"), ["un peu"] = ("", "🤏"),
+            ["je t'aime"] = ("comm-jetaime", "❤️"), ["fini"] = ("comm-fini", "🏁"), ["aide-moi"] = ("comm-aide", "🙋"), ["stop"] = ("", "🛑"),
+        };
+
+        /// <summary>Le visuel d'une réponse : fixe pour les mots de tous les jours, sinon la photo ou l'image du tableau, le picto Mulberry, l'emoji.</summary>
         private static FrameworkElement Visuel(Suggest.Reponse r, CommBoard.Mot mot)
         {
             try
             {
+                var cle = (r.Texte ?? "").Trim().TrimEnd('!', '.').ToLowerInvariant();
+                if (Fixes.TryGetValue(cle, out var fx))
+                {
+                    var src = string.IsNullOrEmpty(fx.Img) ? null : Art.Find(fx.Img);
+                    return src != null ? new Image { Source = src, Stretch = Stretch.Uniform } : Art.Visual("", fx.Emoji, 200);
+                }
                 if (mot != null)
                 {
                     if (mot.Photo != null) return mot.Photo();

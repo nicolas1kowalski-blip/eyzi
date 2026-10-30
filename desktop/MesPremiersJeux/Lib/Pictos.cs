@@ -86,9 +86,10 @@ namespace MesPremiersJeux.Lib
             var w = Norm(word);
             if (w.Length < 2 || _rows.Count == 0) return null;
             Row best = _rows.FirstOrDefault(r => r.En == w) ?? _rows.FirstOrDefault(r => r.Fr == w);
-            if (best == null)
+            if (best == null && w.Length >= 4)
             {
-                // « hug » → « hug , to » ; « pancake » → « pancakes » : le nom le plus court qui commence par le mot.
+                // « hug » → « hug , to » ; « pancake » → « pancakes » : le nom le plus court qui commence par le mot
+                // (jamais pour les mots très courts : « no » donnerait « noisy », « yes » « yesterday »).
                 best = _rows.Where(r => r.En.StartsWith(w + " ") || r.En.StartsWith(w)).OrderBy(r => r.En.Length).FirstOrDefault()
                     ?? _rows.Where(r => r.Fr.StartsWith(w + " ") || r.Fr.StartsWith(w)).OrderBy(r => r.Fr.Length).FirstOrDefault();
             }
@@ -98,7 +99,7 @@ namespace MesPremiersJeux.Lib
                 var parts = w.Split(' ');
                 best = _rows.FirstOrDefault(r => r.En == parts[parts.Length - 1]) ?? _rows.FirstOrDefault(r => r.En == parts[0]);
             }
-            if (best == null) best = _rows.FirstOrDefault(r => (" " + r.Keys + " ").Contains(" " + w + " "));
+            if (best == null && w.Length >= 4) best = _rows.FirstOrDefault(r => (" " + r.Keys + " ").Contains(" " + w + " "));
             return best?.File;
         }
 
