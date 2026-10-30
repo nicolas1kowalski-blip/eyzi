@@ -14,6 +14,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { supabaseAdmin } from '../lib/licences.js';
 
+// Vercel : la fonction peut durer jusqu'à 30 s (l'appel à Claude prend 1 à 4 s).
+export const maxDuration = 30;
+
 const MAX_PER_DAY = 300;
 const counters = new Map(); // machine → { day, n }
 
@@ -91,9 +94,11 @@ export default async function handler(req, res) {
 
     const client = new Anthropic({ apiKey });
     // Haiku 5.5 : pas de repli serveur (réservé aux modèles Opus / Sonnet / Fable).
+    const t0 = Date.now();
     const response = await client.messages.create({
       model: 'claude-haiku-5-5',
       max_tokens: 600,
+      thinking: { type: 'disabled' },   // des réponses courtes, tout de suite
       output_config: { effort: 'low' },
       system: SYSTEM + `\nL'enfant s'appelle ${child} et a ${age} ans. Il est ${heure} h : c'est ${moment || 'la journée'}.` + (profil ? `\nCe que la famille dit de ${child} : ${profil}` : ''),
       messages: [{
@@ -107,6 +112,7 @@ export default async function handler(req, res) {
     if (response.stop_reason === 'refusal') { res.status(200).json({ ok: true, type: 'autre', simple: question, reponses: [] }); return; }
     let text = '';
     for (const block of response.content) if (block.type === 'text') text += block.text;
+    console.log('parler', Date.now() - t0, 'ms', response.stop_reason, text.length);
     const m = text.match(/\{[\s\S]*\}/);
     let parsed = null;
     try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }

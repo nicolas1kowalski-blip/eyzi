@@ -31,7 +31,7 @@ namespace MesPremiersJeux.Lib
         public sealed class Echange { public string Question, Reponse; }
         public sealed class Mot { public string Cle, Label; }
 
-        private static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(12) };
+        private static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
         public static string Url = "https://eyzi.fr/api/parler";
 
         public static async Task<Resultat> Pour(Settings s, string question, IList<Mot> vocabulaire = null, IList<Echange> historique = null)
@@ -55,7 +55,11 @@ namespace MesPremiersJeux.Lib
                 if (!resp.IsSuccessStatusCode)
                 {
                     Log.Write("ecoute", "Réponses : HTTP " + (int)resp.StatusCode + " " + json);
-                    res.Erreur = "HTTP " + (int)resp.StatusCode + " " + (Cloud.JsonGet(json, "message") ?? "");
+                    // Le message du site, sinon le début de la réponse brute (page d'erreur de l'hébergeur : code en clair).
+                    var msg = Cloud.JsonGet(json, "message");
+                    if (string.IsNullOrEmpty(msg)) msg = Regex.Replace(json ?? "", "<[^>]+>", " ").Trim();
+                    if (msg.Length > 160) msg = msg.Substring(0, 160) + "…";
+                    res.Erreur = "HTTP " + (int)resp.StatusCode + " " + msg;
                     return res;
                 }
                 var list = new List<Reponse>();
