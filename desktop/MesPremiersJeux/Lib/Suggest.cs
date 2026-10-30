@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -42,58 +43,129 @@ namespace MesPremiersJeux.Lib
             _ = Task.Run(async () => { try { await Http.PostAsync(Url, new StringContent("{\"ping\":1}", Encoding.UTF8, "application/json")); } catch { } });
         }
 
-        public static async Task<Resultat> Pour(Settings s, string question, IList<Mot> vocabulaire = null, IList<Echange> historique = null)
+        public sealed class Contexte { public string Lieu, Jour; public List<string> Activites = new List<string>(); public List<string> Preferees = new List<string>(); }
+
+        /// <summary>Le contexte du moment : lieu choisi, jour, activités du jour sur la tablette, réponses préférées.</summary>
+        public static Contexte ContexteActuel(Settings s)
+        {
+            var c = new Contexte();
+            switch ((s?.ParlerLieu ?? "maison").ToLowerInvariant())
+            {
+                case "ecole": c.Lieu = "à l'école"; break;
+                case "dehors": c.Lieu = "dehors (parc, promenade, courses)"; break;
+                case "voiture": c.Lieu = "en voiture"; break;
+                default: c.Lieu = "à la maison"; break;
+            }
+            var now = DateTime.Now;
+            var jours = new[] { "dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi" };
+            c.Jour = jours[(int)now.DayOfWeek] + (now.DayOfWeek == DayOfWeek.Saturday || now.DayOfWeek == DayOfWeek.Sunday ? " (week-end)" : " (jour d'école)");
+            try
+            {
+                foreach (var g in Progress.Load().Where(r => r.Day.Date == now.Date).OrderByDescending(r => r.Count).Take(6))
+                    c.Activites.Add(ActivityNames.Of(g.Game));
+            }
+            catch { }
+            try { c.Preferees = ReponsesPref.Preferees().Select(x => x.Texte).ToList(); } catch { }
+            return c;
+        }
+
+        public static Task<Resultat> Pour(Settings s, string question, IList<Mot> vocabulaire = null, IList<Echange> historique = null)
+            => PourFlux(s, question, vocabulaire, historique, null, null, null);
+
+        /// <summary>
+        /// Demande les réponses EN FLUX : « surTete » reçoit le type et la phrase simple dès qu'ils sont
+        /// connus, « surReponse » chaque réponse dès qu'elle est écrite. Renvoie le résultat complet.
+        /// </summary>
+        public static async Task<Resultat> PourFlux(Settings s, string question, IList<Mot> vocabulaire, IList<Echange> historique, Contexte ctx,
+                                                    Action<Resultat> surTete, Action<Reponse> surReponse)
         {
             var res = Defaults(question);
             if (s == null || !s.ListenAnswers || string.IsNullOrWhiteSpace(s.LicenceKey)) return res;
             try
             {
+                ctx = ctx ?? ContexteActuel(s);
                 var sb = new StringBuilder();
                 sb.Append("{\"key\":\"").Append(Esc(s.LicenceKey)).Append("\",\"machine\":\"").Append(Esc(Environment.MachineName))
                   .Append("\",\"child\":\"").Append(Esc(s.ChildName ?? "")).Append("\",\"question\":\"").Append(Esc(question)).Append("\"")
                   .Append(",\"age\":").Append(s.ChildAge).Append(",\"profil\":\"").Append(Esc(s.ChildProfile ?? "")).Append("\"")
-                  .Append(",\"heure\":").Append(DateTime.Now.Hour).Append(",\"moment\":\"").Append(Moment(DateTime.Now)).Append("\"");
+                  .Append(",\"heure\":").Append(DateTime.Now.Hour).Append(",\"moment\":\"").Append(Moment(DateTime.Now)).Append("\"")
+                  .Append(",\"lieu\":\"").Append(Esc(ctx.Lieu)).Append("\",\"jour\":\"").Append(Esc(ctx.Jour)).Append("\"");
+                if (ctx.Activites.Count > 0) sb.Append(",\"activites\":[").Append(string.Join(",", ctx.Activites.Select(a => "\"" + Esc(a) + "\""))).Append("]");
+                if (ctx.Preferees.Count > 0) sb.Append(",\"preferees\":[").Append(string.Join(",", ctx.Preferees.Select(a => "\"" + Esc(a) + "\""))).Append("]");
                 if (vocabulaire != null && vocabulaire.Count > 0)
                     sb.Append(",\"vocab\":[").Append(string.Join(",", vocabulaire.Take(120).Select(m => "{\"cle\":\"" + Esc(m.Cle) + "\",\"mot\":\"" + Esc(m.Label) + "\"}"))).Append("]");
                 if (historique != null && historique.Count > 0)
                     sb.Append(",\"historique\":[").Append(string.Join(",", historique.Skip(Math.Max(0, historique.Count - 3)).Select(h => "{\"q\":\"" + Esc(h.Question) + "\",\"r\":\"" + Esc(h.Reponse ?? "") + "\"}"))).Append("]");
                 sb.Append("}");
+
                 var chrono = System.Diagnostics.Stopwatch.StartNew();
-                var resp = await Http.PostAsync(Url, new StringContent(sb.ToString(), Encoding.UTF8, "application/json"));
-                var json = await resp.Content.ReadAsStringAsync();
-                chrono.Stop();
+                var req = new HttpRequestMessage(HttpMethod.Post, Url) { Content = new StringContent(sb.ToString(), Encoding.UTF8, "application/json") };
+                var resp = await Http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
                 if (!resp.IsSuccessStatusCode)
                 {
+                    var json = await resp.Content.ReadAsStringAsync();
                     Log.Write("ecoute", "Réponses : HTTP " + (int)resp.StatusCode + " " + json);
-                    // Le message du site, sinon le début de la réponse brute (page d'erreur de l'hébergeur : code en clair).
                     var msg = Cloud.JsonGet(json, "message");
                     if (string.IsNullOrEmpty(msg)) msg = Regex.Replace(json ?? "", "<[^>]+>", " ").Trim();
                     if (msg.Length > 160) msg = msg.Substring(0, 160) + "…";
                     res.Erreur = "HTTP " + (int)resp.StatusCode + " " + msg;
                     return res;
                 }
-                var list = new List<Reponse>();
-                int iRep = json.IndexOf("\"reponses\"", StringComparison.Ordinal);
-                foreach (Match m in Regex.Matches(iRep >= 0 ? json.Substring(iRep) : json, @"\{[^{}]*\}"))
+                var fin = new Resultat { Simple = question, Type = res.Type };
+                double msIa = 0, msSrv = 0; bool tete = false; double premiere = 0;
+                using (var stream = await resp.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(stream, Encoding.UTF8))
                 {
-                    var obj = m.Value;
-                    var t = (Cloud.JsonGet(obj, "texte") ?? "").Trim();
-                    if (t.Length == 0) continue;
-                    list.Add(new Reponse { Texte = t, Emoji = Cloud.JsonGet(obj, "emoji") ?? "", Cle = Cloud.JsonGet(obj, "cle") ?? "", Picto = Cloud.JsonGet(obj, "picto") ?? "" });
+                    string line;
+                    while ((line = await reader.ReadLineAsync()) != null)
+                    {
+                        line = line.Trim();
+                        if (line.Length == 0) continue;
+                        if (line.Contains("\"erreur\"")) { fin.Erreur = Cloud.JsonGet(line, "erreur"); break; }
+                        if (line.Contains("\"reponse\""))
+                        {
+                            var r = new Reponse { Texte = (Cloud.JsonGet(line, "texte") ?? "").Trim(), Emoji = Cloud.JsonGet(line, "emoji") ?? "", Cle = Cloud.JsonGet(line, "cle") ?? "", Picto = Cloud.JsonGet(line, "picto") ?? "" };
+                            if (r.Texte.Length == 0) continue;
+                            if (premiere == 0) premiere = chrono.ElapsedMilliseconds;
+                            fin.Reponses.Add(r);
+                            try { surReponse?.Invoke(r); } catch { }
+                        }
+                        else if (line.Contains("\"fin\""))
+                        {
+                            double.TryParse(Cloud.JsonGet(line, "ia") ?? "", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out msIa);
+                            double.TryParse(Cloud.JsonGet(line, "total") ?? "", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out msSrv);
+                        }
+                        else if (line.Contains("\"type\""))
+                        {
+                            var type = (Cloud.JsonGet(line, "type") ?? "").Trim();
+                            if (type.Length > 0) fin.Type = type;
+                            var simple = Cloud.JsonGet(line, "simple");
+                            if (!string.IsNullOrWhiteSpace(simple)) fin.Simple = simple;
+                            if (!tete) { tete = true; try { surTete?.Invoke(fin); } catch { } }
+                        }
+                        else if (line.Contains("\"reponses\""))
+                        {
+                            // Réponse entière d'un coup (hébergeur sans flux) : même lecture qu'avant.
+                            var type = (Cloud.JsonGet(line, "type") ?? "").Trim(); if (type.Length > 0) fin.Type = type;
+                            var simple = Cloud.JsonGet(line, "simple"); if (!string.IsNullOrWhiteSpace(simple)) fin.Simple = simple;
+                            if (!tete) { tete = true; try { surTete?.Invoke(fin); } catch { } }
+                            int iRep = line.IndexOf("\"reponses\"", StringComparison.Ordinal);
+                            foreach (Match m in Regex.Matches(line.Substring(iRep), @"\{[^{}]*\}"))
+                            {
+                                var r = new Reponse { Texte = (Cloud.JsonGet(m.Value, "texte") ?? "").Trim(), Emoji = Cloud.JsonGet(m.Value, "emoji") ?? "", Cle = Cloud.JsonGet(m.Value, "cle") ?? "", Picto = Cloud.JsonGet(m.Value, "picto") ?? "" };
+                                if (r.Texte.Length == 0) continue;
+                                fin.Reponses.Add(r);
+                                try { surReponse?.Invoke(r); } catch { }
+                            }
+                        }
+                    }
                 }
-                if (list.Count == 0) return res;
-                var simple = Cloud.JsonGet(json, "simple");
-                var type = (Cloud.JsonGet(json, "type") ?? "").Trim();
-                double.TryParse(Cloud.JsonGet(json, "ia") ?? "", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var msIa);
-                double.TryParse(Cloud.JsonGet(json, "total") ?? "", System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var msSrv);
-                var ch = string.Format(System.Globalization.CultureInfo.GetCultureInfo("fr-FR"), "IA {0:0.0} s · serveur {1:0.0} s · aller-retour {2:0.0} s", msIa / 1000.0, msSrv / 1000.0, chrono.ElapsedMilliseconds / 1000.0);
-                Log.Write("ecoute", "Réponses : " + ch);
-                return new Resultat
-                {
-                    Type = type.Length > 0 ? type : res.Type,
-                    Simple = string.IsNullOrWhiteSpace(simple) ? question : simple,
-                    Reponses = list, EnLigne = true, Chrono = ch,
-                };
+                chrono.Stop();
+                if (fin.Reponses.Count == 0) { res.Erreur = fin.Erreur ?? "aucune réponse"; return res; }
+                fin.EnLigne = true;
+                fin.Chrono = string.Format(System.Globalization.CultureInfo.GetCultureInfo("fr-FR"), "première case {0:0.0} s · IA {1:0.0} s · total {2:0.0} s", premiere / 1000.0, msIa / 1000.0, chrono.ElapsedMilliseconds / 1000.0);
+                Log.Write("ecoute", "Réponses : " + fin.Chrono);
+                return fin;
             }
             catch (Exception ex) { Log.Write("ecoute", "Réponses : " + ex.Message); res.Erreur = ex.Message; return res; }
         }

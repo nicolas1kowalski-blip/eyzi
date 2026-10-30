@@ -16,6 +16,7 @@ import { supabaseAdmin } from '../lib/licences.js';
 
 // Vercel : la fonction peut durer jusqu'à 30 s (l'appel à Claude prend 1 à 4 s).
 export const maxDuration = 30;
+export const config = { supportsResponseStreaming: true };
 
 const MAX_PER_DAY = 300;
 const counters = new Map(); // machine → { day, n }
@@ -60,7 +61,7 @@ Jamais de réponse blessante ni dangereuse.
 "emoji" : un seul emoji courant qui illustre la réponse (secours si le picto manque).
 "cle" : si la réponse correspond à un mot du vocabulaire de l'enfant (liste "cle: mot"), sa clé ; sinon "".
 
-Le vocabulaire de l'enfant et, s'il y en a, les derniers échanges, sont donnés dans le message.`;
+Le vocabulaire de l'enfant, le contexte (lieu, jour, ce qu'elle a fait, ce qu'elle choisit souvent) et, s'il y en a, les derniers échanges, sont donnés dans le message. Le lieu change tout : à l'école, les réponses parlent des copains, de la maîtresse, de la récré, de la cantine ; à la maison, de la famille, des jouets, des repas ; dehors ou en voiture, de ce qu'on voit et où l'on va. Les réponses qu'elle choisit souvent passent en premier quand elles conviennent à la question.`;
 
 export default async function handler(req, res) {
   const tStart = Date.now();
@@ -77,6 +78,10 @@ export default async function handler(req, res) {
   const profil = clean(body.profil, 1200);
   const moment = clean(body.moment, 60);
   const heure = Math.max(0, Math.min(23, parseInt(body.heure, 10) || 12));
+  const lieu = clean(body.lieu, 60);
+  const jour = clean(body.jour, 60);
+  const activites = Array.isArray(body.activites) ? body.activites.slice(0, 8).map((a) => clean(a, 40)).filter(Boolean) : [];
+  const preferees = Array.isArray(body.preferees) ? body.preferees.slice(0, 15).map((a) => clean(a, 40)).filter(Boolean) : [];
   const vocab = Array.isArray(body.vocab) ? body.vocab.slice(0, 120).map((v) => ({ cle: clean(v?.cle, 40), mot: clean(v?.mot, 40) })).filter((v) => v.cle && v.mot) : [];
   const historique = Array.isArray(body.historique) ? body.historique.slice(-3).map((h) => ({ q: clean(h?.q, 200), r: clean(h?.r, 60) })).filter((h) => h.q) : [];
   if (!/^EYZ-[A-Z0-9-]{10,}$/.test(key) || !machine || question.length < 2) { res.status(400).json({ ok: false, message: 'Demande incomplète.' }); return; }
@@ -107,51 +112,64 @@ export default async function handler(req, res) {
     const client = new Anthropic({ apiKey, ...(workspace ? { defaultHeaders: { 'anthropic-workspace-id': workspace } } : {}) });
     // La forme d'appel qui a fonctionné (journal du 30/10, 19 h 25) : point d'entrée bêta.
     const t0 = Date.now();
-    const response = await client.beta.messages.create({
+    const contexte = [];
+    if (lieu) contexte.push(`Lieu : ${lieu}.`);
+    if (jour) contexte.push(`Jour : ${jour}.`);
+    if (activites.length) contexte.push(`Ce que l'enfant a fait aujourd'hui sur la tablette : ${activites.join(', ')}.`);
+    if (preferees.length) contexte.push(`Réponses qu'elle choisit souvent : ${preferees.join(', ')}.`);
+    const userContent =
+      (vocab.length ? `Vocabulaire de l'enfant :\n${vocab.map((v) => `${v.cle}: ${v.mot}`).join('\n')}\n\n` : '') +
+      (contexte.length ? `Contexte :\n${contexte.join('\n')}\n\n` : '') +
+      (historique.length ? `Derniers échanges :\n${historique.map((h) => `Adulte : « ${h.q} » → l'enfant a répondu : « ${h.r || '(rien)'} »`).join('\n')}\n\n` : '') +
+      `L'adulte vient de dire : « ${question} »`;
+    const request = {
       model: 'claude-haiku-5-5',
       max_tokens: 1500,
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
       output_config: { effort: 'low' },
       system: SYSTEM + `\nL'enfant s'appelle ${child} et a ${age} ans. Il est ${heure} h : c'est ${moment || 'la journée'}.` + (profil ? `\nCe que la famille dit de ${child} : ${profil}` : ''),
-      messages: [{
-        role: 'user',
-        content:
-          (vocab.length ? `Vocabulaire de l'enfant :\n${vocab.map((v) => `${v.cle}: ${v.mot}`).join('\n')}\n\n` : '') +
-          (historique.length ? `Derniers échanges :\n${historique.map((h) => `Adulte : « ${h.q} » → l'enfant a répondu : « ${h.r || '(rien)'} »`).join('\n')}\n\n` : '') +
-          `L'adulte vient de dire : « ${question} »`,
-      }],
-    });
-    if (response.stop_reason === 'refusal') { res.status(200).json({ ok: true, type: 'autre', simple: question, reponses: [] }); return; }
-    let text = '';
-    for (const block of response.content) if (block.type === 'text') text += block.text;
-    const msIa = Date.now() - t0;
-    console.log('parler', msIa, 'ms', response.stop_reason, text.length);
-    const m = text.match(/\{[\s\S]*\}/);
-    let parsed = null;
-    try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
-    if (!parsed) {
-      // JSON coupé ou abîmé (réponse tronquée, virgule en trop…) : on récupère ce qui est complet.
-      console.error('parler: JSON abîmé, récupération', response.stop_reason, text.length);
-      const rep = [];
-      for (const mm of text.matchAll(/\{[^{}]*\}/g)) {
-        const get = (k) => { const x = mm[0].match(new RegExp('"' + k + '"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"')); return x ? x[1] : ''; };
-        if (get('texte')) rep.push({ texte: get('texte'), picto: get('picto'), emoji: get('emoji'), cle: get('cle') });
+      messages: [{ role: 'user', content: userContent }],
+    };
+
+    // En FLUX (une ligne JSON par réponse) : la tablette affiche chaque case dès qu'elle est écrite,
+    // sans attendre la fin. Les lignes : {"type","simple"} puis {"reponse":{…}}… puis {"fin":true,"ms":{…}}.
+    res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' });
+    let text = '', sent = 0, headerSent = false, nb = 0;
+    const emit = (obj) => res.write(JSON.stringify(obj) + '\n');
+    const objRegex = /\{[^{}]*\}/g;
+    const getStr = (src, k) => { const x = src.match(new RegExp('"' + k + '"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"')); return x ? x[1] : ''; };
+    const flush = () => {
+      if (!headerSent) {
+        const ty = text.match(/"type"\s*:\s*"([a-z]+)"/), si = text.match(/"simple"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        if (ty && si) { headerSent = true; emit({ type: ty[1], simple: si[1] }); }
       }
-      const ty = text.match(/"type"\s*:\s*"([a-z]+)"/);
-      const si = text.match(/"simple"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-      parsed = { type: ty ? ty[1] : 'autre', simple: si ? si[1] : question, reponses: rep };
-      if (!rep.length) { res.status(502).json({ ok: false, message: "Réponse de l'IA illisible (" + response.stop_reason + ") : " + text.slice(0, 120) }); return; }
-    }
-    const reponses = Array.isArray(parsed?.reponses)
-      ? parsed.reponses.map((r) => ({ texte: clean(r?.texte, 60), picto: clean(r?.picto, 40), emoji: clean(r?.emoji, 8), cle: clean(r?.cle, 40) })).filter((r) => r.texte).slice(0, 8)
-      : [];
-    const types = ['fermee', 'choix', 'ouverte', 'consigne', 'autre'];
-    const type = types.includes(parsed?.type) ? parsed.type : 'autre';
-    res.status(200).json({ ok: true, type, simple: clean(parsed?.simple, 200) || question, reponses, ms: { ia: msIa, total: Date.now() - tStart } });
+      if (!headerSent) return;
+      const start = text.indexOf('"reponses"');
+      if (start < 0) return;
+      const objs = text.slice(start).match(objRegex) || [];
+      for (; sent < objs.length && nb < 8; sent++) {
+        const o = objs[sent];
+        const texte = getStr(o, 'texte');
+        if (!texte) continue;
+        nb++;
+        emit({ reponse: { texte, picto: getStr(o, 'picto'), emoji: getStr(o, 'emoji'), cle: getStr(o, 'cle') } });
+      }
+    };
+    const stream = client.beta.messages.stream(request);
+    stream.on('text', (delta) => { text += delta; flush(); });
+    const final = await stream.finalMessage();
+    flush();
+    const msIa = Date.now() - t0;
+    console.log('parler', msIa, 'ms', final.stop_reason, text.length, nb, 'réponses');
+    if (!headerSent) emit({ type: 'autre', simple: question });
+    emit({ fin: true, ms: { ia: msIa, total: Date.now() - tStart }, stop: final.stop_reason, n: nb });
+    res.end();
+    return;
   } catch (e) {
     console.error('parler', e);
     const detail = String(e?.message || e).slice(0, 200);
+    if (res.headersSent) { try { res.write(JSON.stringify({ erreur: 'Erreur du serveur : ' + detail }) + '\n'); res.end(); } catch {} return; }
     res.status(500).json({ ok: false, message: 'Erreur du serveur : ' + detail });
   }
 }

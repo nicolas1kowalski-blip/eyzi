@@ -26,11 +26,16 @@ namespace MesPremiersJeux.Views
         private readonly Grid _answersHost;
         private readonly UniformGrid _answers;
         private readonly TextBlock _heard, _state, _wait;
-        private readonly Button _ear, _back;
+        private readonly Button _ear, _back, _lieu;
         private readonly Ellipse _led;
         private Settings _settings;
         private readonly List<Suggest.Echange> _historique = new List<Suggest.Echange>();
         private Suggest.Echange _enCours;
+        private string _speculatif;            // la phrase partielle pour laquelle une grille est déjà en route
+        private string _partiel;
+        private readonly System.Windows.Threading.DispatcherTimer _partielTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
+        private int _grilleRows = 1, _grilleCols = 3;
+        private string _grilleType = "autre";
         public event Action BackRequested;
 
         private static readonly Brush Dark = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A));
@@ -53,6 +58,12 @@ namespace MesPremiersJeux.Views
             _back.Visibility = Visibility.Collapsed;
             DockPanel.SetDock(_back, Dock.Right);
             head.Children.Add(_back);
+            // Où est l'enfant : maison, école, dehors, voiture — un regard change le lieu, l'IA en tient compte.
+            _lieu = GrosBouton("🏠", "Maison", Color.FromRgb(0xFF, 0xF0, 0xC8));
+            Gaze.GazeTargets.SetParentOnly(_lieu, false);
+            _lieu.Click += (s, e) => { CyclerLieu(); };
+            DockPanel.SetDock(_lieu, Dock.Right);
+            head.Children.Add(_lieu);
             _led = new Ellipse { Width = 22, Height = 22, Fill = Brushes.Gray, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
             _state = new TextBlock { FontSize = 18, Foreground = Dark, Opacity = 0.7, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
             _heard = new TextBlock { FontSize = 36, FontWeight = FontWeights.Bold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
@@ -82,7 +93,42 @@ namespace MesPremiersJeux.Views
             Content = root;
 
             Listening.StatusChanged += st => Dispatcher.BeginInvoke(new Action(() => MontrerEtat(st)));
+            // Pendant que la personne parle encore : dès que le texte partiel ne bouge plus 600 ms, la grille part.
+            Listening.Partial += t => Dispatcher.BeginInvoke(new Action(() => { _partiel = t; _partielTimer.Stop(); _partielTimer.Start(); }));
+            _partielTimer.Tick += (s, e) =>
+            {
+                _partielTimer.Stop();
+                var t = (_partiel ?? "").Trim();
+                if (t.Length < 8 || !IsVisible || _settings == null || !_settings.ListenAnswers) return;
+                if (_speculatif != null && Pictos.Norm(_speculatif) == Pictos.Norm(t)) return;
+                _speculatif = t;
+                ShowHeard(t, speculatif: true);
+            };
             Emoji.FixTree(head);
+        }
+
+        private static readonly (string Cle, string Icone, string Nom)[] Lieux = { ("maison", "🏠", "Maison"), ("ecole", "🏫", "École"), ("dehors", "🌳", "Dehors"), ("voiture", "🚗", "Voiture") };
+
+        private void MontrerLieu()
+        {
+            var cle = _settings?.ParlerLieu ?? "maison";
+            var l = Lieux.FirstOrDefault(x => x.Cle == cle); if (l.Cle == null) l = Lieux[0];
+            _lieu.Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                Children = { Art.Visual("", l.Icone, 48), new TextBlock { Text = l.Nom, FontSize = 24, FontWeight = FontWeights.Bold, Foreground = Dark, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center } },
+            };
+        }
+
+        private void CyclerLieu()
+        {
+            if (_settings == null) return;
+            int i = Array.FindIndex(Lieux, x => x.Cle == (_settings.ParlerLieu ?? "maison"));
+            var next = Lieux[(i + 1 + Lieux.Length) % Lieux.Length];
+            _settings.ParlerLieu = next.Cle;
+            _settings.Save();
+            MontrerLieu();
+            Speech.SayAlways(next.Nom + " !");
         }
 
         private Button GrosBouton(string icone, string label, Color fond)
@@ -110,6 +156,7 @@ namespace MesPremiersJeux.Views
             // Le bandeau d'écoute n'est là que si l'écoute est réglée.
             _panel.Visibility = (_settings.ListenMode ?? "off") != "off" ? Visibility.Visible : Visibility.Collapsed;
             MontrerEtat(Listening.Status);
+            MontrerLieu();
             if ((_settings.ListenMode ?? "off") != "off") Suggest.Reveiller(_settings); // le site se réveille pendant qu'on parle
         }
 
@@ -151,24 +198,43 @@ namespace MesPremiersJeux.Views
             _led.BeginAnimation(OpacityProperty, a);
         }
 
-        /// <summary>Une phrase entendue : on attend l'IA (chrono visible), puis la grille en plein écran.</summary>
-        public async void ShowHeard(string text)
+        /// <summary>
+        /// Une phrase entendue : la grille se remplit case par case à mesure que l'IA écrit.
+        /// « speculatif » : la phrase n'est pas finie (texte partiel stable) ; si la phrase finale est la
+        /// même, la grille déjà en route est gardée, sinon on recommence.
+        /// </summary>
+        public async void ShowHeard(string text, bool speculatif = false)
         {
             _settings = _settings ?? Settings.Load();
+            if (!speculatif)
+            {
+                _partielTimer.Stop();
+                if (_speculatif != null && _enCours != null && Pictos.Norm(_speculatif) == Pictos.Norm(text))
+                {
+                    // La phrase finale est celle qu'on avait anticipée : on garde tout, on corrige juste le texte.
+                    _speculatif = null;
+                    _enCours.Question = text;
+                    _heard.Text = "« " + text + " »" + (_heard.Text.Contains("  ·  ") ? _heard.Text.Substring(_heard.Text.IndexOf("  ·  ", StringComparison.Ordinal)) : "");
+                    return;
+                }
+                _speculatif = null;
+            }
             MontrerReponses();
             _heard.Text = "« " + text + " »";
             _enCours = new Suggest.Echange { Question = text };
             _historique.Add(_enCours);
             while (_historique.Count > 3) _historique.RemoveAt(0);
             var histo = _historique.Take(_historique.Count - 1).ToList();
+            var monEchange = _enCours;
 
             var secours = Suggest.Defaults(text);
             bool enLigne = _settings.ListenAnswers && !string.IsNullOrWhiteSpace(_settings.LicenceKey);
             if (!enLigne)
             {
-                Grille(secours);
+                PreparerGrille(secours.Type, secours.Reponses.Count);
+                foreach (var r in secours.Reponses) AjouterCase(r, secours.Type);
                 _state.Text = "Réponses devinées (sans IA).";
-                Speech.SayAlways(text);
+                if (!speculatif) Speech.SayAlways(text);
                 return;
             }
 
@@ -179,30 +245,88 @@ namespace MesPremiersJeux.Views
             var tick = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
             tick.Tick += (s, e) => _wait.Text = string.Format(System.Globalization.CultureInfo.GetCultureInfo("fr-FR"), "L'IA cherche des réponses… {0:0.0} s", (DateTime.Now - t0).TotalSeconds);
             tick.Start();
-            Speech.SayAlways(text);
+            if (!speculatif) Speech.SayAlways(text);
 
             Suggest.Resultat res;
             try
             {
                 var vocab = CommBoard.Vocabulaire().Select(m => new Suggest.Mot { Cle = m.Cle, Label = m.Label }).ToList();
-                res = await Suggest.Pour(_settings, text, vocab, histo);
+                res = await Suggest.PourFlux(_settings, text, vocab, histo, Suggest.ContexteActuel(_settings),
+                    tete => Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (_enCours != monEchange) return;
+                        tick.Stop(); _wait.Visibility = Visibility.Collapsed;
+                        PreparerGrille(tete.Type, 0);
+                        if (tete.Simple != null && tete.Simple != text) _heard.Text = "« " + text + " »  ·  " + tete.Simple;
+                    })),
+                    rep => Dispatcher.BeginInvoke(new Action(() => { if (_enCours == monEchange) AjouterCase(rep, _grilleType); })));
             }
             catch (Exception ex) { res = secours; res.Erreur = ex.Message; }
             tick.Stop();
             _wait.Visibility = Visibility.Collapsed;
-            if (_enCours?.Question != text) return; // une autre phrase est arrivée entre-temps
+            if (_enCours != monEchange) return; // une autre phrase est arrivée entre-temps
             if (res.EnLigne)
             {
-                Grille(res);
-                if (res.Simple != null && res.Simple != text) _heard.Text = "« " + text + " »  ·  " + res.Simple;
                 _state.Text = "Réponses de l'IA · " + (res.Chrono ?? "");
-                if (res.Simple != null && res.Simple != text) Speech.SayAlways(res.Simple);
+                if (!speculatif && res.Simple != null && res.Simple != text) Speech.SayAlways(res.Simple);
             }
             else
             {
-                Grille(secours);
+                PreparerGrille(secours.Type, secours.Reponses.Count);
+                foreach (var r in secours.Reponses) AjouterCase(r, secours.Type);
                 _state.Text = "Réponses devinées (IA indisponible" + (string.IsNullOrEmpty(res.Erreur) ? "" : " : " + res.Erreur) + ")";
             }
+        }
+
+        /// <summary>La grille se dimensionne d'avance selon le type (3 grandes cases pour oui / non, 2 rangées pour une question ouverte).</summary>
+        private void PreparerGrille(string type, int nConnu)
+        {
+            _answers.Children.Clear();
+            _grilleType = type ?? "autre";
+            int attendu = nConnu > 0 ? nConnu : _grilleType == "ouverte" ? 8 : _grilleType == "choix" ? 4 : 3;
+            _grilleRows = attendu <= 3 ? 1 : 2;
+            _grilleCols = (int)Math.Ceiling(attendu / (double)_grilleRows);
+            _answers.Rows = _grilleRows;
+            _answers.Columns = _grilleCols;
+        }
+
+        /// <summary>Une case de plus, tout de suite. Au-delà de la place prévue, la grille s'élargit.</summary>
+        private void AjouterCase(Suggest.Reponse r, string type)
+        {
+            if (_answers.Children.Count >= 8) return;
+            int n = _answers.Children.Count + 1;
+            if (n > _grilleRows * _grilleCols)
+            {
+                if (_grilleRows == 1 && n > 3) { _grilleRows = 2; _grilleCols = (int)Math.Ceiling(n / 2.0); }
+                else _grilleCols = (int)Math.Ceiling(n / (double)_grilleRows);
+                _answers.Rows = _grilleRows; _answers.Columns = _grilleCols;
+            }
+            var cap = r;
+            var mot = CommBoard.Trouver(r.Cle);
+            bool grand = _grilleRows == 1;
+            var st = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            st.Children.Add(new Viewbox { Child = Visuel(r, mot), Height = grand ? 260 : 170, Stretch = Stretch.Uniform });
+            st.Children.Add(new TextBlock { Text = r.Texte, FontSize = grand ? 40 : 30, FontWeight = FontWeights.Bold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = 380, Margin = new Thickness(0, 8, 0, 0) });
+            var b = new Button
+            {
+                Style = (Style)Application.Current.Resources["MenuTile"],
+                Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new Thickness(10, 8, 10, 8), Child = st },
+                Width = double.NaN, Height = double.NaN, Margin = new Thickness(8), Opacity = 0,
+            };
+            b.Click += (s, e) =>
+            {
+                var dit = mot != null && !string.IsNullOrEmpty(mot.Dit) ? mot.Dit : cap.Texte;
+                if (mot == null || !VoiceBank.Play("comm-" + mot.Cle)) Speech.SayAlways(dit);
+                if (_enCours != null) _enCours.Reponse = cap.Texte;
+                ReponsesPref.Choisie(cap.Texte);
+                GazeStats.RecordComm("ecoute-" + type);
+                var sc = new ScaleTransform(1, 1); b.RenderTransformOrigin = new Point(0.5, 0.5); b.RenderTransform = sc;
+                var pop = new DoubleAnimation(1, 1.06, TimeSpan.FromMilliseconds(200)) { AutoReverse = true };
+                sc.BeginAnimation(ScaleTransform.ScaleXProperty, pop); sc.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+            };
+            Emoji.FixTree(st);
+            _answers.Children.Add(b);
+            b.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
         }
 
         // Les réponses de tous les jours ont TOUJOURS le même visuel (le même que le tableau), quoi que dise l'IA.
@@ -238,42 +362,5 @@ namespace MesPremiersJeux.Views
             return Art.Visual("", "💬", 200);
         }
 
-        /// <summary>La grille en plein écran : 1 rangée jusqu'à 3 réponses, 2 rangées jusqu'à 8 ; les cases prennent toute la place.</summary>
-        private void Grille(Suggest.Resultat res)
-        {
-            _answers.Children.Clear();
-            var reps = res.Reponses.Take(8).ToList();
-            int n = Math.Max(1, reps.Count);
-            int rows = n <= 3 ? 1 : 2;
-            _answers.Rows = rows;
-            _answers.Columns = (int)Math.Ceiling(n / (double)rows);
-            foreach (var r in reps)
-            {
-                var cap = r;
-                var mot = CommBoard.Trouver(r.Cle);
-                var st = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-                var pic = Visuel(r, mot);
-                st.Children.Add(new Viewbox { Child = pic, Height = rows == 1 ? 260 : 170, Stretch = Stretch.Uniform });
-                st.Children.Add(new TextBlock { Text = r.Texte, FontSize = rows == 1 ? 40 : 30, FontWeight = FontWeights.Bold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = 380, Margin = new Thickness(0, 8, 0, 0) });
-                var b = new Button
-                {
-                    Style = (Style)Application.Current.Resources["MenuTile"],
-                    Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new Thickness(10, 8, 10, 8), Child = st },
-                    Width = double.NaN, Height = double.NaN, Margin = new Thickness(8),
-                };
-                b.Click += (s, e) =>
-                {
-                    var dit = mot != null && !string.IsNullOrEmpty(mot.Dit) ? mot.Dit : cap.Texte;
-                    if (mot == null || !VoiceBank.Play("comm-" + mot.Cle)) Speech.SayAlways(dit);
-                    if (_enCours != null) _enCours.Reponse = cap.Texte;
-                    GazeStats.RecordComm("ecoute-" + res.Type);
-                    var sc = new ScaleTransform(1, 1); b.RenderTransformOrigin = new Point(0.5, 0.5); b.RenderTransform = sc;
-                    var pop = new DoubleAnimation(1, 1.06, TimeSpan.FromMilliseconds(200)) { AutoReverse = true };
-                    sc.BeginAnimation(ScaleTransform.ScaleXProperty, pop); sc.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
-                };
-                _answers.Children.Add(b);
-            }
-            Emoji.FixTree(_answers);
-        }
     }
 }

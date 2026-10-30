@@ -22,6 +22,8 @@ namespace MesPremiersJeux.Lib
         public static event Action<string> Heard;
         /// <summary>« off », « veille » (mot-clé), « ecoute » (phrase en cours), « erreur ».</summary>
         public static event Action<string> StatusChanged;
+        /// <summary>Le texte PARTIEL pendant que la personne parle encore (pour préparer les réponses avant la fin).</summary>
+        public static event Action<string> Partial;
 
         public static string Status { get; private set; } = "off";
         public static string LastError { get; private set; } = "";
@@ -53,8 +55,12 @@ namespace MesPremiersJeux.Lib
             {
                 var config = SpeechConfig.FromSubscription(_key, _region);
                 config.SpeechRecognitionLanguage = "fr-FR";
+                // La phrase est close après 450 ms de silence au lieu d'une seconde : la grille arrive plus tôt.
+                config.SetProperty(PropertyId.Speech_SegmentationSilenceTimeoutMs, "450");
+                config.SetProperty(PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "450");
                 _rec = new SpeechRecognizer(config, AudioConfig.FromDefaultMicrophoneInput());
                 _rec.Recognized += OnRecognized;
+                _rec.Recognizing += (o, e) => { try { if (e.Result.Reason == ResultReason.RecognizingSpeech) Partial?.Invoke(Clean(e.Result.Text)); } catch { } };
                 _rec.Canceled += (o, e) =>
                 {
                     if (e.Reason == CancellationReason.Error)

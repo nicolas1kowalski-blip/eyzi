@@ -44,6 +44,7 @@ namespace MesPremiersJeux.Lib
         public string AdminPin = "";          // code d'accès à l'administration (4 chiffres ; vide = aucun)
         public string ListenMode = "off";     // écoute (Parler) : off | bouton | motcle
         public bool ListenAnswers = true;     // réponses proposées en ligne (eyzi.fr → Claude)
+        public string ParlerLieu = "maison";  // où est l'enfant (maison | ecole | dehors | voiture) : contexte des réponses
         public string Level = "auto";    // niveau : auto | 1 | 2 | 3
         public int SessionMinutes = 10;  // au bout de N minutes de jeu, on propose une pause (0 = jamais)
         public bool NameAsked = false;   // le prénom a été demandé au premier démarrage sur cette tablette
@@ -111,6 +112,7 @@ namespace MesPremiersJeux.Lib
                         case "AdminPin": s.AdminPin = val.Trim(); break;
                         case "ListenMode": if (val.Length > 0) s.ListenMode = val.Trim().ToLowerInvariant(); break;
                         case "ListenAnswers": s.ListenAnswers = val != "0"; break;
+                        case "ParlerLieu": if (val.Length > 0) s.ParlerLieu = val.Trim(); break;
                         case "Level": s.Level = val; break;
                         case "SessionMinutes": int.TryParse(val, out s.SessionMinutes); break;
                         case "NameAsked": s.NameAsked = val != "0"; break;
@@ -182,6 +184,7 @@ namespace MesPremiersJeux.Lib
                     "AdminPin=" + (AdminPin ?? ""),
                     "ListenMode=" + (ListenMode ?? "off"),
                     "ListenAnswers=" + (ListenAnswers ? "1" : "0"),
+                    "ParlerLieu=" + (ParlerLieu ?? "maison"),
                     "Level=" + (Level ?? "auto"),
                     "SessionMinutes=" + SessionMinutes,
                     "NameAsked=" + (NameAsked ? "1" : "0"),
