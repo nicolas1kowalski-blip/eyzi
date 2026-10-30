@@ -105,7 +105,7 @@ export default async function handler(req, res) {
     const t0 = Date.now();
     const response = await client.messages.create({
       model: 'claude-haiku-5-5',
-      max_tokens: 600,
+      max_tokens: 1500,
       thinking: { type: 'disabled' },   // des réponses courtes, tout de suite
       output_config: { effort: 'low' },
       system: SYSTEM + `\nL'enfant s'appelle ${child} et a ${age} ans. Il est ${heure} h : c'est ${moment || 'la journée'}.` + (profil ? `\nCe que la famille dit de ${child} : ${profil}` : ''),
@@ -125,7 +125,17 @@ export default async function handler(req, res) {
     const m = text.match(/\{[\s\S]*\}/);
     let parsed = null;
     try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
-    if (!parsed) { console.error('parler: réponse non JSON', text.slice(0, 300)); res.status(502).json({ ok: false, message: "Réponse de l'IA illisible : " + text.slice(0, 120) }); return; }
+    if (!parsed) {
+      // JSON coupé ou abîmé (réponse tronquée, virgule en trop…) : on récupère ce qui est complet.
+      console.error('parler: JSON abîmé, récupération', response.stop_reason, text.length);
+      const rep = [];
+      for (const mm of text.matchAll(/\{\s*"texte"\s*:\s*"((?:[^"\\]|\\.)*)"\s*(?:,\s*"emoji"\s*:\s*"((?:[^"\\]|\\.)*)")?\s*(?:,\s*"cle"\s*:\s*"((?:[^"\\]|\\.)*)")?\s*\}/g))
+        rep.push({ texte: mm[1], emoji: mm[2] || '', cle: mm[3] || '' });
+      const ty = text.match(/"type"\s*:\s*"([a-z]+)"/);
+      const si = text.match(/"simple"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      parsed = { type: ty ? ty[1] : 'autre', simple: si ? si[1] : question, reponses: rep };
+      if (!rep.length) { res.status(502).json({ ok: false, message: "Réponse de l'IA illisible (" + response.stop_reason + ") : " + text.slice(0, 120) }); return; }
+    }
     const reponses = Array.isArray(parsed?.reponses)
       ? parsed.reponses.map((r) => ({ texte: clean(r?.texte, 60), emoji: clean(r?.emoji, 8), cle: clean(r?.cle, 40) })).filter((r) => r.texte).slice(0, 6)
       : [];
