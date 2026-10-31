@@ -1,8 +1,8 @@
 # Référentiel d'apprentissage — cycle 1 (petite, moyenne, grande section)
 
-*Document de travail à relire avant tout code. Version 2, 28 octobre 2026 : ajout des axes, des états acquis / en cours / à consolider, des leçons et du chemin.*
+*Document de travail à relire avant tout code. Version 3, 31 octobre 2026 : le domaine 4 est aligné sur le programme consolidé de l'école maternelle (BO n° 41 du 31 octobre 2024, modifié par le BO n° 19 du 7 mai 2026) : seuils par âge, rang et bande numérique, solides, motifs évolutifs. Version 2, 28 octobre : axes, états acquis / en cours / à consolider, leçons et chemin.*
 
-Ce référentiel décrit ce que le monde **Apprendre** d'Eyzi va proposer pour le cycle 1 de l'école maternelle, en s'inspirant du programme officiel (Éduscol, programme de l'école maternelle de 2021, cinq domaines). Il sert de plan : chaque compétence a ses paliers, son moteur d'exercice, ses exemples, et ce qui existe déjà dans l'application.
+Ce référentiel décrit ce que le monde **Apprendre** d'Eyzi va proposer pour le cycle 1 de l'école maternelle, en s'appuyant sur le programme officiel de l'école maternelle (programme consolidé, BO n° 41 du 31 octobre 2024 et BO n° 19 du 7 mai 2026, six domaines). Le programme décline ses objectifs par âge : « à aborder avant 4 ans », « à partir de 4 ans », « à partir de 5 ans », chaque fois « ou dès que les apprentissages précédents ont pu être observés ». Nos paliers P1, P2, P3 reprennent exactement ces trois étapes, étiquetées PS, MS, GS. Il sert de plan : chaque compétence a ses paliers, son moteur d'exercice, ses exemples, et ce qui existe déjà dans l'application.
 
 ## 1. Les principes
 
@@ -80,28 +80,34 @@ Le niveau automatique de ces compétences règle les **tailles de cibles et temp
 | **Rythmes et comptines** | Écouter, choisir la comptine | Compléter la fin d'une comptine | Reproduire un rythme de 3 (cibles) | Compléter, Ordonner | Le xylophone et la chanson |
 | **Regarder des œuvres** | Que vois-tu ? (animal, maison…) | Apparier une œuvre et un détail | Trier portraits / paysages, jour / nuit | Choisir, Apparier, Trier | — |
 
-## 7. Domaine 4 — Acquérir les premiers outils pour structurer sa pensée
+## 7. Domaine 4 — L'acquisition des premiers outils mathématiques
+
+Aligné sur les cinq thématiques du programme : découvrir les nombres (la quantité, puis le rang), utiliser les nombres pour résoudre des problèmes, explorer les solides et les formes planes, explorer des grandeurs (longueur, masse), se familiariser avec les motifs organisés. Les seuils (3, 6, 10 ; 6, 12, 30…) sont ceux du programme. Le zéro et les nombres au-delà de 10 ne sont pas introduits, conformément aux points de vigilance du programme.
 
 ### Les nombres
 
-| Compétence | P1 | P2 | P3 | Moteur | Existe |
+| Compétence | P1 (avant 4 ans, PS) | P2 (à partir de 4 ans, MS) | P3 (à partir de 5 ans, GS) | Moteur | Existe |
 |---|---|---|---|---|---|
-| **Dénombrer** | 1, 2, 3 | Jusqu'à 6 | Jusqu'à 10, puis 20 avec regroupements | Compter | — |
-| **Reconnaître les chiffres** | 1, 2, 3 | 1 à 6 | 0 à 10, puis 20 | Choisir, Apparier (chiffre ↔ quantité ↔ doigts ↔ dé) | Reconnaissance des nombres |
-| **Comparer** | Beaucoup / un peu, plus / moins | Plus que, moins que, autant (jusqu'à 6) | Le plus grand nombre, ranger 3 nombres | Choisir, Ordonner | — |
-| **Composer, décomposer** | — | 3 c'est 2 et 1 | Décompositions de 5 et 10, « j'ajoute un, j'enlève un » | Compléter, Choisir | — |
-| **La suite des nombres** | Compter jusqu'à 3 (comptine) | Jusqu'à 10 : quel nombre vient après ? | Jusqu'à 30, nombre manquant, compter à rebours | Compléter | — |
-| **Résoudre un petit problème** | — | « Il y a 2 pommes, j'en ajoute 1 » (images) | Problèmes à 10 avec ajout, retrait, partage | Compter, Choisir | — |
+| **Dénombrer** | Jusqu'à 3, voire 4 ; collections en ligne et en désordre | Jusqu'à 6 ; le dé qui montre autant ; parcourir une collection en désordre | Jusqu'à 10 ; la boîte de 10 ; objets variés | Compter | Mes leçons |
+| **Reconnaître les chiffres** | 1, 2, 3 ; le chiffre et le dé | 1 à 6 ; le chiffre, le dé, la boîte de 10 | 1 à 10, chiffres proches ; ranger trois chiffres | Choisir, Ordonner | Mes leçons |
+| **Comparer** | Beaucoup / un peu ; le plus (jusqu'à 4, écart visible) | Le plus, le moins ; autant que (jusqu'à 6) | Le plus grand nombre ; ranger ; autant que (jusqu'à 10) | Choisir, Ordonner, Oui/non | Mes leçons |
+| **Composer, décomposer** | 2, c'est 1 et 1 ; 3 ; j'ajoute un | Jusqu'à 6 ; j'ajoute un, j'enlève un | Jusqu'à 10 ; la boîte de 10 ; les doubles (3 et 3) | Choisir | Mes leçons |
+| **La suite des nombres** (comptine) | Jusqu'à 6 : le nombre d'après, la bande à trou | Jusqu'à 12 : après, avant, la bande | Jusqu'à 30 ; compter à rebours ; de deux en deux | Compléter | Mes leçons |
+| **Le rang et la bande numérique** | — | Le premier, le dernier, le deuxième… (jusqu'à 6) ; le dé sur la bande ; la bande à trou | Premier, dernier, avant-dernier (jusqu'à 10) ; avancer et reculer sur la piste ; la bande jusqu'à 10 | Choisir | Mes leçons |
+| **Petits problèmes** | Parties-tout jusqu'à 3 : j'en ajoute, j'en enlève (matériel figuré) | Jusqu'à 6 ; partager en deux | Jusqu'à 10 ; partager ; combien en plus ; combien en manque-t-il | Choisir | Mes leçons |
 
-### Formes, grandeurs, suites
+### Formes, grandeurs, motifs
 
-| Compétence | P1 | P2 | P3 | Moteur | Existe |
+| Compétence | P1 (avant 4 ans, PS) | P2 (à partir de 4 ans, MS) | P3 (à partir de 5 ans, GS) | Moteur | Existe |
 |---|---|---|---|---|---|
-| **Les formes** | Rond, carré | + triangle, rectangle | + ovale, losange ; formes dans les objets (la roue est ronde) | Choisir, Trier | — |
-| **Les grandeurs** | Grand / petit | Long / court, gros / mince ; ranger 3 | Ranger 5, lourd / léger, plein / vide, contenances | Choisir, Ordonner | Grand ou petit |
-| **Les suites (algorithmes)** | Alternance de 2 (rouge, bleu, rouge, ?) | Motif de 3 ; alternance forme + couleur | Motifs complexes (AAB, ABC), suite de nombres | Compléter | Les suites, Le collier de perles |
-| **Puzzles et encastrements** | 2 pièces | 4 pièces | 6 à 9 pièces, pièce manquante | Compléter | — |
-| **Classer selon un critère** | Couleur | Forme ou taille | Deux critères (grand ET rouge) | Trier | — |
+| **Les formes planes** | Rond, carré ; la même forme que le modèle | + triangle ; trier ; la forme dans l'objet ; toutes tailles et couleurs | + rectangle ; formes tournées (le carré sur la pointe, le triangle quelconque) ; oui/non | Choisir, Trier, Oui/non | Mes leçons |
+| **Les solides** | — | Cube, boule, pyramide, cylindre ; l'objet qui a cette forme ; solides et formes plates | + cône, pavé ; oui/non ; l'empreinte du solide | Choisir, Trier, Oui/non | Mes leçons |
+| **Les grandeurs** | Grand / petit ; long / court | Ranger trois longueurs ; gros / mince ; ranger trois tailles ; lourd / léger | Ranger cinq tailles, cinq longueurs ; du plus léger au plus lourd (trois) | Choisir, Ordonner | Mes leçons |
+| **Les motifs** | Alternance de deux (couleurs, formes) ; le collier bien rangé | Motif de trois ; forme et couleur ; AAB ; le collier bien rangé | ABC, ABB ; le motif qui grandit (évolutif) ; rangé comme le modèle (même structure) ; suite de nombres | Compléter, Choisir | Mes leçons |
+| **Puzzles et encastrements** | 2 pièces | 4 à 6 pièces, où va la pièce | 9 pièces, la pièce à l'endroit | Compléter | Mes leçons |
+| **Classer selon un critère** | Couleur | Forme ou taille ; trois couleurs | Deux critères (grand ET rouge) ; par nombre | Trier | Mes leçons |
+
+Ce que le programme attend et que le regard ne peut pas faire : manipuler, encastrer réellement, produire une empreinte, utiliser une balance ou une règle. Ces attendus sont travaillés en classe ; Eyzi en couvre la part visuelle (reconnaître, comparer, choisir, ordonner), ce que le bilan précise.
 
 ## 8. Domaine 5 — Explorer le monde
 

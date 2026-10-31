@@ -419,6 +419,104 @@ namespace MesPremiersJeux.Learning
             return new Border { Child = g, BorderBrush = Ink, BorderThickness = new Thickness(4), Background = Brushes.White };
         }
 
+        // ------------------------------------------------------------------
+        //  Les solides (cube, boule, pyramide, cylindre, cône, pavé) : dessinés en « 3D » simple
+        // ------------------------------------------------------------------
+        public static readonly (string Cle, string Nom)[] Solides = { ("cube", "le cube"), ("boule", "la boule"), ("pyramide", "la pyramide"), ("cylindre", "le cylindre"), ("cone", "le cône"), ("pave", "le pavé") };
+        public static string NomSolide(string k, bool article = true)
+        {
+            var s = Solides.FirstOrDefault(x => x.Cle == k); if (s.Cle == null) return k;
+            return article ? s.Nom : s.Nom.Substring(s.Nom.IndexOf(' ') + 1);
+        }
+        /// <summary>La forme plane que laisse le solide posé sur le sable (son empreinte).</summary>
+        public static string Empreinte(string solide) => solide == "cube" || solide == "pyramide" ? "carre" : solide == "pave" ? "rectangle" : "rond";
+
+        private static Color Teinte(Color c, double k)
+        {
+            byte f(byte v) => (byte)Math.Max(0, Math.Min(255, k >= 1 ? v + (255 - v) * (k - 1) : v * k));
+            return Color.FromRgb(f(c.R), f(c.G), f(c.B));
+        }
+
+        public static FrameworkElement Solide(string kind, Color color, double size = 150)
+        {
+            var c = new Canvas { Width = 100, Height = 100 };
+            var fill = new SolidColorBrush(color); var light = new SolidColorBrush(Teinte(color, 1.35)); var dark = new SolidColorBrush(Teinte(color, 0.72));
+            var stroke = new SolidColorBrush(Color.FromArgb(0x60, 0, 0, 0));
+            Polygon Poly(Brush b, params double[] xy)
+            {
+                var pts = new PointCollection(); for (int i = 0; i < xy.Length; i += 2) pts.Add(new Point(xy[i], xy[i + 1]));
+                return new Polygon { Points = pts, Fill = b, Stroke = stroke, StrokeThickness = 2.5, StrokeLineJoin = PenLineJoin.Round };
+            }
+            Ellipse Ell(Brush b, double x, double y, double w, double h)
+            {
+                var e = new Ellipse { Width = w, Height = h, Fill = b, Stroke = stroke, StrokeThickness = 2.5 };
+                Canvas.SetLeft(e, x); Canvas.SetTop(e, y); return e;
+            }
+            switch (kind)
+            {
+                case "cube":
+                    c.Children.Add(Poly(light, 20, 35, 75, 35, 90, 18, 35, 18));
+                    c.Children.Add(Poly(dark, 75, 35, 90, 18, 90, 73, 75, 90));
+                    c.Children.Add(Poly(fill, 20, 35, 75, 35, 75, 90, 20, 90));
+                    break;
+                case "pave":
+                    c.Children.Add(Poly(light, 8, 45, 75, 45, 92, 28, 25, 28));
+                    c.Children.Add(Poly(dark, 75, 45, 92, 28, 92, 73, 75, 90));
+                    c.Children.Add(Poly(fill, 8, 45, 75, 45, 75, 90, 8, 90));
+                    break;
+                case "boule":
+                    var rg = new RadialGradientBrush(Teinte(color, 1.5), Teinte(color, 0.7)) { GradientOrigin = new Point(0.35, 0.3), Center = new Point(0.45, 0.4), RadiusX = 0.6, RadiusY = 0.6 };
+                    c.Children.Add(Ell(rg, 10, 10, 80, 80));
+                    break;
+                case "cylindre":
+                    c.Children.Add(Ell(dark, 25, 72, 50, 22));
+                    c.Children.Add(Poly(fill, 25, 20, 75, 20, 75, 83, 25, 83));
+                    c.Children.Add(Ell(light, 25, 9, 50, 22));
+                    break;
+                case "cone":
+                    c.Children.Add(Poly(fill, 50, 6, 82, 82, 18, 82));
+                    c.Children.Add(Ell(dark, 18, 72, 64, 22));
+                    break;
+                case "pyramide":
+                    c.Children.Add(Poly(dark, 50, 8, 12, 78, 50, 92));
+                    c.Children.Add(Poly(fill, 50, 8, 50, 92, 90, 70));
+                    break;
+                default:
+                    c.Children.Add(Poly(fill, 20, 20, 80, 20, 80, 80, 20, 80));
+                    break;
+            }
+            return new Viewbox { Width = size, Height = size, Child = c };
+        }
+
+        /// <summary>Une piste de jeu : les cases de 1 à n, et un pion sur la case « pion ».</summary>
+        public static FrameworkElement Piste(int n, int pion, double cell = 96)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            for (int i = 1; i <= n; i++)
+            {
+                var g = new Grid { Width = cell, Height = cell, Margin = new Thickness(3) };
+                g.Children.Add(new Border { CornerRadius = new CornerRadius(12), Background = i % 2 == 0 ? new SolidColorBrush(Color.FromRgb(0xFF, 0xF3, 0xC4)) : Brushes.White, BorderBrush = Ink, BorderThickness = new Thickness(3) });
+                g.Children.Add(new TextBlock { Text = i.ToString(), FontSize = cell * 0.42, FontWeight = FontWeights.ExtraBold, Foreground = Ink, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 4, 0, 0) });
+                if (i == pion) { var pv = Art.Visual("", "🐸", cell * 0.5); pv.HorizontalAlignment = HorizontalAlignment.Center; pv.VerticalAlignment = VerticalAlignment.Bottom; pv.Margin = new Thickness(0, 0, 0, 4); g.Children.Add(pv); }
+                row.Children.Add(g);
+            }
+            return row;
+        }
+
+        /// <summary>Une file d'objets avec une flèche de départ (le rang : premier, deuxième, dernier).</summary>
+        public static FrameworkElement File(IList<ObjetDef> objets, double size = 90)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            var fl = Art.Visual("", "➡️", size * 0.7); fl.Margin = new Thickness(0, 0, 10, 0); fl.VerticalAlignment = VerticalAlignment.Center;
+            row.Children.Add(fl);
+            foreach (var o in objets) { var v = o.Visuel(size); v.Margin = new Thickness(5); row.Children.Add(v); }
+            return row;
+        }
+
+        /// <summary>Un collier (une rangée de perles ou de formes) qui tient dans une carte de réponse.</summary>
+        public static FrameworkElement Collier(IList<Func<FrameworkElement>> items, double width = 330)
+            => new Viewbox { Width = width, Child = Rangee(items, -1, 60) };
+
         public static T Un<T>(IList<T> l) => l[Rng.Next(l.Count)];
         public static List<T> Melange<T>(IEnumerable<T> l) => l.OrderBy(_ => Rng.Next()).ToList();
         public static int Entre(int min, int maxInclus) => Rng.Next(min, maxInclus + 1);
