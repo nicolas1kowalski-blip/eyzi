@@ -44,7 +44,8 @@ export function modulesText(list) {
   return (m.length ? m : ALL_MODULES).join(',');
 }
 
-export async function issueLicence(supabase, r, requestId, { force = false } = {}) {
+export async function issueLicence(supabase, r, requestId, opts = {}) {
+  const force = opts.force === true;
   const maxTablets = Math.min(Math.max(1, r.tablets || 1), r.kind === 'famille' ? 2 : 10);
 
   // Déjà servie ? (même e-mail, demande traitée avec un numéro) : on renvoie la même.
