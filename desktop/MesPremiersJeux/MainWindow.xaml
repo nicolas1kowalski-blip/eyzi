@@ -494,6 +494,20 @@
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
+                                    <TextBlock Text="📺 La télé de la maison (LG webOS)" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Adresse de la télé sur le réseau" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="TvIpBox" Style="{StaticResource Field}" LostFocus="Tv_Changed" />
+                                    <UniformGrid Columns="2">
+                                        <Button Content="🔍  Chercher la télé" Style="{StaticResource AdminBtn}" Margin="0,6,4,0" Click="TvFind_Click" />
+                                        <Button Content="🔗  Associer" Style="{StaticResource AdminPrimary}" Margin="4,6,0,0" Click="TvPair_Click" />
+                                    </UniformGrid>
+                                    <TextBlock x:Name="TvStatusText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="Une télécommande au regard dans le monde Jouer (tuile 📺) : allumer, éteindre, le son, les chaînes, pause, YouTube, Netflix, les flèches. La télé et la tablette doivent être sur le même Wi-Fi. La première association est à accepter sur l'écran de la télé. Pour l'allumage par le réseau, activez dans la télé : Réglages → Général → Appareils externes (ou Réseau) → « Allumage via mobile / Quick Start+ ». Tout reste dans la maison." />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
                                     <TextBlock Text="🔑 Licence et mises à jour" Style="{StaticResource CardTitle}" />
                                     <TextBlock x:Name="LicenceText" Style="{StaticResource Hint}" Margin="0" FontSize="14.5" Foreground="#FF0B1A33" />
                                     <UniformGrid Columns="2">

@@ -1,4 +1,5 @@
 using System;
+using MesPremiersJeux.Lib;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -113,10 +114,19 @@ namespace MesPremiersJeux.Views
             var mus = MenuKit.ThemeTile("🎵", "Musique", Color.FromRgb(0xDE, 0xF7, 0xEA), "🎶  🎧  🎤");
             mus.Click += (s, e) => Navigate?.Invoke("music");
             Cats.Children.Add(mus);
+            // 📺 La télé de la maison (si elle est réglée).
+            _tvTile = MenuKit.ThemeTile("📺", "La télé", Color.FromRgb(0xE6, 0xEE, 0xFF), "🔊  ⏯  ▶️");
+            _tvTile.Click += (s, e) => Navigate?.Invoke("tv");
+            _tvTile.Visibility = string.IsNullOrWhiteSpace(Settings.Load().TvIp) ? Visibility.Collapsed : Visibility.Visible;
+            Cats.Children.Add(_tvTile);
         }
 
         /// <summary>Vers un autre écran du monde Jouer (coloriage, musique).</summary>
         public event Action<string> Navigate;
+
+        private Button _tvTile;
+        /// <summary>La tuile 📺 n'apparaît que si une télé est réglée.</summary>
+        public void ShowTv(bool on) { if (_tvTile != null) _tvTile.Visibility = on ? Visibility.Visible : Visibility.Collapsed; }
 
         /// <summary>Revient à la porte du monde : les thèmes.</summary>
         public void ShowRoot()

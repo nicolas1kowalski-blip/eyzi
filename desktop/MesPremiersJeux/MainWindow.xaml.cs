@@ -90,6 +90,9 @@ namespace MesPremiersJeux
             _views["parler"] = parler;
             _views["coloring"] = coloring;
             _views["music"] = new MusicView();
+            var tv = new TvView();
+            tv.BackRequested += () => { (_views["games"] as GamesView)?.ShowRoot(); Select("games"); };
+            _views["tv"] = tv;
 
             foreach (var v in _views.Values)
             {
@@ -437,6 +440,9 @@ namespace MesPremiersJeux
                 Select("parler");
                 (_views["parler"] as ParlerView)?.ShowHeard(text);
             }));
+            // 📺 La télé.
+            TvIpBox.Text = _settings.TvIp ?? "";
+            RefreshTvText();
             // 📍 Le lieu d'après le Wi-Fi.
             LieuAutoCheck.IsChecked = _settings.LieuAuto;
             RefreshLieux();
@@ -1881,6 +1887,50 @@ namespace MesPremiersJeux
             Listening.Start(_settings);
         }
 
+        // ---------------- 📺 La télé LG ----------------
+        private void Tv_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null || TvIpBox == null) return;
+            var ip = TvIpBox.Text.Trim();
+            if (ip != _settings.TvIp) { _settings.TvIp = ip; _settings.TvKey = ""; _settings.TvMac = ""; _settings.Save(); LgTv.Disconnect(); }
+            (_views["games"] as GamesView)?.ShowTv(ip.Length > 0);
+            RefreshTvText();
+        }
+
+        private async void TvFind_Click(object sender, RoutedEventArgs e)
+        {
+            TvStatusText.Text = "Je cherche une télé LG sur le réseau…";
+            var ip = await LgTv.DiscoverAsync();
+            if (ip == null) { TvStatusText.Text = "Aucune télé trouvée. Allumez-la, vérifiez qu'elle est sur le même Wi-Fi, ou tapez son adresse (Réglages de la télé → Réseau)."; return; }
+            TvIpBox.Text = ip;
+            Tv_Changed(sender, e);
+            TvStatusText.Text = "Télé trouvée à " + ip + ". Cliquez « Associer » : la télé demandera l'autorisation.";
+        }
+
+        private async void TvPair_Click(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null) return;
+            Tv_Changed(sender, e);
+            if (string.IsNullOrWhiteSpace(_settings.TvIp)) { TvStatusText.Text = "Donnez d'abord l'adresse de la télé."; return; }
+            TvStatusText.Text = "Connexion… Si la télé affiche « Autoriser Eyzi ? », acceptez avec sa télécommande.";
+            var key = await LgTv.ConnectAsync(_settings.TvIp, _settings.TvKey);
+            if (key == null) { TvStatusText.Text = "Échec : " + LgTv.LastError; return; }
+            _settings.TvKey = key;
+            var mac = await LgTv.GetMacAsync();
+            if (mac != null) _settings.TvMac = mac;
+            _settings.Save();
+            await LgTv.Toast("Eyzi est associée à la télé !");
+            RefreshTvText();
+        }
+
+        private void RefreshTvText()
+        {
+            if (TvStatusText == null || _settings == null) return;
+            if (string.IsNullOrWhiteSpace(_settings.TvIp)) TvStatusText.Text = "Pas de télé réglée : la tuile 📺 n'apparaît pas dans le monde Jouer.";
+            else if (string.IsNullOrEmpty(_settings.TvKey)) TvStatusText.Text = "Télé à " + _settings.TvIp + ", pas encore associée.";
+            else TvStatusText.Text = "Télé associée (" + _settings.TvIp + (string.IsNullOrEmpty(_settings.TvMac) ? ", allumage par le réseau impossible : adresse matérielle inconnue" : ", allumage par le réseau " + _settings.TvMac) + ").";
+        }
+
         private void LieuAuto_Changed(object sender, RoutedEventArgs e)
         {
             if (_settings == null || LieuAutoCheck == null) return;
@@ -1950,7 +2000,7 @@ namespace MesPremiersJeux
         {
             switch (id)
             {
-                case "games": case "coloring": case "music": return "jouer";
+                case "games": case "coloring": case "music": case "tv": return "jouer";
                 case "edu": case "stories": case "parcours": return "apprendre";
                 case "parler": return "parler";
                 default: return "";
@@ -1986,6 +2036,7 @@ namespace MesPremiersJeux
                 if (id == "parler" && !was) parler.Enter();
                 else if (id != "parler" && was) parler.Leave();
             }
+            if (id == "tv" && _views.TryGetValue("tv", out var tvv) && tvv is TvView tvView && tvView.Visibility != Visibility.Visible) tvView.Enter();
             foreach (var kv in _views) kv.Value.Visibility = kv.Key == id ? Visibility.Visible : Visibility.Collapsed;
             HighlightWorld(WorldOf(id));
             ApplyTiles();
