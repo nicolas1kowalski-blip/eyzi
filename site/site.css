@@ -161,29 +161,29 @@ button:disabled{opacity:.6;cursor:wait}
 @media(max-width:900px){.tablet .mock{aspect-ratio:16/11}}
 
 /* ======== refonte 2 : la scène animée de l'écoute, avant/après, sections en zigzag ======== */
-.hero .in{grid-template-columns:1fr 1.05fr}
-.scene{position:relative;min-height:380px;display:grid;grid-template-columns:1fr 1.8fr 1fr;align-items:center;gap:8px}
-.sc-face{font-size:64px;line-height:1;text-align:center;filter:drop-shadow(0 8px 20px rgba(0,0,0,.35))}
+.hero .in{grid-template-columns:.9fr 1.1fr}
+.scene{position:relative;min-height:420px;display:grid;grid-template-columns:.8fr 2.2fr .8fr;align-items:center;gap:6px;padding-bottom:30px}
+.sc-face{font-size:56px;line-height:1;text-align:center;filter:drop-shadow(0 8px 20px rgba(0,0,0,.35))}
 .sc-bubble{background:#fff;color:#1B1430;border-radius:18px;padding:10px 14px;font-weight:700;font-size:15px;line-height:1.25;margin-top:10px;position:relative;box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0}
 .sc-bubble:after{content:"";position:absolute;top:-8px;left:28px;border:8px solid transparent;border-bottom-color:#fff;border-top:0}
 .sc-adult .sc-bubble{animation:scBubble 11s infinite}
 .sc-child .sc-bubble.say{background:var(--yellow);animation:scSay 11s infinite}
 .sc-tablet{background:#0A1529;border-radius:22px;padding:10px;box-shadow:0 30px 80px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.08);position:relative}
 .sc-cam{position:absolute;left:50%;top:4px;width:7px;height:7px;border-radius:50%;background:#2E4470;transform:translateX(-50%)}
-.sc-screen{position:relative;background:linear-gradient(160deg,#F1E6FF,#FFF3E6);border-radius:14px;aspect-ratio:16/10;padding:10px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.sc-screen{position:relative;background:linear-gradient(160deg,#F1E6FF,#FFF3E6);border-radius:14px;min-height:300px;padding:12px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
 .sc-listen{display:flex;align-items:center;gap:6px;color:#3B2A5A;font-size:13px;font-weight:600;opacity:0;animation:scListen 11s infinite}
 .sc-listen em{font-style:normal;margin-left:4px}
 .sc-dot{width:9px;height:9px;border-radius:50%;background:#E8352F;animation:scDot 1s infinite}
 .sc-dot:nth-child(2){animation-delay:.2s}.sc-dot:nth-child(3){animation-delay:.4s}
 .sc-heard{background:#fff;border-radius:12px;padding:7px 10px;font-weight:700;color:#3B2A5A;font-size:14px;opacity:0;animation:scHeard 11s infinite}
 .sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1}
-.sc-t{background:#fff;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;color:#3B2A5A;font-size:14px;box-shadow:0 6px 18px rgba(59,42,90,.12);opacity:0;transform:scale(.6);animation:scTile 11s infinite}
+.sc-t{background:#fff;border-radius:12px;min-height:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;color:#3B2A5A;font-size:15px;box-shadow:0 6px 18px rgba(59,42,90,.12);opacity:0;transform:scale(.6);animation:scTile 11s infinite}
 .sc-t span{font-size:30px;line-height:1.1;margin-bottom:2px}
 .sc-t.t1{animation-delay:.0s}.sc-t.t2{animation-delay:.18s}.sc-t.t3{animation-delay:.36s}.sc-t.t4{animation-delay:.54s}
 .sc-t.t1{animation-name:scTileChosen}
 .sc-gaze{position:absolute;width:40px;height:40px;border-radius:50%;border:4px solid var(--yellow);box-shadow:0 0 0 6px rgba(255,200,61,.18),0 0 22px rgba(255,200,61,.6);left:72%;top:78%;opacity:0;animation:scGaze 11s infinite;pointer-events:none}
 .sc-gaze:after{content:"";position:absolute;inset:8px;border-radius:50%;background:var(--yellow);transform:scale(.2);animation:scDwell 11s infinite}
-.sc-time{position:absolute;left:0;right:0;bottom:-34px;text-align:center;color:#AFC0E0;font-size:13px}
+.sc-time{position:absolute;left:0;right:0;bottom:0;text-align:center;color:#AFC0E0;font-size:13px}
 .sc-time b{color:#fff;font-weight:700}
 /* la ligne de temps : 0-1,5 s la question · 1,5-3 s l'écoute · 3-5 s les cases · 5-7,5 s le regard · 7,5-10 s la réponse · 10-11 s rien */
 @keyframes scBubble{0%{opacity:0;transform:translateY(6px)}5%,70%{opacity:1;transform:none}76%,100%{opacity:0}}

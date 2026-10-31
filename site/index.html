@@ -180,7 +180,7 @@
   <section id="comment">
     <h2>Comment ça marche</h2><p class="sub">Trois étapes, et l'enfant joue.</p>
     <div class="steps">
-      <div class="step rv"><b>Téléchargez et installez</b><span>Un fichier, un clic. Si Windows affiche « Windows a protégé votre ordinateur », cliquez <em>Informations complémentaires</em> puis <em>Exécuter quand même</em>.</span></div>
+      <div class="step rv"><b>Téléchargez et installez</b><span>Un fichier, un clic. Attendez la fin du téléchargement avant d'ouvrir le fichier. Si Windows affiche « pas fréquemment téléchargé » ou « Windows a protégé votre ordinateur », c'est normal pour une application récente : choisissez <em>Conserver quand même</em>, puis <em>Informations complémentaires</em> et <em>Exécuter quand même</em>.</span></div>
       <div class="step rv"><b>Essayez 10 jours</b><span>Au premier lancement, choisissez « Essayer 10 jours ». Donnez le prénom de l'enfant, et c'est parti.</span></div>
       <div class="step rv"><b>Demandez votre licence, gratuite</b><span>Un formulaire, une réponse sous 48 heures. Et dites-nous ce que vous en pensez : c'est comme ça que l'application avance.</span></div>
     </div>
@@ -273,7 +273,7 @@
       if(!c.pre&&(!bestProd||newer(c.v,bestProd.v))) bestProd=c;
     });
     var pick=bestProd||best;
-    if(pick){ btn.href=pick.url; info.textContent='Version '+pick.tag.replace(/^v/,'')+(pick.pre?' (bêta, canal test)':'')+' · '+Math.round(pick.size/1048576)+' Mo · attendez la fin du téléchargement avant d\'ouvrir le fichier. Avertissement « pas fréquemment téléchargé » ou « Windows a protégé votre ordinateur » : normal pour une application récente, choisissez « Conserver quand même » puis « Informations complémentaires → Exécuter quand même » (détail dans le guide).'; }
+    if(pick){ btn.href=pick.url; info.textContent='Version '+pick.tag.replace(/^v/,'')+(pick.pre?' (bêta, canal test)':'')+' · '+Math.round(pick.size/1048576)+' Mo · si Windows affiche un avertissement, c\'est normal pour une application récente : voir « Comment ça marche ».'; }
     else info.textContent='Aucune version publiée pour le moment.';
   }catch(e){ info.textContent='Toutes les versions sont sur GitHub (bouton ci-dessus).'; }
 })();
