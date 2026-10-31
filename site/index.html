@@ -11,117 +11,172 @@
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
-<div class="top"><div class="in"><a class="brand" href="./"><img src="img/eyzi-logo-dark.png" alt="Eyzi"></a><nav><a href="./#mondes">Les trois mondes</a><a href="./#parler">Parler</a><a href="./#apprendre">Apprendre</a><a href="./#compatibilite">Compatibilité</a><a href="guide.html">Guide</a><a href="retours.html">Vos retours</a><a class="hl" href="licence.html">🔑 Licence</a></nav></div></div>
+<div class="top"><div class="in"><a class="brand" href="./"><img src="img/eyzi-logo-dark.png" alt="Eyzi"></a><nav><a href="./#parler">L'écoute</a><a href="./#mondes">Trois mondes</a><a href="./#apprendre">Apprendre</a><a href="./#pros">Professionnels</a><a href="guide.html">Guide</a><a class="hl" href="licence.html">🔑 Licence</a></nav></div></div>
 
+<!-- ============ HÉROS : la scène de l'écoute, jouée en boucle ============ -->
 <div class="hero"><div class="bg-blob a"></div><div class="bg-blob b"></div><div class="in">
   <div class="copy">
     <img class="logo" src="img/eyzi-logo-dark.png" alt="Eyzi">
-    <div class="pill"><i></i>Version bêta · gratuite · pour 50 familles et leurs équipes</div>
-    <h1>Jouer, apprendre, parler.<br><span>Avec les yeux.</span></h1>
-    <p>Pour les enfants qui ne peuvent pas utiliser leurs mains ni parler. Trois mondes pilotés par le regard : des jeux qui entraînent la précision, un vrai programme de maternelle, et la parole : <strong style="color:#fff">la tablette écoute la question, l'enfant répond d'un regard.</strong></p>
-    <div class="ctas"><a class="btn primary" id="telecharger" href="https://github.com/nicolas1kowalski-blip/eyzi/releases">⬇ Télécharger pour Windows</a><a class="btn ghost" href="licence.html">🔑 Demander une licence</a></div>
+    <div class="pill"><i></i>Version bêta · gratuite · 50 familles</div>
+    <h1>Elle ne parle pas.<br>Elle <span>répond</span>.</h1>
+    <p>Eyzi écoute la question qu'on pose à l'enfant et lui propose des réponses. Un regard sur une case, et la tablette parle pour elle. <strong style="color:#fff">En deux secondes, avec ses mots à elle.</strong></p>
+    <div class="ctas"><a class="btn primary" id="telecharger" href="https://github.com/nicolas1kowalski-blip/eyzi/releases">⬇ Télécharger pour Windows</a><a class="btn ghost" href="#parler">Voir comment ça marche ↓</a></div>
     <small id="version">Recherche de la dernière version…</small>
-    <small>Windows 10 / 11 · Tobii Dynavox I-13, I-16, PCEye · installation sans droits administrateur · 10 jours d'essai sans licence</small>
+    <small>Windows 10 / 11 · commande oculaire Tobii Dynavox · 10 jours d'essai · licence gratuite pendant la bêta</small>
   </div>
-  <div class="tablet">
-    <img class="deco d1" src="img/deco/soleil.png" alt="">
-    <img class="deco d2" src="img/deco/montgolfiere.png" alt="">
-    <img class="deco d3" src="img/deco/ballon.png" alt="">
-    <img class="deco d4" src="img/deco/oiseau-bleu.png" alt="">
-    <img class="deco d5" src="img/deco/etoile.png" alt="">
-    <div class="frame"><div class="cam"></div>
-      <div class="mock">
-        <div class="mock-q"><span class="mock-ear">👂</span><div><div class="mock-heard">« Tu veux du jus ou de l'eau ? »</div><div class="mock-sub">Réponses de l'IA · première case en 1,4 s</div></div></div>
-        <div class="mock-grid">
-          <div class="mock-t"><span>🧃</span>Du jus</div>
-          <div class="mock-t"><span>💧</span>De l'eau</div>
-          <div class="mock-t"><span>🤲</span>Les deux</div>
-          <div class="mock-t"><span>💭</span>Autre chose</div>
-        </div>
-      </div>
-      <div class="gaze"></div>
+
+  <div class="scene" aria-hidden="true">
+    <div class="sc-adult">
+      <div class="sc-face">👩</div>
+      <div class="sc-bubble">Tu veux du jus ou de l'eau ?</div>
     </div>
+    <div class="sc-tablet">
+      <div class="sc-cam"></div>
+      <div class="sc-screen">
+        <div class="sc-listen"><span class="sc-dot"></span><span class="sc-dot"></span><span class="sc-dot"></span><em>j'écoute…</em></div>
+        <div class="sc-heard">« Tu veux du jus ou de l'eau ? »</div>
+        <div class="sc-grid">
+          <div class="sc-t t1"><span>🧃</span>Du jus</div>
+          <div class="sc-t t2"><span>💧</span>De l'eau</div>
+          <div class="sc-t t3"><span>🤲</span>Les deux</div>
+          <div class="sc-t t4"><span>💭</span>Autre chose</div>
+        </div>
+        <div class="sc-gaze"></div>
+      </div>
+    </div>
+    <div class="sc-child">
+      <div class="sc-face">👧</div>
+      <div class="sc-bubble say">Du jus !</div>
+    </div>
+    <div class="sc-time"><b>0 s</b> la question · <b>1,5 s</b> les cases · <b>3 s</b> la réponse</div>
   </div>
 </div></div>
 
 <div class="wrap">
-  <div class="ribbon"><img src="img/deco/etoile.png" alt=""><img src="img/deco/note-musique.png" alt=""><img src="img/deco/pomme.png" alt=""><img src="img/deco/emotion-content.png" alt=""></div>
 
+  <!-- ============ EN CHIFFRES ============ -->
+  <div class="stats rv">
+    <div><b>3</b><span>mondes : jouer, apprendre, parler</span></div>
+    <div><b>~2 s</b><span>entre la question et les premières réponses</span></div>
+    <div><b>3 400</b><span>pictogrammes livrés avec l'application</span></div>
+    <div><b>11</b><span>compétences de maternelle, 3 paliers chacune</span></div>
+    <div><b>0</b><span>son envoyé hors de la tablette</span></div>
+  </div>
+
+  <!-- ============ L'ÉCOUTE : avant / après, puis la mécanique ============ -->
+  <section id="parler" class="feature">
+    <div class="feature-head">
+      <div class="tag">L'avancée de la bêta</div>
+      <h2>La question amène les réponses</h2>
+      <p class="sub">Avec une commande oculaire classique, l'enfant cherche ses mots dans des grilles de centaines de cases, page après page. Avec Eyzi, c'est l'inverse : on lui parle, et les bonnes réponses viennent à elle.</p>
+    </div>
+
+    <div class="compare rv">
+      <div class="cmp before">
+        <div class="cmp-label">Avant</div>
+        <div class="cmp-grid">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <p>Une grille de 40 cases, puis une autre, puis une autre. Pour dire « du jus », il faut déjà savoir où il est.</p>
+      </div>
+      <div class="cmp-arrow">→</div>
+      <div class="cmp after">
+        <div class="cmp-label">Avec Eyzi</div>
+        <div class="cmp-four">
+          <div><span>🧃</span>Du jus</div><div><span>💧</span>De l'eau</div><div><span>🤲</span>Les deux</div><div><span>💭</span>Autre chose</div>
+        </div>
+        <p>Quatre grandes cases, celles qui répondent à cette question-là, à ce moment-là. Un regard, c'est dit.</p>
+      </div>
+    </div>
+
+    <div class="split rv">
+      <div class="split-text">
+        <h3>Elle comprend ce qu'on demande</h3>
+        <p>Oui ou non, un choix, une question ouverte, une consigne : la grille n'est pas la même. « Tu as faim ? » donne trois grandes cases. « Qu'est-ce que tu veux faire ? » en donne huit, avec des pictos. « On va prendre le bain » donne D'accord, Non, Attends.</p>
+      </div>
+      <div class="split-mock">
+        <div class="mk"><div class="mk-q">« Tu as faim ? »</div><div class="mk-row three"><div><span>✅</span>Oui</div><div><span>❌</span>Non</div><div><span>🤏</span>Un peu</div></div></div>
+        <div class="mk"><div class="mk-q">« On va prendre le bain. »</div><div class="mk-row three"><div><span>👍</span>D'accord</div><div><span>❌</span>Non</div><div><span>✋</span>Attends</div></div></div>
+      </div>
+    </div>
+
+    <div class="split rev rv">
+      <div class="split-text">
+        <h3>Elle connaît l'enfant, et le moment</h3>
+        <p>La famille écrit une fois ce que l'enfant aime, ses habitudes, les prénoms des copains et de la maîtresse. Eyzi sait l'heure, le jour, et où l'on est : maison, école, dehors, voiture, changé d'un regard. Au petit-déjeuner, on propose une tartine, pas des pâtes. À la récré, Emma et Louis, pas mamie.</p>
+      </div>
+      <div class="split-mock">
+        <div class="mk wide"><div class="mk-q">« Avec qui tu veux jouer à la récré ? »</div><div class="mk-ctx"><span>🏫 École</span><span>10 h</span><span>Laura, 4 ans</span></div><div class="mk-row six"><div><span>👧</span>Emma</div><div><span>👦</span>Louis</div><div><span>👩‍🏫</span>La maîtresse</div><div><span>🙋</span>Mon AESH</div><div><span>🧑‍🤝‍🧑</span>Tout le monde</div><div><span>💭</span>Autre chose</div></div></div>
+      </div>
+    </div>
+
+    <div class="split rv">
+      <div class="split-text">
+        <h3>Elle garde la main, et la famille aussi</h3>
+        <p>Le tableau de communication reste là, avec les photos des proches et la voix de papa ou maman. L'écoute vient en plus. On l'allume avec un bouton 👂, ou avec le mot-clé « Dis Eyzi », reconnu sur la tablette : rien ne part de la maison avant qu'il soit dit, et jamais le son, seulement le texte de la question.</p>
+      </div>
+      <div class="split-mock">
+        <div class="mk"><div class="mk-q" style="display:flex;gap:10px;align-items:center"><span style="font-size:34px">👂</span><span>« Dis Eyzi, tu veux du jus ou de l'eau ? »</span></div><div class="mk-note">Le mot-clé réveille la tablette. Le reste de la journée, elle n'écoute pas.</div></div>
+      </div>
+    </div>
+
+    <div class="status rv"><b>Où ça en est, honnêtement.</b> L'écoute est utilisée tous les jours par la première famille d'Eyzi, à la maison et à l'école. Pendant la bêta, elle s'ouvre famille par famille, avec une clé de reconnaissance vocale pour chacune. <a href="retours.html">Dites-nous si vous voulez en être.</a></div>
+  </section>
+
+  <!-- ============ LES TROIS MONDES ============ -->
   <section id="mondes">
     <h2>Trois mondes, une seule application</h2><p class="sub">Dès l'accueil, l'enfant choisit sa porte. La barre du haut permet de passer de l'un à l'autre d'un regard.</p>
     <div class="worlds">
-      <a class="w jouer rv" href="#jouer"><div class="ic">🎮</div><b>Jouer</b><span>Des jeux faits pour le regard : ballons, paires, fête foraine, pêche, miroir magique, coloriage, musique. La difficulté monte toute seule, la précision se travaille sans que l'enfant s'en rende compte.</span></a>
-      <a class="w apprendre rv" href="#apprendre"><div class="ic">🎓</div><b>Apprendre</b><span>Un programme de maternelle adapté au regard, par compétence : acquis, en cours, à consolider. Des leçons courtes, un défi, des révisions. Des histoires avec vos photos. Un bilan pour l'école.</span></a>
-      <a class="w parler rv" href="#parler"><div class="ic">💬</div><b>Parler</b><span>Un tableau de communication avec les photos et la voix de la famille. Et l'écoute : la tablette entend la question posée à l'enfant et lui propose des réponses, en pictos, en un regard.</span></a>
+      <a class="w jouer rv" href="#jouer"><div class="ic">🎮</div><b>Jouer</b><span>Ballons, paires, fête foraine, pêche, miroir magique, coloriage, musique. La difficulté monte toute seule : la précision du regard se travaille sans que l'enfant s'en rende compte.</span></a>
+      <a class="w apprendre rv" href="#apprendre"><div class="ic">🎓</div><b>Apprendre</b><span>Un programme de maternelle adapté au regard, compétence par compétence. Des leçons de trois minutes, un défi, des révisions. Des histoires avec vos photos. Un bilan pour l'école.</span></a>
+      <a class="w parler rv" href="#parler"><div class="ic">💬</div><b>Parler</b><span>Le tableau avec les photos et la voix de la famille, et l'écoute : la question amène les réponses, l'enfant choisit d'un regard.</span></a>
     </div>
   </section>
 
-  <section id="parler" class="feature parler-feature">
-    <div class="feature-head">
-      <div class="tag">Nouveau · l'avancée de la bêta</div>
-      <h2>La tablette écoute. L'enfant répond.</h2>
-      <p class="sub">Jusqu'ici, un enfant en commande oculaire devait chercher ses mots dans des grilles de centaines de cases. Avec Eyzi, c'est la question qui amène les réponses.</p>
-    </div>
-    <div class="flow">
-      <div class="f rv"><div class="n">1</div><b>L'adulte parle</b><span>« Qu'est-ce que tu veux manger ce soir ? » On appuie sur 👂, ou on dit « Dis Eyzi » et la tablette veille toute seule.</span></div>
-      <div class="f rv"><div class="n">2</div><b>La tablette comprend</b><span>Elle reconnaît la phrase, la redit en mots simples, et voit de quelle question il s'agit : oui ou non, un choix, une question ouverte, une consigne.</span></div>
-      <div class="f rv"><div class="n">3</div><b>Les réponses arrivent</b><span>Trois à huit grandes cases avec un pictogramme, adaptées à l'enfant, à l'heure, au lieu, à ses goûts, à ses mots à lui. La première case en une à deux secondes.</span></div>
-      <div class="f rv"><div class="n">4</div><b>L'enfant choisit</b><span>Un regard sur la case, et la tablette le dit avec sa voix, ou celle de papa ou maman enregistrée.</span></div>
-    </div>
-    <div class="parler-demo rv">
-      <div class="pd-left">
-        <div class="pd-q">« Avec qui tu veux jouer à la récré ? »</div>
-        <div class="pd-ctx"><span>🏫 École</span><span>🕐 10 h · la récréation</span><span>👧 Laura, 4 ans</span></div>
+  <!-- ============ APPRENDRE ============ -->
+  <section id="apprendre" class="feature">
+    <div class="split rv">
+      <div class="split-text">
+        <div class="tag green">Apprendre</div>
+        <h2>Un vrai programme de maternelle, par le regard</h2>
+        <p>Inspiré des programmes officiels. Chaque compétence a ses paliers, petite, moyenne et grande section. Elle n'est <strong>acquise</strong> que lorsqu'elle est réussie sous plusieurs formes, à des jours différents, puis dans un défi sans aide. Ensuite elle est révisée, à 3, 7, 21 jours.</p>
+        <p>Pour commencer : les nombres, les formes et les grandeurs. Dénombrer, reconnaître les chiffres, comparer, composer, les suites, les puzzles, classer. L'oral, l'écrit, le temps et l'espace suivent.</p>
       </div>
-      <div class="pd-grid">
-        <div class="pd-t"><span>👧</span>Emma</div>
-        <div class="pd-t"><span>👦</span>Louis</div>
-        <div class="pd-t"><span>👩‍🏫</span>La maîtresse</div>
-        <div class="pd-t"><span>🙋</span>Mon AESH</div>
-        <div class="pd-t"><span>🧑‍🤝‍🧑</span>Tout le monde</div>
-        <div class="pd-t"><span>💭</span>Autre chose</div>
+      <div class="split-mock">
+        <div class="path">
+          <div class="node done"><span>🍎</span>Dénombrer<small>PS · acquis</small></div>
+          <div class="node done"><span>🔢</span>Chiffres<small>PS · acquis</small></div>
+          <div class="node cur"><span>⚖️</span>Comparer<small>PS · en cours</small><i style="width:60%"></i></div>
+          <div class="node"><span>🍎</span>Dénombrer<small>MS · 🔒</small></div>
+          <div class="node"><span>➕</span>Composer<small>MS</small></div>
+          <div class="node"><span>🧩</span>Puzzles<small>MS</small></div>
+        </div>
       </div>
     </div>
     <div class="bento three">
-      <div class="b rv"><div class="ic">🧠</div><b>Ça connaît l'enfant</b><span>Son âge, ce qu'elle aime et n'aime pas, ses habitudes, les prénoms des copains et de la maîtresse : la famille l'écrit une fois, l'IA s'en sert à chaque question. Et ce qu'elle choisit souvent remonte en premier.</span></div>
-      <div class="b rv"><div class="ic">📍</div><b>Ça suit le moment</b><span>Au petit-déjeuner, on propose une tartine, pas des pâtes. À l'école, on parle des copains et de la récré. Le lieu se change d'un regard : maison, école, dehors, voiture.</span></div>
-      <div class="b rv"><div class="ic">🖼️</div><b>Des pictos, pas des mots</b><span>3 400 pictogrammes Mulberry livrés avec l'application, les photos des proches, les images du tableau. Les réponses de tous les jours gardent toujours le même visuel.</span></div>
-      <div class="b rv"><div class="ic">🔒</div><b>Rien ne part sans raison</b><span>Le mot-clé « Dis Eyzi » est reconnu sur la tablette : rien ne quitte la maison avant qu'il soit dit. Seul le texte de la question est envoyé, jamais le son. Une famille qui ne veut pas d'un micro laisse l'écoute éteinte.</span></div>
-      <div class="b rv"><div class="ic">🧩</div><b>Et le tableau reste là</b><span>Je veux, j'ai mal, les gens avec leurs photos, ma journée, je fais une phrase. L'écoute vient en plus du tableau, pas à la place.</span></div>
-      <div class="b dark rv"><div class="ic">🧪</div><b>Où ça en est</b><span>L'écoute est utilisée chaque jour par la première famille d'Eyzi. Pendant la bêta, elle s'ouvre progressivement aux autres familles, avec une clé de reconnaissance vocale par famille. Dites-nous si vous voulez en être.</span></div>
+      <div class="b rv"><div class="ic">📘</div><b>Des leçons de trois minutes</b><span>Six à dix exercices mélangés : la compétence du moment sous plusieurs angles, une révision, une réussite pour finir. Pas de chrono, pas de vies.</span></div>
+      <div class="b rv"><div class="ic">📖</div><b>Des histoires à soi</b><span>Des livres fournis et les vôtres, avec les photos de la famille, lus comme un conteur ou mot à mot, et un mode jeune enfant en pictos.</span></div>
+      <div class="b rv"><div class="ic">📊</div><b>Un bilan pour l'école</b><span>Compétence par compétence, axe par axe, avec les dates. Pour le PPS, l'orthophoniste, l'ergothérapeute. Imprimable.</span></div>
     </div>
   </section>
 
-  <section id="apprendre" class="feature">
-    <div class="feature-head">
-      <div class="tag green">Apprendre</div>
-      <h2>Un programme de maternelle, adapté au regard</h2>
-      <p class="sub">Inspiré des programmes de l'école maternelle. Chaque compétence a ses paliers, petite, moyenne et grande section, et n'est acquise que lorsqu'elle est prouvée sous plusieurs formes, à des jours différents.</p>
-    </div>
-    <div class="bento">
-      <div class="b rv"><div class="ic">🧭</div><b>Un chemin par domaine</b><span>Les nombres, formes et grandeurs pour commencer : dénombrer, reconnaître les chiffres, comparer, composer, les suites, les formes, les grandeurs, les puzzles, classer. L'oral, l'écrit, le temps et l'espace suivent.</span></div>
-      <div class="b rv"><div class="ic">📘</div><b>Des leçons de trois minutes</b><span>Six à dix exercices mélangés : la compétence du moment sous plusieurs angles, une révision, et une réussite pour finir. Pas de chrono, pas de vies.</span></div>
-      <div class="b rv"><div class="ic">✅</div><b>Acquis, en cours, à consolider</b><span>Quatre réussites sur cinq par axe, sur deux jours, puis un défi sans aide. Ensuite des révisions à 3, 7, 21 jours. L'accompagnant peut corriger à la main.</span></div>
-      <div class="b rv"><div class="ic">🧩</div><b>Sept moteurs d'exercice</b><span>Choisir, oui ou non, apparier, trier, ordonner, compter, compléter. Tout passe par un regard sur une grande case. Lire, c'est reconnaître ; écrire, c'est assembler.</span></div>
-      <div class="b rv"><div class="ic">📖</div><b>Des histoires à soi</b><span>Des livres fournis, et les vôtres avec les photos de la famille, lus comme un conteur ou mot à mot, avec un mode jeune enfant en pictos.</span></div>
-      <div class="b rv"><div class="ic">📊</div><b>Un bilan pour l'école</b><span>Compétence par compétence, axe par axe, avec les dates : de quoi alimenter le PPS, l'orthophoniste, l'ergothérapeute. Imprimable.</span></div>
-    </div>
-  </section>
-
+  <!-- ============ JOUER ============ -->
   <section id="jouer" class="feature">
-    <div class="feature-head">
-      <div class="tag orange">Jouer</div>
-      <h2>Des jeux qui entraînent le regard sans le dire</h2>
-      <p class="sub">Chaque jeu travaille quelque chose : viser, suivre, choisir, créer. Et chacun s'adapte : cibles plus petites, poissons plus rapides, boîtes sans aimant, au fil des réussites.</p>
-    </div>
-    <div class="bento">
-      <div class="b rv"><div class="ic">🎪</div><b>La fête foraine</b><span>Chamboule-tout, où l'on peut viser entre deux boîtes ; la pêche, où le bouchon suit le poisson qu'on regarde ; les tartes à la crème ; Patatou.</span></div>
-      <div class="b rv"><div class="ic">🪞</div><b>Le miroir magique</b><span>La caméra montre l'enfant, son regard choisit chapeaux, lunettes, moustaches, mondes et étincelles. Et prend la photo.</span></div>
-      <div class="b rv"><div class="ic">🎈</div><b>Les classiques</b><span>Ballons, paires, cherche et trouve, le jeu magique, les émotions, range la maison, le coloriage, le xylophone et « Au clair de la lune ».</span></div>
-      <div class="b rv"><div class="ic">⭐</div><b>Les étoiles et le carnet</b><span>Chaque réussite vaut une étoile qui vole dans la tirelire. L'arbre à pommes, les badges, la boutique de surprises.</span></div>
+    <div class="split rev rv">
+      <div class="split-text">
+        <div class="tag orange">Jouer</div>
+        <h2>Des jeux qui entraînent le regard sans le dire</h2>
+        <p>Au chamboule-tout, on vise entre deux boîtes. À la pêche, le bouchon suit le poisson qu'on regarde. Au miroir magique, la caméra montre l'enfant et son regard choisit chapeaux, lunettes et étincelles. Chaque jeu s'adapte : cibles plus petites, poissons plus rapides, au fil des réussites. Et chaque réussite vaut une étoile qui vole dans la tirelire.</p>
+      </div>
+      <div class="split-mock">
+        <div class="games">
+          <div><span>🎪</span>Chamboule-tout</div><div><span>🎣</span>La pêche</div><div><span>🪞</span>Miroir magique</div><div><span>🥧</span>Tartes à la crème</div><div><span>🎈</span>Ballons</div><div><span>🎨</span>Coloriage</div><div><span>🎹</span>Xylophone</div><div><span>🧩</span>Paires</div>
+        </div>
+      </div>
     </div>
   </section>
 
+  <!-- ============ COMMENT ÇA MARCHE + VIDÉO ============ -->
   <section id="comment">
     <h2>Comment ça marche</h2><p class="sub">Trois étapes, et l'enfant joue.</p>
     <div class="steps">
@@ -129,23 +184,35 @@
       <div class="step rv"><b>Essayez 10 jours</b><span>Au premier lancement, choisissez « Essayer 10 jours ». Donnez le prénom de l'enfant, et c'est parti.</span></div>
       <div class="step rv"><b>Demandez votre licence, gratuite</b><span>Un formulaire, une réponse sous 48 heures. Et dites-nous ce que vous en pensez : c'est comme ça que l'application avance.</span></div>
     </div>
-  </section>
-
-  <section id="decouvrir">
-    <h2>Découvrir en une minute</h2><p class="sub">L'accueil, « Je choisis », les émotions, la musique, le carnet. Les écrans de cette vidéo datent de la première version ; les trois mondes et l'écoute arrivent dans une prochaine vidéo.</p>
+    <p class="sub" style="margin-top:26px">Une minute d'images de la première version. Les trois mondes et l'écoute arrivent dans une prochaine vidéo.</p>
     <video controls preload="metadata" poster="img/poster.jpg" src="demo.mp4"></video>
   </section>
 
+  <!-- ============ PROFESSIONNELS + DONNÉES ============ -->
   <section id="pros">
-    <h2>Pour les professionnels</h2><p class="sub">Orthophonistes, ergothérapeutes, enseignants, équipes de SESSAD, d'IME ou de plateformes d'aides techniques.</p>
-    <div class="bento three">
-      <div class="b rv"><div class="ic">👁</div><b>Le regard, réglé finement</b><span>Temps de fixation, aimant, cibles de précision, calibration, lissage. Des mesures dans le bilan : temps de sélection, hésitations, erreurs.</span></div>
-      <div class="b rv"><div class="ic">📊</div><b>Des données utiles</b><span>Réussites par jour, niveaux automatiques, compétences acquises ou en cours, ce qui est dit dans Parler. Imprimable ou en PDF pour vos comptes rendus.</span></div>
-      <div class="b rv"><div class="ic">🏫</div><b>Une licence établissement</b><span>Jusqu'à dix postes, les mondes à la carte, gratuite pendant la bêta. Et une famille peut partager ses tablettes avec vous.</span></div>
+    <div class="duo">
+      <div class="duo-a rv">
+        <h2>Pour les professionnels</h2>
+        <p class="sub">Orthophonistes, ergothérapeutes, enseignants, SESSAD, IME, plateformes d'aides techniques.</p>
+        <ul class="ticks">
+          <li>Le regard réglé finement : temps de fixation, aimant, cibles de précision, calibration, lissage.</li>
+          <li>Des mesures : temps de sélection, hésitations, erreurs, réussites par jour, compétences acquises, ce qui est dit dans Parler.</li>
+          <li>Une licence établissement, jusqu'à dix postes, les mondes à la carte, gratuite pendant la bêta.</li>
+        </ul>
+        <a class="btn violet" href="retours.html">Évaluer Eyzi avec vos patients</a>
+      </div>
+      <div class="duo-b rv">
+        <h2>Vos données restent chez vous</h2>
+        <ul class="ticks">
+          <li>Photos, voix, livres, mesures, apprentissages : sur la tablette de la famille. L'éditeur n'y a pas accès.</li>
+          <li>Ce qui voyage entre vos tablettes est chiffré avec votre mot de passe famille, que personne d'autre ne connaît.</li>
+          <li>L'écoute : le son ne quitte jamais la tablette. Seul le texte de la question est envoyé, et l'écoute est éteinte tant que vous ne l'allumez pas.</li>
+        </ul>
+      </div>
     </div>
-    <p class="note">Vous voulez évaluer Eyzi avec vos patients ou vos élèves ? <a href="retours.html">Écrivez-nous</a> : nous préparons l'accès, le guide, et nous prenons vos retours au sérieux.</p>
   </section>
 
+  <!-- ============ COMPATIBILITÉ ============ -->
   <section id="compatibilite">
     <h2>Compatibilité, aujourd'hui</h2><p class="sub">Ce qui est testé, ce qui marche, ce qui n'est pas encore là.</p>
     <div class="compat">
@@ -155,24 +222,15 @@
       <div class="c"><div class="s">✅</div><div><b>Tobii Eye Tracker 4C et 5</b><span>Les capteurs grand public, avec Tobii Experience.</span></div></div>
       <div class="c"><div class="s">✅</div><div><b>Tobii Pro (Nano, Fusion…)</b><span>Par le Tobii Pro SDK, avec la position des yeux.</span></div></div>
       <div class="c"><div class="s">🟡</div><div><b>Toute commande oculaire qui déplace la souris</b><span>Irisbond, Lumin-i, TD Control, Computer Control… en mode « Curseur ».</span></div></div>
-      <div class="c"><div class="s">🟡</div><div><b>PRC-Saltillo Accent avec module Look</b><span>Non testé. Appareil « open » (accès au bureau Windows) obligatoire ; moteur direct possible, sinon mode « Curseur ». Essayez les 10 jours avant de demander une licence.</span></div></div>
+      <div class="c"><div class="s">🟡</div><div><b>PRC-Saltillo Accent avec module Look</b><span>Non testé. Appareil « open » obligatoire ; moteur direct possible, sinon mode « Curseur ».</span></div></div>
       <div class="c"><div class="s">✅</div><div><b>Au doigt et à la souris</b><span>Sans capteur, pour les frères et sœurs, ou pour préparer une activité.</span></div></div>
       <div class="c"><div class="s">✅</div><div><b>Voix</b><span>Voix naturelle hors ligne, voix Windows, voix Azure en option. Français ; anglais pour le module d'anglais.</span></div></div>
-      <div class="c"><div class="s">🟡</div><div><b>L'écoute</b><span>Micro de la tablette et reconnaissance vocale Azure (clé par famille). En bêta, ouverte progressivement.</span></div></div>
+      <div class="c"><div class="s">🟡</div><div><b>L'écoute</b><span>Micro de la tablette et reconnaissance vocale Azure, une clé par famille. En bêta, ouverte progressivement.</span></div></div>
       <div class="c"><div class="s">❌</div><div><b>Pas encore</b><span>Mac, iPad, Android, Chromebook.</span></div></div>
     </div>
-    <p class="note">Votre capteur n'est pas dans la liste ? Essayez le mode « Curseur », et <a href="retours.html">dites-nous</a> ce que vous avez : c'est comme ça que la liste s'allonge.</p>
   </section>
 
-  <section id="donnees">
-    <h2>Vos données restent chez vous</h2>
-    <div class="bento three">
-      <div class="b rv"><div class="ic">🏠</div><b>Tout est sur la tablette</b><span>Photos, voix, livres, mesures, apprentissages : sur la tablette de la famille. L'éditeur n'y a pas accès.</span></div>
-      <div class="b rv"><div class="ic">🔐</div><b>Chiffré entre vos tablettes</b><span>Ce qui voyage entre vos tablettes est chiffré avec votre mot de passe famille, que personne d'autre ne connaît, pas même nous.</span></div>
-      <div class="b rv"><div class="ic">🎙️</div><b>L'écoute, texte seulement</b><span>Le son ne quitte jamais la tablette. Seul le texte de la question posée est envoyé pour obtenir des réponses, et l'écoute est éteinte tant que vous ne l'allumez pas.</span></div>
-    </div>
-  </section>
-
+  <!-- ============ LICENCE ============ -->
   <section id="licence">
     <h2>La licence, gratuite pendant la bêta</h2>
     <p class="sub">Eyzi est en version bêta : l'application marche, elle est utilisée tous les jours par une famille, et elle s'améliore à chaque retour. La licence regroupe les tablettes d'une famille, donne les mises à jour, et choisit les mondes.</p>
@@ -193,10 +251,7 @@
     </div>
   </section>
 
-  <section>
-    <h2>Pour les curieux : versions test et prod</h2>
-    <p class="sub">Chaque nouvelle version sort d'abord en test, puis passe en prod une fois essayée. Le bouton de téléchargement donne la version prod ; <a href="https://github.com/nicolas1kowalski-blip/eyzi/releases">la page des versions</a> liste aussi les versions test, avec leur empreinte de contrôle. Le <a href="guide.html">guide</a> décrit tout, monde par monde.</p>
-  </section>
+  <p class="sub" style="text-align:center;margin-top:30px">Chaque version sort d'abord en test, puis passe en prod une fois essayée. <a href="https://github.com/nicolas1kowalski-blip/eyzi/releases">Toutes les versions</a> · <a href="guide.html">le guide, monde par monde</a>.</p>
 </div>
 <footer><img src="img/eyzi-logo-dark.png" alt="Eyzi">Eyzi · version bêta · jouer, apprendre, parler, avec les yeux<br><a href="guide.html">guide utilisateur</a> · <a href="licence.html">demander une licence</a> · <a href="retours.html">vos retours</a> · <a href="https://github.com/nicolas1kowalski-blip/eyzi/releases">toutes les versions</a> · <a href="mailto:contact@eyzi.fr">contact@eyzi.fr</a><br><span style="opacity:.7">pictogrammes Mulberry Symbols (CC BY-SA) · emojis Twemoji (CC BY) · fait avec amour pour Laura</span></footer>
 <script>
