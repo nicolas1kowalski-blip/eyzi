@@ -42,8 +42,7 @@ a{color:var(--violet)}
 <a href="#5-l-administration-bouton-rserve-l-accompagnant">5. L&#x27;administration (bouton ⚙, réservée à l&#x27;accompagnant)</a>
 <a href="#6-les-mises-jour">6. Les mises à jour</a>
 <a href="#7-les-donnes-et-la-scurit">7. Les données et la sécurité</a>
-<a href="#8-problmes-frquents">8. Problèmes fréquents</a>
-<a href="#9-pour-l-diteur-donner-l-application-une-autre-famille">9. Pour l&#x27;éditeur : donner l&#x27;application à une autre famille</a></nav>
+<a href="#8-problmes-frquents">8. Problèmes fréquents</a></nav>
 <main>
 <h1>Eyzi — Guide utilisateur</h1>
 <p><em>Une application Windows pour jouer, parler et apprendre avec les yeux, pour les enfants de 4 à 7 ans. Elle se pilote à la commande oculaire (Tobii), au doigt ou à la souris.</em></p>
@@ -208,20 +207,10 @@ a{color:var(--violet)}
 <p><strong>Le regard ne fait rien</strong> : vérifiez que le logiciel Tobii voit les yeux (👁 Vérifier la position des yeux), puis essayez « Moteur Tobii direct » dans Source du regard, puis calibrez (🎯).</p>
 <p><strong>Le cercle se remplit trop vite / trop lentement</strong> : Durée de fixation, ou cochez « Ajuster tout seul ».</p>
 <p><strong>La voix parle en retard ou coupe</strong> : avec la voix Azure, vérifiez le réseau ; sinon passez en voix Windows. La phrase en cours se termine toujours avant la suivante.</p>
-<p><strong>« Le serveur de licences n'est pas configuré »</strong> : cette version n'embarque pas encore l'adresse du serveur ; saisissez-la dans ☁️ Le nuage (URL et clé fournies par l'éditeur), ou utilisez une licence maître.</p>
+<p><strong>« Le serveur de licences n'est pas configuré »</strong> : installez la dernière version depuis eyzi.fr ; si le message reste, écrivez à contact@eyzi.fr.</p>
 <p><strong>L'application s'est fermée toute seule</strong> : relancez-la, puis regardez <code>journal.txt</code> (lignes <code>[plantage]</code>) et envoyez le fichier <code>plantage-…txt</code>.</p>
 <p><strong>Je change de tablette</strong> : installez, activez avec le même numéro et le même mot de passe famille ; le contenu descend tout seul (ou 📦 Exporter / 📥 Importer sans réseau).</p>
 <hr>
-<h2 id="9-pour-l-diteur-donner-l-application-une-autre-famille">9. Pour l'éditeur : donner l'application à une autre famille</h2>
-<ol>
-<li><strong>Créer une licence</strong> dans le serveur (Supabase → SQL) : <code>select public.create_licence('Famille Martin', 'prod', 2);</code> — le nom, le canal (<code>test</code> ou <code>prod</code>), le nombre de tablettes, une date de fin facultative en 4ᵉ paramètre, et en 5ᵉ les mondes compris (<code>'jouer,apprendre,parler'</code> par défaut ; par exemple <code>'jouer,apprendre'</code> pour une licence sans le monde Parler). La fonction renvoie le numéro <code>EYZ-…</code> à transmettre. Pour changer les mondes d'une licence existante : <code>update public.licences set modules = 'jouer,parler' where key = 'EYZ-…';</code> ou, plus simple, la page admin du site (cases à cocher puis « Enregistrer les mondes »).</li>
-<li><strong>Donner</strong> à la famille : l'adresse eyzi.fr, le numéro de licence, ce guide (eyzi.fr/guide.html). Elle choisit elle-même son mot de passe famille.</li>
-<li><strong>Publier une version</strong> : chaque poussée de code compile une version <em>test</em> (pré-version) sur GitHub. Pour la passer en <em>prod</em> : GitHub → Releases → Edit → décocher « Set as a pre-release » → cocher « Set as the latest release ». Les tablettes prod la reçoivent au prochain démarrage.</li>
-<li><strong>Révoquer</strong> une licence : dans la table <code>licences</code>, passer <code>enabled</code> à <code>false</code> ; la tablette perd l'accès au plus tard 30 jours après (ou à sa prochaine vérification en ligne).</li>
-<li><strong>Désactiver une tablette</strong> (perdue, remplacée, prêtée) : <code>select public.disable_tablet('EYZ-…', 'NOM-DE-LA-TABLETTE');</code> (même fonction avec <code>true</code> en 3ᵉ paramètre pour la réactiver). La vue <code>tablettes</code> liste toutes les tablettes par famille, avec leur version et leur dernière connexion. La limite est stricte : une tablette de plus que <code>max_tablets</code> est refusée tant qu'une place n'est pas libérée.</li>
-<li><strong>Voir ce qui est utilisé</strong>, par famille : la vue <code>usage_par_famille</code> (du plus utilisé au moins utilisé : minutes, ouvertures, réussites, jours), <code>usage_30_jours</code> (les 30 derniers jours) et <code>usage_resume</code> (une ligne par famille : minutes, jours, tablettes, dernière fois). Dans Supabase : Table Editor → choisir la vue, ou SQL : <code>select * from public.usage_30_jours where famille = 'Famille Martin';</code></li>
-</ol>
-<p>Les fichiers utiles : <code>desktop/docs/supabase.sql</code> (le serveur), <code>desktop/installer/MesPremiersJeux.iss</code> (l'installeur), <code>.github/workflows/build.yml</code> (la compilation automatique).</p>
 <hr>
 <p class="note">Les images de ce guide et de la vidéo sont des maquettes des écrans de l'application, faites pour illustrer ; les vrais écrans peuvent différer légèrement selon la version et la tablette.</p>
 <div class="shots">
