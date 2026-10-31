@@ -113,6 +113,19 @@ Les réponses s'affichent en **plein écran**, en grandes cases avec un pictogra
 
 Il faut la **clé Azure Speech** de la page Voix (la même ressource fait la voix et l'écoute ; la reconnaissance se facture à l'usage, le mot-clé est gratuit). Les réponses proposées viennent d'une intelligence artificielle via eyzi.fr : seul le **texte** de la phrase est envoyé, jamais le son ; la case « Proposer des réponses » peut être décochée, la tablette propose alors des réponses simples (oui, non, les deux côtés d'un « ou », encore, autre chose). Une famille qui ne veut pas d'un micro qui veille laisse l'écoute sur Éteinte ou sur Bouton.
 
+### Créer sa clé Azure, en dix minutes
+La voix naturelle en ligne et l'écoute passent par le service **Azure Speech** de Microsoft. Chaque famille crée sa propre clé, gratuite pour un usage familial, et la saisit dans l'application. L'éditeur ne la connaît jamais.
+
+1. Allez sur **portal.azure.com** et créez un compte Microsoft si vous n'en avez pas (une carte bancaire est demandée pour vérifier l'identité ; l'offre gratuite ne prélève rien).
+2. En haut, cherchez **Speech** (ou « Services de parole ») et cliquez **Créer**.
+3. Remplissez : **Abonnement** (le vôtre), **Groupe de ressources** : créez-en un, par exemple `eyzi`, **Région** : **France Central**, **Nom** : par exemple `voix-prenom`, **Niveau tarifaire** : **Free F0**. Puis **Vérifier + créer**, puis **Créer**.
+4. Une fois la ressource créée, ouvrez-la et cliquez à gauche sur **Clés et point de terminaison**. Copiez la **CLÉ 1**. La région est écrite juste en dessous : `francecentral`.
+5. Dans Eyzi, ouvrez l'administration (⚙), page **Voix** : collez la clé dans **Clé Azure** et écrivez `francecentral` dans **Région**. Cliquez **Écouter un exemple** : si la voix naturelle parle, la clé marche. L'écoute utilise la même clé.
+
+**Ce que ça coûte.** Le niveau Free donne chaque mois environ cinq heures de reconnaissance vocale et un demi-million de caractères de voix naturelle, sans frais. C'est largement assez pour une famille : l'écoute ne tourne que pendant la phrase posée, pas toute la journée, et le mot-clé « Dis Eyzi » est reconnu sur la tablette, sans Azure. Si vous dépassez, le service s'arrête jusqu'au mois suivant ; il ne facture rien tant que vous restez en Free F0. Vous pouvez passer en Standard S0 plus tard, à l'usage, si le besoin vient.
+
+**Si ça ne marche pas** : vérifiez que la région saisie est bien celle de la ressource (une clé de France Central ne marche pas avec une autre région), que la clé est complète (32 caractères, sans espace) et que la tablette a Internet. Si l'écoute est allumée, la carte **👂 Écoute** de la page Nuage affiche la dernière erreur Azure.
+
 ### Écouter ou choisir : la règle
 La voix appartient à l'écran. Trois sortes de phrases :
 
