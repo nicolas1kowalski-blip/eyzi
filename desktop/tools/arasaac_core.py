@@ -127,5 +127,9 @@ with open(os.path.join(OUT, "LISEZ-MOI.txt"), "w", encoding="utf-8") as f:
             "Ce dossier contient un noyau de pictogrammes choisi pour Eyzi, en 300 px, et l'index (index.csv) de toute la banque en français ;\n"
             "les autres pictogrammes sont téléchargés à la demande depuis static.arasaac.org et gardés sur la tablette.\n"
             "Usage non commercial : Eyzi est gratuite.\n")
+with open(os.path.join(OUT, "RESUME.txt"), "w", encoding="utf-8") as f:
+    f.write(f"ARASAAC : {len(tous)} pictos dans l'index, {len(entrees)} gardés (sans sexe ni violence)\n")
+    f.write(f"Noyau : {len(noyau)} pictos demandés, {ok} images téléchargées\n")
+    f.write(f"Mots du vocabulaire sans picto ({len(manquants)}) : {' '.join(manquants)}\n")
 if ok < 800:
     print("TROP PEU D'IMAGES"); sys.exit(1)

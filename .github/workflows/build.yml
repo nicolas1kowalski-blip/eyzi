@@ -118,6 +118,10 @@ jobs:
           New-Item -ItemType Directory -Force $dst | Out-Null
           Copy-Item arasaac-cache/* $dst -Force
           if (-not (Test-Path "$dst/index.csv")) { Write-Error "ARASAAC absent"; exit 1 }
+          Remove-Item "$dst/RESUME.txt" -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force desktop/installer/Output | Out-Null
+          Copy-Item arasaac-cache/RESUME.txt desktop/installer/Output/arasaac-resume.txt -ErrorAction SilentlyContinue
+          Get-Content arasaac-cache/RESUME.txt -ErrorAction SilentlyContinue
           "{0:N0} fichiers, {1:N0} Mo" -f (Get-ChildItem $dst).Count, ((Get-ChildItem $dst | Measure-Object Length -Sum).Sum / 1MB)
 
       - name: Installeur (Inno Setup)
