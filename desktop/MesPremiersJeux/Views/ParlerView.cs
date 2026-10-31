@@ -30,7 +30,7 @@ namespace MesPremiersJeux.Views
         public event Action<string> LieuChoisi;
         private readonly Grid _answersHost;
         private readonly UniformGrid _answers;
-        private readonly TextBlock _heard, _state, _wait;
+        private readonly TextBlock _heard, _state, _wait, _ia;
         private readonly Button _ear, _back, _lieu;
         private readonly Ellipse _led;
         private Settings _settings;
@@ -75,6 +75,8 @@ namespace MesPremiersJeux.Views
             var texts = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 14, 0) };
             texts.Children.Add(_heard);
             texts.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { _led, _state }, Margin = new Thickness(0, 4, 0, 0) });
+            _ia = new TextBlock { FontSize = 16, Foreground = new SolidColorBrush(Color.FromRgb(0xB0, 0x5A, 0x00)), FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+            texts.Children.Add(_ia);
             head.Children.Add(texts);
             _panel = new Border
             {
@@ -296,12 +298,13 @@ namespace MesPremiersJeux.Views
             {
                 PreparerGrille(secours.Type, secours.Reponses.Count);
                 foreach (var r in secours.Reponses) AjouterCase(r, secours.Type);
-                _state.Text = "Réponses devinées (sans IA).";
+                Ia("⚠️ Réponses devinées, sans IA : " + (!_settings.ListenAnswers ? "la case « Proposer des réponses » est décochée (réglages → Nuage → Écoute)." : "pas de licence en ligne."));
                 if (!speculatif) Speech.SayAlways(text);
                 return;
             }
 
             _answers.Children.Clear();
+            Ia(null);
             _wait.Visibility = Visibility.Visible;
             _wait.Text = "L'IA cherche des réponses…";
             var t0 = DateTime.Now;
@@ -330,15 +333,25 @@ namespace MesPremiersJeux.Views
             if (_enCours != monEchange) return; // une autre phrase est arrivée entre-temps
             if (res.EnLigne)
             {
-                _state.Text = "Réponses de l'IA · " + (res.Chrono ?? "");
+                Ia("🤖 Réponses de l'IA · " + (res.Chrono ?? ""), ok: true);
                 if (!speculatif && res.Simple != null && res.Simple != text) Speech.SayAlways(res.Simple);
             }
             else
             {
                 PreparerGrille(secours.Type, secours.Reponses.Count);
                 foreach (var r in secours.Reponses) AjouterCase(r, secours.Type);
-                _state.Text = "Réponses devinées (IA indisponible" + (string.IsNullOrEmpty(res.Erreur) ? "" : " : " + res.Erreur) + ")";
+                Ia("⚠️ Réponses devinées : l'IA n'a pas répondu" + (string.IsNullOrEmpty(res.Erreur) ? "." : " (" + res.Erreur + ")."));
             }
+        }
+
+        /// <summary>La ligne qui dit d'où viennent les réponses : elle reste affichée, quoi que fasse le voyant d'écoute.</summary>
+        private void Ia(string text, bool ok = false)
+        {
+            if (string.IsNullOrEmpty(text)) { _ia.Visibility = Visibility.Collapsed; return; }
+            _ia.Text = text;
+            _ia.Foreground = new SolidColorBrush(ok ? Color.FromRgb(0x1E, 0x7A, 0x4C) : Color.FromRgb(0xB0, 0x5A, 0x00));
+            _ia.Visibility = Visibility.Visible;
+            Emoji.FixTree(_ia);
         }
 
         /// <summary>La grille se dimensionne d'avance selon le type (3 grandes cases pour oui / non, 2 rangées pour une question ouverte).</summary>

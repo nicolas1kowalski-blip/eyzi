@@ -200,6 +200,41 @@ namespace MesPremiersJeux.Lib
         }
 
         /// <summary>Sans serveur : des réponses selon le type deviné.</summary>
+        private static readonly HashSet<string> Tetes = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "au", "aux", "à", "de", "du", "des", "d'", "le", "la", "les", "l'", "un", "une", "en", "avec", "chez", "dans", "sur" };
+
+        /// <summary>
+        /// Les options d'une question à choix, sans le début de la phrase :
+        /// « Laura, veux-tu un yaourt au chocolat, à la vanille ou aux fruits ? » → au chocolat · à la vanille · aux fruits.
+        /// </summary>
+        public static List<string> OptionsDuChoix(string q)
+        {
+            var res = new List<string>();
+            var s = Regex.Replace(q ?? "", @"[?!.]+\s*$", "").Trim();
+            if (s.Length == 0) return res;
+            s = Regex.Replace(s, @"^[A-ZÀ-Ý][\wà-ÿ-]+\s*,\s*", ""); // « Laura, … »
+            var m = Regex.Match(s, @"^(.+?)\s+ou\s+(?:bien\s+)?(.+)$", RegexOptions.IgnoreCase);
+            if (!m.Success) return res;
+            var gauche = m.Groups[1].Value; var droite = m.Groups[2].Value;
+            var morceaux = gauche.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
+            if (morceaux.Count == 0) return res;
+            // Le premier morceau porte le début de la question : on garde ce qui suit le verbe…
+            var premier = morceaux[0];
+            var mv = Regex.Match(premier, @"(?:veux|préfères|prends|choisis|aimes|voudrais|plutôt|veux-tu|tu veux|préfères-tu|tu préfères|voulez-vous|est-ce que)\s+(?:tu\s+|vous\s+)?(?:veux\s+|préfères\s+)?(.+)$", RegexOptions.IgnoreCase);
+            if (mv.Success) premier = mv.Groups[1].Value.Trim();
+            // … et, si la liste a des virgules (« au chocolat, à la vanille ou aux fruits »), on coupe au dernier petit mot de tête : « un yaourt au chocolat » → « au chocolat ».
+            if (morceaux.Count >= 2)
+            {
+                var mots = premier.Split(' ');
+                int coupe = -1;
+                for (int i = mots.Length - 2; i >= 1; i--) if (Tetes.Contains(mots[i]) || mots[i].EndsWith("'") && Tetes.Contains(mots[i])) { coupe = i; break; }
+                if (coupe > 0) premier = string.Join(" ", mots.Skip(coupe));
+            }
+            res.Add(premier);
+            res.AddRange(morceaux.Skip(1));
+            res.Add(droite.Trim());
+            return res.Select(Nettoie).Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Take(6).ToList();
+        }
+
         public static Resultat Defaults(string q)
         {
             var r = new Resultat { Simple = q, Type = TypeDe(q) };
@@ -208,9 +243,8 @@ namespace MesPremiersJeux.Lib
             {
                 case "choix":
                 {
-                    var m = Regex.Match(q ?? "", @"(?:veux|préfères|prends|choisis|aimes|voudrais|plutôt)\s+(.+?)\s+ou\s+(.+?)\s*\??$", RegexOptions.IgnoreCase);
-                    if (!m.Success) m = Regex.Match(q ?? "", @"^(.+?)\s+ou\s+(.+?)\s*\??$", RegexOptions.IgnoreCase);
-                    if (m.Success) { Add(Nettoie(m.Groups[1].Value), "👉"); Add(Nettoie(m.Groups[2].Value), "👉"); Add("Les deux", "🤲"); }
+                    var options = OptionsDuChoix(q);
+                    if (options.Count >= 2) { foreach (var o in options) Add(o, "👉"); if (options.Count == 2) Add("Les deux", "🤲"); }
                     else { Add("Oui", "✅"); Add("Non", "❌"); }
                     Add("Autre chose", "💭");
                     break;
