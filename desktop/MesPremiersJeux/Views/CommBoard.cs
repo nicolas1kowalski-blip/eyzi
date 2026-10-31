@@ -426,6 +426,15 @@ namespace MesPremiersJeux.Views
 
         public void MarkClosed() => IsOpen = false;
 
+        /// <summary>Le visuel d'une tuile : la photo du proche, sinon le picto ARASAAC du mot (comme dans les classeurs de CAA), sinon l'image maison.</summary>
+        private static FrameworkElement Pic(Item it, double size)
+        {
+            if (it.Photo != null) return it.Photo();
+            var maison = Art.Visual(it.Img, it.Emoji, size);
+            if (it.Key == "autre" || it.Key == "phrase" || (it.Key ?? "").StartsWith("jour-") || it.Key == "raconte") return maison;
+            try { return Arasaac.Picture(it.Label, size, maison) ?? maison; } catch { return maison; }
+        }
+
         private void ShowCategory(int i)
         {
             var visible = Cats.Where(c => c.MinLevel <= Level.Current).ToList();
@@ -463,7 +472,7 @@ namespace MesPremiersJeux.Views
                     {
                         _starter = item;
                         _msgText.Text = item.Say + "...";
-                        _msgPic.Content = Art.Visual(item.Img, item.Emoji, 110);
+                        _msgPic.Content = Pic(item, 110);
                         Speech.SayAlways(item.Say + "...");
                         ShowSentence(cat);
                     };
@@ -532,7 +541,7 @@ namespace MesPremiersJeux.Views
 
         private static Button Cell(Item it, Color tint)
         {
-            FrameworkElement pic = it.Photo != null ? it.Photo() : Art.Visual(it.Img, it.Emoji, 170);
+            FrameworkElement pic = Pic(it, 170);
             var content = new StackPanel
             {
                 Children =
@@ -593,7 +602,7 @@ namespace MesPremiersJeux.Views
         {
             _last = it;
             _msgText.Text = it.Say;
-            _msgPic.Content = it.Photo != null ? it.Photo() : Art.Visual(it.Img, it.Emoji, 110);
+            _msgPic.Content = Pic(it, 110);
             if (record) GazeStats.RecordComm(it.Key);
 
             // Appel, douleur, peur : une petite sonnerie d'abord, pour que

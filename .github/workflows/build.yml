@@ -95,6 +95,31 @@ jobs:
           Set-Content -Path "$dst/version.txt" -Value $env:PACK_ID -Encoding ascii -NoNewline
           "{0:N0} Mo" -f ((Get-ChildItem $dst -Recurse | Measure-Object Length -Sum).Sum / 1MB)
 
+      # Pictogrammes ARASAAC (CC BY-NC-SA) : l'index français complet et un noyau d'images,
+      # constitués par desktop/tools/arasaac_core.py, mis en cache d'une compilation à l'autre.
+      - name: Pictogrammes ARASAAC (cache)
+        id: arasaac
+        uses: actions/cache@v4
+        with:
+          path: arasaac-cache
+          key: arasaac-${{ hashFiles('desktop/tools/arasaac_core.py') }}
+
+      - name: Pictogrammes ARASAAC (index + noyau)
+        if: steps.arasaac.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          python desktop/tools/arasaac_core.py arasaac-cache 1500
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Pictogrammes ARASAAC (installation dans l'application)
+        shell: pwsh
+        run: |
+          $dst = "desktop/MesPremiersJeux/bin/x64/Release/net472/Images/arasaac"
+          New-Item -ItemType Directory -Force $dst | Out-Null
+          Copy-Item arasaac-cache/* $dst -Force
+          if (-not (Test-Path "$dst/index.csv")) { Write-Error "ARASAAC absent"; exit 1 }
+          "{0:N0} fichiers, {1:N0} Mo" -f (Get-ChildItem $dst).Count, ((Get-ChildItem $dst | Measure-Object Length -Sum).Sum / 1MB)
+
       - name: Installeur (Inno Setup)
         shell: pwsh
         run: |

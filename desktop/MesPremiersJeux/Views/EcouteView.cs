@@ -386,25 +386,26 @@ namespace MesPremiersJeux.Views
             ["je t'aime"] = ("comm-jetaime", "❤️"), ["fini"] = ("comm-fini", "🏁"), ["aide-moi"] = ("comm-aide", "🙋"), ["stop"] = ("", "🛑"),
         };
 
+        /// <summary>Le visuel d'une réponse : la photo d'un proche d'abord, puis le picto ARASAAC du mot français, puis le secours (image du tableau, Mulberry, emoji).</summary>
         public static FrameworkElement Visuel(Suggest.Reponse r, CommBoard.Mot mot)
         {
             try
             {
+                if (mot != null && mot.Photo != null) return mot.Photo();
                 var cle = (r.Texte ?? "").Trim().TrimEnd('!', '.').ToLowerInvariant();
+                FrameworkElement secours = null;
                 if (Fixes.TryGetValue(cle, out var fx))
                 {
                     var src = string.IsNullOrEmpty(fx.Img) ? null : Art.Find(fx.Img);
-                    return src != null ? new Image { Source = src, Stretch = Stretch.Uniform } : Art.Visual("", fx.Emoji, 200);
+                    secours = src != null ? new Image { Source = src, Stretch = Stretch.Uniform } : Art.Visual("", fx.Emoji, 200);
+                    if (cle == "autre chose" || cle == "les deux" || cle == "je ne sais pas") return secours; // ceux-là restent des symboles, pas des dessins
                 }
-                if (mot != null)
-                {
-                    if (mot.Photo != null) return mot.Photo();
-                    var src = Art.Find(mot.Img);
-                    if (src != null) return new Image { Source = src, Stretch = Stretch.Uniform };
-                }
-                var p = Pictos.Picture(r.Picto, 200) ?? Pictos.Picture(r.Texte, 200);
-                if (p != null) return p;
-                if (!string.IsNullOrWhiteSpace(r.Emoji)) return Art.Visual("", r.Emoji.Trim(), 200);
+                if (secours == null && mot != null) { var src = Art.Find(mot.Img); if (src != null) secours = new Image { Source = src, Stretch = Stretch.Uniform }; }
+                if (secours == null) secours = Pictos.Picture(r.Picto, 200) ?? Pictos.Picture(r.Texte, 200);
+                if (secours == null && !string.IsNullOrWhiteSpace(r.Emoji)) secours = Art.Visual("", r.Emoji.Trim(), 200);
+                var a = Arasaac.Picture(r.Texte, 200, secours);
+                if (a != null) return a;
+                if (secours != null) return secours;
             }
             catch { }
             return Art.Visual("", "💬", 200);
