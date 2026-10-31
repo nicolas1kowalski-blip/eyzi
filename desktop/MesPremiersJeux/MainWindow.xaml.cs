@@ -1836,7 +1836,8 @@ namespace MesPremiersJeux
             CloudUpBtn.IsEnabled = CloudDownBtn.IsEnabled = true;
             RefreshCloudStatus();
             RefreshContentDirInfo();
-            MessageBox.Show(this, err == null ? "Contenu récupéré ! (" + FamilyCloud.Status + ")" : "Récupération impossible : " + err, "Nuage");
+            if (err == null && FamilyCloud.ReglagesRecus) ReglagesPartagesRecus();
+            MessageBox.Show(this, err == null ? "Contenu récupéré ! (" + FamilyCloud.Status + ")" + (FamilyCloud.ReglagesRecus ? "\nLes réglages de la famille (clé Azure, écoute, profil, télé) ont été appliqués." : "") : "Récupération impossible : " + err, "Nuage");
         }
 
         private void RefreshCloudStatus()
@@ -1860,7 +1861,7 @@ namespace MesPremiersJeux
                 await System.Threading.Tasks.Task.Delay(2500);
                 var err = await FamilyCloud.DownloadAsync(_settings, force: false);
                 if (err != null) Lib.Log.Write("nuage", "Synchro au démarrage : " + err);
-                else if (FamilyCloud.Status.StartsWith("récupéré")) { ShowParentNotice("☁️ Contenu de la famille récupéré."); RefreshContentDirInfo(); }
+                else if (FamilyCloud.Status.StartsWith("récupéré")) { ShowParentNotice("☁️ Contenu de la famille récupéré."); RefreshContentDirInfo(); if (FamilyCloud.ReglagesRecus) ReglagesPartagesRecus(); }
                 RefreshCloudStatus();
             }
             catch (Exception ex) { Lib.Log.Write("nuage", "Synchro au démarrage : " + ex.Message); }
@@ -1885,6 +1886,25 @@ namespace MesPremiersJeux
             _settings.ListenAnswers = ListenAnswersCheck.IsChecked == true;
             _settings.Save();
             Listening.Start(_settings);
+        }
+
+        /// <summary>Le nuage a apporté des réglages partagés : on les affiche et on relance ce qui en dépend.</summary>
+        private void ReglagesPartagesRecus()
+        {
+            try
+            {
+                AzureKeyBox.Text = _settings.AzureKey; AzureRegionBox.Text = _settings.AzureRegion;
+                foreach (ComboBoxItem it in AzureVoiceCombo.Items) if ((string)it.Tag == _settings.AzureVoice) { AzureVoiceCombo.SelectedItem = it; break; }
+                AzureTts.Key = _settings.AzureKey; AzureTts.Region = _settings.AzureRegion; AzureTts.Voice = _settings.AzureVoice;
+                foreach (ComboBoxItem it in ListenModeCombo.Items) if ((string)it.Tag == (_settings.ListenMode ?? "off")) { ListenModeCombo.SelectedItem = it; break; }
+                ListenAnswersCheck.IsChecked = _settings.ListenAnswers;
+                ChildAgeBox.Text = _settings.ChildAge.ToString(); ChildProfileBox.Text = _settings.ChildProfile ?? "";
+                TvIpBox.Text = _settings.TvIp ?? ""; RefreshTvText(); (_views["games"] as GamesView)?.ShowTv(!string.IsNullOrWhiteSpace(_settings.TvIp));
+                RefreshLieux();
+                if (Licence.HasModule(_settings, "parler")) Listening.Start(_settings);
+                ShowParentNotice("☁️ Réglages de la famille reçus : clé Azure, écoute, profil, télé.");
+            }
+            catch (Exception ex) { Lib.Log.Write("nuage", "Réglages reçus : " + ex.Message); }
         }
 
         // ---------------- 📺 La télé LG ----------------

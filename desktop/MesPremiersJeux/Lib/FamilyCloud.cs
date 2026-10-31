@@ -124,6 +124,9 @@ namespace MesPremiersJeux.Lib
         // ------------------------------------------------------------------
         //  Empreinte du contenu local : a-t-il changé depuis le dernier envoi ?
         // ------------------------------------------------------------------
+        /// <summary>Vrai si la dernière récupération a changé des réglages partagés (clé Azure, écoute, profil, télé…).</summary>
+        public static bool ReglagesRecus { get; private set; }
+
         public static string LocalFingerprint()
         {
             try
@@ -150,6 +153,7 @@ namespace MesPremiersJeux.Lib
         public static async Task<string> UploadAsync(Settings s, bool force, Action<string> status = null)
         {
             if (!Available(s)) return "nuage non configuré";
+            Partage.Ecrire(s); // la clé Azure, l'écoute, le profil, la télé, les Wi-Fi : voyagent avec le contenu
             var fp = LocalFingerprint();
             if (!force && fp == s.CloudLastFingerprint) { Status = "rien de nouveau à envoyer"; return null; }
             var tmp = Path.Combine(Path.GetTempPath(), "mpj-famille.zip");
@@ -224,6 +228,7 @@ namespace MesPremiersJeux.Lib
                 File.WriteAllBytes(tmp, Decrypt(enc, k1, k2));
                 status?.Invoke("Installation du contenu…");
                 if (!UserContent.ImportZip(tmp)) return "impossible d'installer le contenu reçu";
+                ReglagesRecus = Partage.Appliquer(s);
                 s.CloudLastSync = remoteStamp;
                 s.CloudLastFingerprint = LocalFingerprint();
                 s.Save();

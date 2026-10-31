@@ -62,6 +62,7 @@ namespace MesPremiersJeux.Lib
         public string LastUpdateSeen = ""; // dernière version proposée (pour ne pas insister)
         // ☁🔒 Nuage de la famille (voir Lib/FamilyCloud.cs)
         public string CloudEmail = "", CloudSecret = "", FamilyPassphrase = "", CloudLastSync = "", CloudLastFingerprint = "";
+        public string PartageStamp = "", PartageEmpreinte = ""; // réglages partagés de la famille (famille.ini) : dernier changement ici, et son empreinte
         public int AutoLevel = 1;        // niveau atteint en automatique
         public bool AutoDwell = true;    // temps de fixation ajusté tout seul selon le jeu de l'enfant
 
@@ -141,6 +142,8 @@ namespace MesPremiersJeux.Lib
                         case "FamilyPassphrase": s.FamilyPassphrase = val; break;
                         case "CloudLastSync": s.CloudLastSync = val; break;
                         case "CloudLastFingerprint": s.CloudLastFingerprint = val; break;
+                        case "PartageStamp": s.PartageStamp = val; break;
+                        case "PartageEmpreinte": s.PartageEmpreinte = val; break;
                         case "AutoLevel": int.TryParse(val, out s.AutoLevel); break;
                     }
                 }
@@ -217,6 +220,8 @@ namespace MesPremiersJeux.Lib
                     "FamilyPassphrase=" + (FamilyPassphrase ?? ""),
                     "CloudLastSync=" + (CloudLastSync ?? ""),
                     "CloudLastFingerprint=" + (CloudLastFingerprint ?? ""),
+                    "PartageStamp=" + (PartageStamp ?? ""),
+                    "PartageEmpreinte=" + (PartageEmpreinte ?? ""),
                     "AutoLevel=" + AutoLevel,
                 };
                 File.WriteAllLines(FilePath, lines);
