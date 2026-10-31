@@ -33,6 +33,7 @@ namespace MesPremiersJeux.Lib
         private static KeywordRecognitionModel _kw;
         private static bool _keywordMode, _busy;
         private static string _key = "", _region = "";
+        private static Settings _last;
 
         public static string KeywordFile => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Voix", "eyzi.table");
         public static bool KeywordAvailable => File.Exists(KeywordFile);
@@ -48,6 +49,7 @@ namespace MesPremiersJeux.Lib
         {
             Stop();
             if (s == null) return;
+            _last = s;
             var mode = (s.ListenMode ?? "off").ToLowerInvariant();
             if (mode == "off" || string.IsNullOrWhiteSpace(s.AzureKey)) { SetStatus("off"); return; }
             _key = s.AzureKey.Trim(); _region = string.IsNullOrWhiteSpace(s.AzureRegion) ? "francecentral" : s.AzureRegion.Trim();
@@ -65,7 +67,7 @@ namespace MesPremiersJeux.Lib
                 {
                     if (e.Reason == CancellationReason.Error)
                     {
-                        LastError = e.ErrorDetails ?? e.ErrorCode.ToString();
+                        LastError = Humain(e.ErrorDetails, e.ErrorCode.ToString());
                         Log.Write("ecoute", "Annulé : " + e.ErrorCode + " " + e.ErrorDetails);
                         SetStatus("erreur");
                     }
@@ -116,6 +118,20 @@ namespace MesPremiersJeux.Lib
             try { Heard?.Invoke(text); } catch { }
         }
 
+        /// <summary>Un message court et compréhensible à la place du détail technique du SDK.</summary>
+        public static string Humain(string details, string code)
+        {
+            var d = details ?? "";
+            if (d.Contains("401") || d.IndexOf("Authentication", StringComparison.OrdinalIgnoreCase) >= 0 || code == "AuthenticationFailure") return "clé Azure ou région incorrecte (401). Vérifiez la clé (32 caractères) et la région (francecentral) dans la page Voix.";
+            if (d.Contains("403") || code == "Forbidden") return "la clé Azure n'a pas le droit d'écouter (403) : quota du niveau gratuit dépassé, ou ressource désactivée.";
+            if (d.Contains("1006") || d.IndexOf("Connection", StringComparison.OrdinalIgnoreCase) >= 0 || code == "ConnectionFailure") return "pas de connexion à Azure : vérifiez l'Internet de la tablette.";
+            if (d.Contains("INVALID_STATE_TRANSITION") || d.Contains("0x13")) return "l'écoute a dû redémarrer, réessayez.";
+            if (d.IndexOf("microphone", StringComparison.OrdinalIgnoreCase) >= 0 || d.Contains("0x15") || d.Contains("MIC")) return "pas de micro : vérifiez le micro dans les réglages Windows (confidentialité → microphone).";
+            int nl = d.IndexOf('\n'); if (nl > 0) d = d.Substring(0, nl);
+            if (d.Length > 140) d = d.Substring(0, 140) + "…";
+            return d.Length > 0 ? d : code;
+        }
+
         /// <summary>Enlève le mot-clé (et ses variantes entendues) en tête de phrase.</summary>
         public static string Clean(string text)
         {
@@ -127,13 +143,26 @@ namespace MesPremiersJeux.Lib
         /// <summary>Le bouton 👂 : écoute UNE phrase maintenant (dans tous les modes).</summary>
         public static async Task ListenOnce()
         {
-            if (_rec == null || _busy) return;
+            if (_busy) return;
+            // Après une erreur (mauvaise clé, réseau), le moteur reste bloqué dans son état : on le recrée avant de réessayer.
+            if (_rec == null || Status == "erreur") { if (_last == null) return; Start(_last); if (_rec == null) return; }
             _busy = true;
             try
             {
                 if (_keywordMode) { try { await _rec.StopKeywordRecognitionAsync(); } catch { } }
                 SetStatus("ecoute");
                 var result = await _rec.RecognizeOnceAsync();
+                if (result.Reason == ResultReason.Canceled)
+                {
+                    var d0 = CancellationDetails.FromResult(result);
+                    if (d0.Reason == CancellationReason.Error && (d0.ErrorDetails ?? "").Contains("INVALID_STATE_TRANSITION"))
+                    {
+                        Log.Write("ecoute", "État invalide : on recrée le moteur et on réessaie");
+                        Start(_last); if (_rec == null) { _busy = false; return; }
+                        SetStatus("ecoute");
+                        result = await _rec.RecognizeOnceAsync();
+                    }
+                }
                 if (result.Reason == ResultReason.RecognizedSpeech)
                 {
                     var text = Clean(result.Text);
@@ -142,12 +171,12 @@ namespace MesPremiersJeux.Lib
                 else if (result.Reason == ResultReason.Canceled)
                 {
                     var d = CancellationDetails.FromResult(result);
-                    if (d.Reason == CancellationReason.Error) { LastError = d.ErrorDetails; Log.Write("ecoute", "Bouton : " + d.ErrorCode + " " + d.ErrorDetails); SetStatus("erreur"); _busy = false; return; }
+                    if (d.Reason == CancellationReason.Error) { LastError = Humain(d.ErrorDetails, d.ErrorCode.ToString()); Log.Write("ecoute", "Bouton : " + d.ErrorCode + " " + d.ErrorDetails); SetStatus("erreur"); _busy = false; return; }
                 }
                 if (_keywordMode && _kw != null) { try { await _rec.StartKeywordRecognitionAsync(_kw); } catch { } SetStatus("veille"); }
                 else SetStatus("pret");
             }
-            catch (Exception ex) { LastError = ex.Message; Log.Write("ecoute", "Bouton : " + ex.Message); SetStatus("erreur"); }
+            catch (Exception ex) { LastError = Humain(ex.Message, ""); Log.Write("ecoute", "Bouton : " + ex.Message); SetStatus("erreur"); }
             finally { _busy = false; }
         }
     }
