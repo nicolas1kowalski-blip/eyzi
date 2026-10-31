@@ -87,8 +87,9 @@ namespace MesPremiersJeux.Lib
                     if (v != (champ ?? "")) { champ = v; changed = true; }
                 }
                 Set(ref s.AzureKey, "AzureKey"); Set(ref s.AzureRegion, "AzureRegion"); Set(ref s.AzureVoice, "AzureVoice");
-                Set(ref s.ListenMode, "ListenMode", false);
-                if (V("ListenAnswers") != null) { bool b = V("ListenAnswers") != "0"; if (b != s.ListenAnswers) { s.ListenAnswers = b; changed = true; } }
+                // L'écoute ne s'éteint jamais à distance : une tablette où elle est « off » ou sans réponses n'impose pas ça aux autres.
+                var mode = V("ListenMode"); if (mode != null && mode != "off" && mode != (s.ListenMode ?? "off")) { s.ListenMode = mode; changed = true; }
+                if (V("ListenAnswers") == "1" && !s.ListenAnswers) { s.ListenAnswers = true; changed = true; }
                 if (int.TryParse(V("ChildAge") ?? "", out var age) && age > 0 && age < 30 && age != s.ChildAge) { s.ChildAge = age; changed = true; }
                 var prof = V("ChildProfile"); if (prof != null) { prof = prof.Replace("\\n", "\n"); if (prof.Length > 0 || string.IsNullOrEmpty(s.ChildProfile)) if (prof != (s.ChildProfile ?? "")) { s.ChildProfile = prof; changed = true; } }
                 Set(ref s.TvIp, "TvIp"); Set(ref s.TvKey, "TvKey"); Set(ref s.TvMac, "TvMac");

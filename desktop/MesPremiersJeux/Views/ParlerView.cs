@@ -270,7 +270,8 @@ namespace MesPremiersJeux.Views
         /// </summary>
         public async void ShowHeard(string text, bool speculatif = false)
         {
-            _settings = _settings ?? Settings.Load();
+            // Les réglages peuvent avoir changé dans l'administration pendant que Parler est ouvert : on relit le fichier.
+            if (!speculatif || _settings == null) _settings = Settings.Load();
             if (!speculatif)
             {
                 _partielTimer.Stop();
