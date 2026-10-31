@@ -28,6 +28,7 @@ namespace MesPremiersJeux.Lib
         public static bool Available => File.Exists(Path.Combine(Dir, "index.csv"));
 
         private static Dictionary<string, List<int>> _parMot;      // mot normalisé → ids (du plus téléchargé au moins)
+        private static Dictionary<string, int> _parTete;           // premier mot d'un libellé composé → meilleur id (« tartine » → « tartine de beurre »)
         private static readonly object _lock = new object();
         private static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(12) };
         private static readonly Dictionary<int, BitmapSource> _images = new Dictionary<int, BitmapSource>();
@@ -38,6 +39,7 @@ namespace MesPremiersJeux.Lib
             {
                 if (_parMot != null) return;
                 var d = new Dictionary<string, List<int>>(StringComparer.Ordinal);
+                var tetes = new Dictionary<string, int>(StringComparer.Ordinal);
                 try
                 {
                     var p = Path.Combine(Dir, "index.csv");
@@ -54,11 +56,14 @@ namespace MesPremiersJeux.Lib
                                 var k = Norm(w); if (k.Length == 0) continue;
                                 if (!d.TryGetValue(k, out var l)) d[k] = l = new List<int>();
                                 if (!l.Contains(id)) l.Add(id); // l'index est trié par téléchargements : le premier est le meilleur
+                                int sp = k.IndexOf(' ');
+                                if (sp > 0) { var tete = k.Substring(0, sp); if (tete.Length >= 3 && !tetes.ContainsKey(tete)) tetes[tete] = id; }
                             }
                         }
                     }
                 }
                 catch (Exception ex) { Log.Write("pictos", "Index ARASAAC : " + ex.Message); }
+                _parTete = tetes;
                 _parMot = d;
                 Log.Write("pictos", "ARASAAC : " + d.Count + " mots");
             }
@@ -104,6 +109,7 @@ namespace MesPremiersJeux.Lib
             if (k.EndsWith("s") && _parMot.TryGetValue(k.Substring(0, k.Length - 1), out l) && l.Count > 0) return l[0];
             if (k.EndsWith("x") && _parMot.TryGetValue(k.Substring(0, k.Length - 1), out l) && l.Count > 0) return l[0];
             if (k.EndsWith("e") && _parMot.TryGetValue(k.Substring(0, k.Length - 1), out l) && l.Count > 0) return l[0]; // fatiguée → fatigue
+            if (k.IndexOf(' ') < 0 && _parTete != null && _parTete.TryGetValue(k, out var t)) return t;                  // tartine → tartine de beurre
             return 0;
         }
 

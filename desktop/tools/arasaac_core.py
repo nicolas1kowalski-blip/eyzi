@@ -103,7 +103,18 @@ while i < len(mots):
     if not pris:
         manquants.append(mots[i]); i += 1
 print(len(noyau), "pictos du vocabulaire ;", len(manquants), "mots sans picto :", " ".join(manquants[:60]))
-for e in sorted([e for e in entrees if e["aac"]], key=lambda e: -e["dl"]):
+# 2) un mot du vocabulaire absent tel quel mais présent en tête d'un libellé composé (« tartine » → « tartine de beurre »)
+prefixes = {}
+for e in entrees:
+    for w in e["kw"]:
+        tete = w.split(" ")[0]
+        if tete not in prefixes or (not e["schematic"] and e["dl"] > prefixes[tete]["dl"]): prefixes[tete] = e
+for m in list(manquants):
+    w = norm(m)
+    if w in prefixes:
+        noyau.setdefault(prefixes[w]["id"], w); manquants.remove(m)
+# 3) le complément : les pictos « CAA » d'abord, puis les plus téléchargés de toute la banque
+for e in sorted(entrees, key=lambda e: (not e["aac"], e["schematic"], -e["dl"])):
     if len(noyau) >= MAX: break
     noyau.setdefault(e["id"], e["kw"][0])
 print(len(noyau), "pictos dans le noyau")
