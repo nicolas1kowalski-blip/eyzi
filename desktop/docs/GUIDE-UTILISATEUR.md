@@ -124,7 +124,7 @@ La voix naturelle en ligne et l'écoute passent par le service **Azure Speech** 
 
 **Ce que ça coûte.** Le niveau Free donne chaque mois environ cinq heures de reconnaissance vocale et un demi-million de caractères de voix naturelle, sans frais. C'est largement assez pour une famille : l'écoute ne tourne que pendant la phrase posée, pas toute la journée, et le mot-clé « Dis Eyzi » est reconnu sur la tablette, sans Azure. Si vous dépassez, le service s'arrête jusqu'au mois suivant ; il ne facture rien tant que vous restez en Free F0. Vous pouvez passer en Standard S0 plus tard, à l'usage, si le besoin vient.
 
-**Si ça ne marche pas** : vérifiez que la région saisie est bien celle de la ressource (une clé de France Central ne marche pas avec une autre région), que la clé est complète (32 caractères, sans espace) et que la tablette a Internet. Si l'écoute est allumée, la carte **👂 Écoute** de la page Nuage affiche la dernière erreur Azure.
+**Si ça ne marche pas** : vérifiez que la région saisie est bien celle de la ressource (une clé de France Central ne marche pas avec une autre région), que la clé est complète (32 caractères, sans espace) et que la tablette a Internet. Si l'écoute est allumée, le bandeau d'écoute du monde Parler affiche l'erreur Azure en clair (voyant orange).
 
 ### Écouter ou choisir : la règle
 La voix appartient à l'écran. Trois sortes de phrases :
