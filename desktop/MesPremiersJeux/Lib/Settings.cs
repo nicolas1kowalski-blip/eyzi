@@ -43,6 +43,7 @@ namespace MesPremiersJeux.Lib
         public bool StoryLittle = false;      // histoires : mode jeune enfant (texte par morceaux, avec des pictos)
         public string AdminPin = "";          // code d'accès à l'administration (4 chiffres ; vide = aucun)
         public string ListenMode = "off";     // écoute (Parler) : off | bouton | motcle
+        public bool MotCleAuto = false;       // le passage automatique au mode mot-clé (fichier eyzi.table livré) a déjà été fait
         public bool ListenAnswers = true;     // réponses proposées en ligne (eyzi.fr → Claude)
         public string ParlerLieu = "maison";  // où est l'enfant (maison | ecole | dehors | voiture) : contexte des réponses
         public bool LieuAuto = true;          // le lieu se règle d'après le Wi-Fi (réseaux appris dans lieux.ini)
@@ -116,6 +117,7 @@ namespace MesPremiersJeux.Lib
                         case "StoryLittle": s.StoryLittle = val == "1"; break;
                         case "AdminPin": s.AdminPin = val.Trim(); break;
                         case "ListenMode": if (val.Length > 0) s.ListenMode = val.Trim().ToLowerInvariant(); break;
+                        case "MotCleAuto": s.MotCleAuto = val != "0"; break;
                         case "ListenAnswers": s.ListenAnswers = val != "0"; break;
                         case "ParlerLieu": if (val.Length > 0) s.ParlerLieu = val.Trim(); break;
                         case "LieuAuto": s.LieuAuto = val != "0"; break;
@@ -194,6 +196,7 @@ namespace MesPremiersJeux.Lib
                     "StoryLittle=" + (StoryLittle ? "1" : "0"),
                     "AdminPin=" + (AdminPin ?? ""),
                     "ListenMode=" + (ListenMode ?? "off"),
+                    "MotCleAuto=" + (MotCleAuto ? "1" : "0"),
                     "ListenAnswers=" + (ListenAnswers ? "1" : "0"),
                     "ParlerLieu=" + (ParlerLieu ?? "maison"),
                     "LieuAuto=" + (LieuAuto ? "1" : "0"),

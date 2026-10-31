@@ -354,6 +354,9 @@ namespace MesPremiersJeux
                 if (!okLic) { Lib.Log.Write("licence", "Pas de licence : fermeture"); Close(); return; }
             }
             RefreshLicenceText();
+            // Le mot-clé « Dis Eyzi » est livré avec l'application : une écoute réglée sur « bouton » passe une fois en « mot-clé ».
+            if (Listening.KeywordAvailable && !_settings.MotCleAuto && (_settings.ListenMode ?? "off") == "bouton") { _settings.ListenMode = "motcle"; _settings.MotCleAuto = true; _settings.Save(); Lib.Log.Write("ecoute", "Mot-clé livré : écoute passée en mode mot-clé"); }
+            else if (Listening.KeywordAvailable && !_settings.MotCleAuto) { _settings.MotCleAuto = true; _settings.Save(); }
             if (Licence.HasModule(_settings, "parler")) Listening.Start(_settings);
             if (Licence.HasModule(_settings, "parler") && _settings.LieuAuto) Lieux.Demarrer();
             _ = Licence.RecheckAsync(_settings).ContinueWith(t => Dispatcher.Invoke(RefreshLicenceText));
