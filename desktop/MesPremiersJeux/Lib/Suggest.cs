@@ -30,7 +30,30 @@ namespace MesPremiersJeux.Lib
             public string Erreur;           // pourquoi le serveur n'a pas répondu (affiché dans le bandeau)
             public string Chrono;           // « IA 1,2 s · serveur 1,9 s · total 3,4 s » : pour savoir d'où vient la lenteur
         }
-        public sealed class Echange { public string Question, Reponse; }
+        public sealed class Echange
+        {
+            public string Question, Reponse, Type;
+            public List<string> Propositions = new List<string>(); // les cases proposées pour cette question
+            public DateTime At = DateTime.Now;
+            public bool Suite;                                      // « ou du chocolat » : la phrase complète la question d'avant
+        }
+
+        /// <summary>« ou du chocolat », « et de la vanille ? », « sinon dehors » : un fragment qui prolonge la question précédente.</summary>
+        public static bool EstSuite(string text) => Regex.IsMatch(text ?? "", @"^\s*(ou alors|ou bien|ou|et|sinon|plutôt|aussi)\b", RegexOptions.IgnoreCase);
+        public static string SansAmorce(string text) => Nettoie(Regex.Replace(text ?? "", @"^\s*(ou alors|ou bien|ou|et|sinon|plutôt|aussi)\s+", "", RegexOptions.IgnoreCase));
+
+        /// <summary>Les réponses devinées pour un fragment : la nouvelle option d'abord, puis celles de la question d'avant.</summary>
+        public static Resultat DefaultsSuite(string text, Echange precedent)
+        {
+            var r = new Resultat { Simple = text, Type = precedent?.Type == "ouverte" ? "ouverte" : "choix" };
+            void Add(string tx, string e) => r.Reponses.Add(new Reponse { Texte = tx, Emoji = e, Cle = "", Picto = PictoDe(tx) });
+            var neuf = SansAmorce(text);
+            if (neuf.Length > 0) Add(neuf, "👉");
+            foreach (var p in (precedent?.Propositions ?? new List<string>()).Where(x => x != "Autre chose" && x != "Les deux" && x != "Oui" && x != "Non").Take(6))
+                if (!string.Equals(p, neuf, StringComparison.OrdinalIgnoreCase)) Add(p, "👉");
+            Add("Autre chose", "💭");
+            return r;
+        }
         public sealed class Mot { public string Cle, Label; }
 
         private static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
@@ -77,7 +100,7 @@ namespace MesPremiersJeux.Lib
         /// connus, « surReponse » chaque réponse dès qu'elle est écrite. Renvoie le résultat complet.
         /// </summary>
         public static async Task<Resultat> PourFlux(Settings s, string question, IList<Mot> vocabulaire, IList<Echange> historique, Contexte ctx,
-                                                    Action<Resultat> surTete, Action<Reponse> surReponse)
+                                                    Action<Resultat> surTete, Action<Reponse> surReponse, bool suite = false)
         {
             var res = Defaults(question);
             if (s == null || !s.ListenAnswers || string.IsNullOrWhiteSpace(s.LicenceKey)) return res;
@@ -95,7 +118,8 @@ namespace MesPremiersJeux.Lib
                 if (vocabulaire != null && vocabulaire.Count > 0)
                     sb.Append(",\"vocab\":[").Append(string.Join(",", vocabulaire.Take(120).Select(m => "{\"cle\":\"" + Esc(m.Cle) + "\",\"mot\":\"" + Esc(m.Label) + "\"}"))).Append("]");
                 if (historique != null && historique.Count > 0)
-                    sb.Append(",\"historique\":[").Append(string.Join(",", historique.Skip(Math.Max(0, historique.Count - 3)).Select(h => "{\"q\":\"" + Esc(h.Question) + "\",\"r\":\"" + Esc(h.Reponse ?? "") + "\"}"))).Append("]");
+                    sb.Append(",\"historique\":[").Append(string.Join(",", historique.Skip(Math.Max(0, historique.Count - 3)).Select(h => "{\"q\":\"" + Esc(h.Question) + "\",\"r\":\"" + Esc(h.Reponse ?? "") + "\",\"t\":\"" + Esc(h.Type ?? "") + "\",\"p\":[" + string.Join(",", h.Propositions.Take(8).Select(x => "\"" + Esc(x) + "\"")) + "]}"))).Append("]");
+                if (suite) sb.Append(",\"suite\":true");
                 sb.Append("}");
 
                 var chrono = System.Diagnostics.Stopwatch.StartNew();

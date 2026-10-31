@@ -52,7 +52,8 @@ Elles doivent être RÉALISTES pour un enfant de cet âge, dans sa vie de tous l
 Les règles par type :
 - fermee : exactement 3 réponses : "Oui", "Non", puis une nuance utile ("Un peu", "Plus tard", "Je ne sais pas").
 - choix : chaque option proposée (dans l'ordre où l'adulte les a dites), puis "Les deux" si ça a un sens, puis "Autre chose". 6 au plus.
-- ouverte : 6 à 8 réponses concrètes et probables pour cet enfant, en PRIORITÉ prises dans son vocabulaire (ci-dessous) et dans ce que la famille dit de lui, puis "Autre chose".
+- ouverte : 6 à 8 réponses concrètes et probables pour cet enfant, en PRIORITÉ prises dans son vocabulaire (ci-dessous) et dans ce que la famille dit de lui, puis "Autre chose". Quand la question porte sur une chose précise (un parfum, une couleur, un plat, un jeu, un vêtement), les réponses sont les options les plus courantes et les plus évidentes pour un enfant, les plus probables d'abord : « quel parfum de yaourt ? » → chocolat, vanille, fraise, nature, abricot… ; « quelle couleur ? » → rouge, bleu, jaune, vert, rose…
+- Un fragment qui prolonge la question d'avant (« ou du chocolat », « et de la vanille ? », « sinon dehors ») n'est JAMAIS une question fermée : c'est la question précédente complétée. Même type qu'elle, la nouvelle option en premier, puis les options précédentes utiles, puis "Autre chose".
 - consigne : 3 réponses : "D'accord", "Non", "Attends".
 - autre : 3 réponses : "D'accord", "Encore", "Je t'aime".
 Jamais de réponse blessante ni dangereuse.
@@ -83,7 +84,8 @@ export default async function handler(req, res) {
   const activites = Array.isArray(body.activites) ? body.activites.slice(0, 8).map((a) => clean(a, 40)).filter(Boolean) : [];
   const preferees = Array.isArray(body.preferees) ? body.preferees.slice(0, 15).map((a) => clean(a, 40)).filter(Boolean) : [];
   const vocab = Array.isArray(body.vocab) ? body.vocab.slice(0, 120).map((v) => ({ cle: clean(v?.cle, 40), mot: clean(v?.mot, 40) })).filter((v) => v.cle && v.mot) : [];
-  const historique = Array.isArray(body.historique) ? body.historique.slice(-3).map((h) => ({ q: clean(h?.q, 200), r: clean(h?.r, 60) })).filter((h) => h.q) : [];
+  const historique = Array.isArray(body.historique) ? body.historique.slice(-3).map((h) => ({ q: clean(h?.q, 200), r: clean(h?.r, 60), t: clean(h?.t, 12), p: Array.isArray(h?.p) ? h.p.slice(0, 8).map((x) => clean(x, 40)).filter(Boolean) : [] })).filter((h) => h.q) : [];
+  const suite = body.suite === true && historique.length > 0;
   if (!/^EYZ-[A-Z0-9-]{10,}$/.test(key) || !machine || question.length < 2) { res.status(400).json({ ok: false, message: 'Demande incomplète.' }); return; }
 
   const apiKey = String(process.env.ANTHROPIC_API_KEY || '').trim();
@@ -120,7 +122,8 @@ export default async function handler(req, res) {
     const userContent =
       (vocab.length ? `Vocabulaire de l'enfant :\n${vocab.map((v) => `${v.cle}: ${v.mot}`).join('\n')}\n\n` : '') +
       (contexte.length ? `Contexte :\n${contexte.join('\n')}\n\n` : '') +
-      (historique.length ? `Derniers échanges :\n${historique.map((h) => `Adulte : « ${h.q} » → l'enfant a répondu : « ${h.r || '(rien)'} »`).join('\n')}\n\n` : '') +
+      (historique.length ? `Derniers échanges :\n${historique.map((h) => `Adulte : « ${h.q} »${h.p.length ? ` → cases proposées : ${h.p.join(', ')}` : ''} → l'enfant a répondu : « ${h.r || '(rien)'} »`).join('\n')}\n\n` : '') +
+      (suite ? `ATTENTION : ce que l'adulte vient de dire est la SUITE de sa question précédente « ${historique[historique.length - 1].q} » (il ajoute ou précise une option). Ce n'est PAS une question fermée. Garde le type de la question précédente (${historique[historique.length - 1].t || 'choix'}), mets d'abord la nouvelle option, puis les cases précédentes encore utiles, puis "Autre chose".\n\n` : '') +
       `L'adulte vient de dire : « ${question} »`;
     const request = {
       model: 'claude-haiku-5-5',

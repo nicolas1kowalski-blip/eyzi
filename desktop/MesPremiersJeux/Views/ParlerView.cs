@@ -292,7 +292,13 @@ namespace MesPremiersJeux.Views
             var histo = _historique.Take(_historique.Count - 1).ToList();
             var monEchange = _enCours;
 
-            var secours = Suggest.Defaults(text);
+            // « ou du chocolat » juste après « quel parfum de yaourt ? » : la phrase complète la question d'avant.
+            var precedent = histo.LastOrDefault();
+            bool suite = precedent != null && (DateTime.Now - precedent.At).TotalSeconds < 120 && Suggest.EstSuite(text);
+            monEchange.Suite = suite;
+            var secours = suite ? Suggest.DefaultsSuite(text, precedent) : Suggest.Defaults(text);
+            monEchange.Type = secours.Type;
+            if (suite) _heard.Text = "« " + precedent.Question + " »  +  « " + text + " »";
             bool enLigne = _settings.ListenAnswers && !string.IsNullOrWhiteSpace(_settings.LicenceKey);
             if (!enLigne)
             {
@@ -322,10 +328,11 @@ namespace MesPremiersJeux.Views
                     {
                         if (_enCours != monEchange) return;
                         tick.Stop(); _wait.Visibility = Visibility.Collapsed;
+                        monEchange.Type = tete.Type;
                         PreparerGrille(tete.Type, 0);
                         if (tete.Simple != null && tete.Simple != text) _heard.Text = "« " + text + " »  ·  " + tete.Simple;
                     })),
-                    rep => Dispatcher.BeginInvoke(new Action(() => { if (_enCours == monEchange) AjouterCase(rep, _grilleType); })));
+                    rep => Dispatcher.BeginInvoke(new Action(() => { if (_enCours == monEchange) AjouterCase(rep, _grilleType); })), suite);
             }
             catch (Exception ex) { res = secours; res.Erreur = ex.Message; }
             tick.Stop();
@@ -370,6 +377,7 @@ namespace MesPremiersJeux.Views
         private void AjouterCase(Suggest.Reponse r, string type)
         {
             if (_answers.Children.Count >= 8) return;
+            if (_enCours != null && !string.IsNullOrEmpty(r.Texte)) _enCours.Propositions.Add(r.Texte);
             int n = _answers.Children.Count + 1;
             if (n > _grilleRows * _grilleCols)
             {
