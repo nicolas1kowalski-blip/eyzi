@@ -126,7 +126,7 @@ La voix naturelle en ligne et l'écoute passent par le service **Azure Speech** 
 2. En haut, cherchez **Speech** (ou « Services de parole ») et cliquez **Créer**.
 3. Remplissez : **Abonnement** (le vôtre), **Groupe de ressources** : créez-en un, par exemple `eyzi`, **Région** : **France Central**, **Nom** : par exemple `voix-prenom`, **Niveau tarifaire** : **Free F0**. Puis **Vérifier + créer**, puis **Créer**.
 4. Une fois la ressource créée, ouvrez-la et cliquez à gauche sur **Clés et point de terminaison**. Copiez la **CLÉ 1**. La région est écrite juste en dessous : `francecentral`.
-5. Dans Eyzi, ouvrez l'administration (⚙), page **Voix** : collez la clé dans **Clé Azure** et écrivez `francecentral` dans **Région**. Cliquez **Écouter un exemple** : si la voix naturelle parle, la clé marche. L'écoute utilise la même clé.
+5. Dans Eyzi, ouvrez l'administration (⚙), page **Voix** : collez la clé dans **Clé Azure** et écrivez `francecentral` dans **Région**. Cliquez **🔑 Tester la clé Azure** : « ✅ la clé est bonne » ou « ❌ refusée (401) » avec la raison. Ne vous fiez pas à « Écouter un exemple » pour ça : si Azure refuse la clé, l'exemple joue la voix hors ligne sans le dire. L'écoute utilise la même clé.
 
 **Ce que ça coûte.** Le niveau Free donne chaque mois environ cinq heures de reconnaissance vocale et un demi-million de caractères de voix naturelle, sans frais. C'est largement assez pour une famille : l'écoute ne tourne que pendant la phrase posée, pas toute la journée, et le mot-clé « Dis Eyzi » est reconnu sur la tablette, sans Azure. Si vous dépassez, le service s'arrête jusqu'au mois suivant ; il ne facture rien tant que vous restez en Free F0. Vous pouvez passer en Standard S0 plus tard, à l'usage, si le besoin vient.
 

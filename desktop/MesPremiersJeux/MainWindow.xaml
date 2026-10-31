@@ -414,7 +414,12 @@
                                     <TextBlock Style="{StaticResource Hint}"
                                                Text="Facultatif. Avec une clé : voix naturelle en ligne (Eloise = voix d'enfant), prioritaire en mode automatique. Sans clé ou hors ligne : la voix naturelle hors ligne prend le relais." />
                                     <TextBlock x:Name="EnglishVoiceText" Style="{StaticResource Hint}" />
-                                    <Button Content="🔈  Écouter un exemple" Style="{StaticResource AdminBtn}" Click="VoiceTest_Click" />
+                                    <UniformGrid Columns="2">
+                                        <Button Content="🔈  Écouter un exemple" Style="{StaticResource AdminBtn}" Margin="0,0,4,0" Click="VoiceTest_Click" />
+                                        <Button Content="🔑  Tester la clé Azure" Style="{StaticResource AdminBtn}" Margin="4,0,0,0" Click="AzureTest_Click" />
+                                    </UniformGrid>
+                                    <TextBlock x:Name="AzureTestText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33"
+                                               Text="L'exemple joue la voix Azure si la clé marche, sinon la voix hors ligne sans le dire : seul le test de la clé fait foi." />
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}">

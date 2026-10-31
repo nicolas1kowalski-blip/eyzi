@@ -1761,6 +1761,33 @@ namespace MesPremiersJeux
             Speech.Say("Bonjour ! On joue ensemble ?");
         }
 
+        /// <summary>Le test qui tranche : demande un jeton à Azure avec la clé et la région saisies. 200 = bonne clé ; 401 = clé ou région fausse.</summary>
+        private async void AzureTest_Click(object sender, RoutedEventArgs e)
+        {
+            Azure_Changed(sender, e);
+            var key = (_settings?.AzureKey ?? "").Trim(); var region = string.IsNullOrWhiteSpace(_settings?.AzureRegion) ? "francecentral" : _settings.AzureRegion.Trim();
+            if (key.Length == 0) { AzureTestText.Text = "Pas de clé saisie."; return; }
+            AzureTestText.Text = "Test en cours avec la région « " + region + " »…";
+            try
+            {
+                using (var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(10) })
+                using (var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, "https://" + region + ".api.cognitive.microsoft.com/sts/v1.0/issueToken"))
+                {
+                    req.Headers.Add("Ocp-Apim-Subscription-Key", key);
+                    req.Content = new System.Net.Http.ByteArrayContent(new byte[0]);
+                    using (var res = await http.SendAsync(req))
+                    {
+                        int code = (int)res.StatusCode;
+                        if (res.IsSuccessStatusCode) { AzureTestText.Text = "✅ La clé est bonne pour la région « " + region + " » (" + key.Length + " caractères). La voix et l'écoute peuvent marcher."; Listening.Start(_settings); }
+                        else if (code == 401) AzureTestText.Text = "❌ Refusée (401) : la clé ne correspond pas à cette région, ou elle est fausse. Clé saisie : " + key.Length + " caractères" + (key.Length != 32 ? " (il en faut 32)" : "") + ". Ouvrez la ressource dans portal.azure.com → Clés et point de terminaison, copiez CLÉ 1, et vérifiez la région écrite dessous.";
+                        else if (code == 403) AzureTestText.Text = "❌ Interdit (403) : la ressource est désactivée ou son quota gratuit est épuisé pour ce mois.";
+                        else AzureTestText.Text = "❌ Réponse " + code + " de Azure.";
+                    }
+                }
+            }
+            catch (Exception ex) { AzureTestText.Text = "❌ Impossible de joindre Azure (" + ex.GetBaseException().Message + ") : la région « " + region + " » est-elle bien écrite (francecentral) ? La tablette a-t-elle Internet ?"; }
+        }
+
         // ------------------------------------------------------------------
         //  Synchronisation entre tablettes (dossier partagé type OneDrive)
         // ------------------------------------------------------------------
