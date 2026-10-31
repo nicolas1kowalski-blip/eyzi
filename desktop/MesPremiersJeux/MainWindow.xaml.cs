@@ -86,6 +86,7 @@ namespace MesPremiersJeux
             _views["edu"] = edu;
             var parler = new ParlerView();
             parler.BackRequested += () => Select("accueil");
+            parler.EcouteRequested += () => { OuvrirEcoute(); _ = Listening.ListenOnce(); };
             parler.LieuChoisi += lieu => { if (_settings != null) _settings.ParlerLieu = lieu; };
             _views["parler"] = parler;
             _views["coloring"] = coloring;
@@ -100,6 +101,12 @@ namespace MesPremiersJeux
                 ContentHost.Children.Add(v);
             }
             Select("accueil");
+
+            // 👂 L'écoute en surcouche : « Dis Eyzi » n'importe où, la grille se pose sur l'écran, puis l'activité reprend.
+            _ecoute = new EcouteView();
+            _ecoute.CloseRequested += FermerEcoute;
+            _ecoute.MotsRequested += () => { FermerEcoute(); SelectWorld("parler"); };
+            EcouteHost.Children.Add(_ecoute);
 
             // La boutique de récompenses (surcouche plein écran).
             _shop = new RewardShopView();
@@ -251,6 +258,40 @@ namespace MesPremiersJeux
         }
 
         private RewardShopView _shop;
+        private EcouteView _ecoute;
+
+        /// <summary>Ouvre l'écoute par-dessus l'écran courant : le regard ne vise plus que la surcouche, la voix de l'activité se tait.</summary>
+        private void OuvrirEcoute(bool ecoute = false)
+        {
+            if (_settings == null || !Licence.HasModule(_settings, "parler")) return;
+            if (AdminHost.Visibility == Visibility.Visible) return;
+            if (EcouteHost.Visibility == Visibility.Visible) { if (ecoute) _ecoute.Ecouter(); return; }
+            Speech.Stop();
+            EcouteHost.Visibility = Visibility.Visible;
+            GazeTargets.ModalRoot = EcouteHost;
+            _ecoute.Open(ecoute);
+            Usage.Screen("ecoute");
+        }
+
+        /// <summary>Referme l'écoute : l'activité du dessous reprend là où elle en était.</summary>
+        private void FermerEcoute()
+        {
+            if (EcouteHost.Visibility != Visibility.Visible) return;
+            EcouteHost.Visibility = Visibility.Collapsed;
+            if (ReferenceEquals(GazeTargets.ModalRoot, EcouteHost)) GazeTargets.ModalRoot = null;
+        }
+
+        private void Ear_Click(object sender, RoutedEventArgs e)
+        {
+            OuvrirEcoute();
+            _ = Listening.ListenOnce();
+        }
+
+        private void RefreshEarButton()
+        {
+            if (EarBtn == null || _settings == null) return;
+            EarBtn.Visibility = (_settings.ListenMode ?? "off") != "off" && Licence.HasModule(_settings, "parler") ? Visibility.Visible : Visibility.Collapsed;
+        }
         private AccueilView _accueil;
         private ProgressBookView _book;
         private ChoiceView _choice;
@@ -437,9 +478,12 @@ namespace MesPremiersJeux
             Listening.Heard += text => Dispatcher.BeginInvoke(new Action(() =>
             {
                 if (!Licence.HasModule(_settings, "parler")) return;
-                Select("parler");
-                (_views["parler"] as ParlerView)?.ShowHeard(text);
+                OuvrirEcoute();
+                if (EcouteHost.Visibility == Visibility.Visible) _ecoute.ShowHeard(text);
             }));
+            // Le mot-clé « Dis Eyzi » (ou le micro) : la surcouche apparaît dès que la tablette écoute, avant la fin de la phrase.
+            Listening.StatusChanged += st => Dispatcher.BeginInvoke(new Action(() => { if (st == "ecoute") OuvrirEcoute(ecoute: true); }));
+            RefreshEarButton();
             // 📺 La télé.
             TvIpBox.Text = _settings.TvIp ?? "";
             RefreshTvText();
@@ -1913,6 +1957,7 @@ namespace MesPremiersJeux
             _settings.ListenAnswers = ListenAnswersCheck.IsChecked == true;
             _settings.Save();
             Listening.Start(_settings);
+            RefreshEarButton();
         }
 
         /// <summary>Le nuage a apporté des réglages partagés : on les affiche et on relance ce qui en dépend.</summary>
@@ -1929,6 +1974,7 @@ namespace MesPremiersJeux
                 TvIpBox.Text = _settings.TvIp ?? ""; RefreshTvText(); (_views["games"] as GamesView)?.ShowTv(!string.IsNullOrWhiteSpace(_settings.TvIp));
                 RefreshLieux();
                 if (Licence.HasModule(_settings, "parler")) Listening.Start(_settings);
+                RefreshEarButton();
                 ShowParentNotice("☁️ Réglages de la famille reçus : clé Azure, écoute, profil, télé.");
             }
             catch (Exception ex) { Lib.Log.Write("nuage", "Réglages reçus : " + ex.Message); }
