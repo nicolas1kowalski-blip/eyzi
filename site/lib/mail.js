@@ -103,6 +103,8 @@ Pour l'installer :
 
 La licence est gratuite pendant toute la bêta (jusqu'au 30 juin 2027). Si Eyzi devenait payant un jour, les familles de la bêta garderaient leur licence gratuitement.
 
+Un mot sur l'écoute, la fonction où la tablette entend la question et propose des réponses à regarder : elle n'est pas encore ouverte aux familles. Capter la voix et faire interpréter la question par une intelligence artificielle a aujourd'hui un coût non négligeable, que nous ne pouvons pas encore assumer pour tout le monde. Elle s'ouvrira plus tard, progressivement, et nous vous préviendrons. Tout le reste est là dès maintenant : les jeux, les leçons, les histoires, et le tableau de communication avec les photos et les voix de la famille.
+
 Un problème, une idée ? Répondez simplement à ce message, ou passez par https://eyzi.fr/retours.html. Vos retours font l'application.
 
 L'équipe Eyzi
