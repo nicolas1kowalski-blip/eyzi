@@ -1,0 +1,62 @@
+LICENCE EYZI — code source visible, tous droits réservés
+=========================================================
+
+Copyright (c) 2025-2026 Nicolas Kowalski. Tous droits réservés.
+
+Eyzi (anciennement « Mes Premiers Jeux ») est une application pour les
+enfants qui utilisent une commande oculaire : jouer, apprendre, parler
+avec les yeux. Ce dépôt contient son code source, son site et sa
+documentation.
+
+Le code est publié pour être lu, vérifié et commenté, notamment par les
+familles, les professionnels et les associations qui utilisent
+l'application. Il n'est pas placé sous licence libre ou open source.
+
+1. Ce que vous pouvez faire
+---------------------------
+- Lire le code, l'étudier, le faire tourner sur votre propre machine pour
+  le comprendre ou le vérifier (par exemple pour contrôler ce qui est fait
+  de vos données).
+- Télécharger et utiliser l'application telle qu'elle est distribuée sur
+  https://eyzi.fr et dans les versions publiées de ce dépôt, dans les
+  conditions de la licence d'utilisation remise avec l'application.
+- Signaler des bugs, proposer des idées ou des corrections. En proposant
+  une contribution, vous acceptez qu'elle soit intégrée à Eyzi sous cette
+  même licence, sans contrepartie.
+
+2. Ce que vous ne pouvez pas faire sans accord écrit de l'auteur
+----------------------------------------------------------------
+- Copier, modifier, redistribuer, vendre ou louer tout ou partie du code,
+  des images, des sons, des textes ou de la documentation.
+- Publier une application dérivée, même gratuite, même sous un autre nom.
+- Utiliser le code ou le contenu dans un autre produit ou service.
+- Contourner, retirer ou modifier le système de licence ou de mise à jour.
+- Utiliser les noms « Eyzi », « Mes Premiers Jeux » ou leurs logos.
+
+Pour toute demande (usage par un établissement, une association, un
+éditeur, un chercheur) : contact@eyzi.fr.
+
+3. Composants tiers
+-------------------
+Eyzi inclut des éléments qui ont leur propre licence, et qui restent
+soumis à celle-ci :
+- Pictogrammes Mulberry Symbols (Steve Lee, Paxtoncrafts Charitable Trust),
+  licence CC BY-SA 4.0 — dossier Images/pictos, voir le fichier LISEZ-MOI.
+- Émojis Twemoji (Twitter, Inc. et contributeurs), licence CC BY 4.0.
+- Bibliothèques .NET et paquets NuGet (dont Microsoft Cognitive Services
+  Speech SDK, Tobii SDK) selon les licences de leurs éditeurs.
+- Polices Google Fonts (Fredoka, Baloo 2), licence SIL Open Font License.
+
+4. Garantie
+-----------
+Le code et l'application sont fournis « en l'état », sans garantie
+d'aucune sorte. Eyzi est un outil d'accompagnement : il ne remplace ni un
+suivi médical, ni une prise en charge orthophonique ou pédagogique.
+L'auteur ne peut être tenu responsable d'un dommage lié à l'utilisation du
+code ou de l'application.
+
+5. Droit applicable
+-------------------
+Cette licence est soumise au droit français. Toute reproduction non
+autorisée constitue une contrefaçon au sens du Code de la propriété
+intellectuelle.

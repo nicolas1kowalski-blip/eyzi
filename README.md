@@ -16,3 +16,7 @@ Ce dépôt est public : il contient le code, et ses [versions publiées](https:/
 ## Variables Vercel (projet `site`)
 
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` : le projet Supabase (tables `licence_requests`, `licences`…).
+
+## Licence
+
+Code source visible, tous droits réservés : voir `LICENSE`. Lire, vérifier et proposer des corrections est bienvenu ; copier, redistribuer ou dériver ne l'est pas sans accord écrit (contact@eyzi.fr).
