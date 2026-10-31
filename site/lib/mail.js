@@ -85,16 +85,18 @@ contact@eyzi.fr`;
   });
 }
 
-/// La famille reçoit son numéro de licence et la marche à suivre.
-export async function sendLicence(r) {
-  if (!r.email || !r.licenceKey) return;
+export const KEY_PLACEHOLDER = 'EYZ-XXXX-XXXX-XXXX-XXXX';
+
+/// Le texte du mail de licence (relu et modifiable dans la page admin avant l'envoi).
+export function licenceMail(r) {
   const first = (r.name || '').trim().split(/\s+/)[0] || '';
+  const key = r.licenceKey || KEY_PLACEHOLDER;
   const text =
 `Bonjour${first ? ' ' + first : ''},
 
 Bienvenue dans la bêta d'Eyzi ! Voici votre numéro de licence :
 
-    ${r.licenceKey}
+    ${key}
 
 Pour l'installer :
 1. Téléchargez l'application sur https://eyzi.fr (bouton « Télécharger ») et installez-la sur la tablette de l'enfant.
@@ -109,14 +111,20 @@ Un problème, une idée ? Répondez simplement à ce message, ou passez par http
 
 L'équipe Eyzi
 contact@eyzi.fr`;
-  await transport().sendMail({
-    from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: 'Votre licence Eyzi : ' + r.licenceKey, text,
-  });
+  return { subject: 'Votre licence Eyzi : ' + key, text };
 }
 
-/// Réponse polie quand l'éditeur refuse (ou n'a pas de place) — texte libre ajouté.
-export async function refuse(r, note) {
-  if (!r.email) return;
+/// La famille reçoit son numéro de licence et la marche à suivre. « mail » = le texte relu dans la page admin (le numéro provisoire y est remplacé).
+export async function sendLicence(r, mail) {
+  if (!r.email || !r.licenceKey) return;
+  const m = mail && mail.text ? { subject: String(mail.subject || ''), text: String(mail.text) } : licenceMail(r);
+  m.subject = (m.subject || 'Votre licence Eyzi : ' + r.licenceKey).split(KEY_PLACEHOLDER).join(r.licenceKey);
+  m.text = m.text.split(KEY_PLACEHOLDER).join(r.licenceKey);
+  await transport().sendMail({ from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: m.subject, text: m.text });
+}
+
+/// Le texte du refus poli (relu et modifiable dans la page admin).
+export function refuseMail(r, note) {
   const first = (r.name || '').trim().split(/\s+/)[0] || '';
   const text =
 `Bonjour${first ? ' ' + first : ''},
@@ -128,7 +136,12 @@ Si une place se libère ou si la bêta s'élargit, nous vous recontacterons à c
 
 L'équipe Eyzi
 contact@eyzi.fr`;
-  await transport().sendMail({
-    from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: 'Votre demande de licence Eyzi', text,
-  });
+  return { subject: 'Votre demande de licence Eyzi', text };
+}
+
+/// Réponse polie quand l'éditeur refuse (ou n'a pas de place). « mail » = le texte relu dans la page admin.
+export async function refuse(r, note, mail) {
+  if (!r.email) return;
+  const m = mail && mail.text ? { subject: String(mail.subject || 'Votre demande de licence Eyzi'), text: String(mail.text) } : refuseMail(r, note);
+  await transport().sendMail({ from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: m.subject, text: m.text });
 }

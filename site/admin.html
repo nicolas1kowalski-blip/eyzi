@@ -26,6 +26,11 @@
   .req .key{font-family:ui-monospace,Consolas,monospace;font-size:17px;background:var(--code);padding:4px 10px;border-radius:8px}
   .acts{display:flex;gap:8px;flex-wrap:wrap}
   .acts button{border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:15px}
+  .mailbox{margin-top:12px;background:#fff;border:2px solid #7E3FF2;border-radius:14px;padding:12px}
+  .mailbox .to{font-size:14px;color:#555;margin-bottom:6px}
+  .mailbox input,.mailbox textarea{width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:8px;padding:8px;font:inherit;font-size:14px}
+  .mailbox textarea{min-height:360px;margin-top:6px;line-height:1.4}
+  .mailbox .acts{margin-top:8px}
   .ok{background:var(--ok);color:#fff}.no{background:#F3F6FC;color:var(--ink);border:1px solid var(--line)!important}.warn{background:#FDE8E6;color:var(--err)}
   .login{max-width:460px}
   .login input{width:100%;padding:14px;border:1px solid var(--line);border-radius:12px;font-size:16px;margin:8px 0 12px;box-sizing:border-box}
@@ -112,18 +117,46 @@
       }
       function chosen(){ return mods ? Array.prototype.map.call(mods.querySelectorAll('input:checked'), function(i){ return i.value; }) : null; }
       function btn(label, cls, fn){ var b=document.createElement('button'); b.className=cls; b.textContent=label; b.onclick=async function(){ b.disabled=true; try { await fn(); } catch(e){ show(rmsg,'err',e.message); } b.disabled=false; }; acts.appendChild(b); }
+      // Le mail est relu (et corrigé si besoin) AVANT de partir : aperçu, puis bouton d'envoi.
+      async function relire(kind, note, sendLabel, onSend){
+        var old = el.querySelector('.mailbox'); if (old) old.remove();
+        var p = await api('POST', {action:'preview', id:q.id, kind:kind, note:note});
+        var box = document.createElement('div'); box.className = 'mailbox';
+        box.innerHTML = '<div class="to">📧 À : <b>'+(p.to||'(pas d\'adresse)')+'</b>'+(p.configured?'':' · <span style="color:#b00">envoi impossible : SMTP non configuré</span>')+(kind==='licence'&&!q.licence_key?' · le numéro provisoire EYZ-XXXX-XXXX-XXXX-XXXX sera remplacé par le vrai numéro à l\'envoi':'')+'</div>'
+          + '<input class="subj" value="'+(p.subject||'').replace(/"/g,'&quot;')+'">'
+          + '<textarea class="body"></textarea><div class="acts"></div>';
+        box.querySelector('.body').value = p.text || '';
+        var a2 = box.querySelector('.acts');
+        var send = document.createElement('button'); send.className='ok'; send.textContent = sendLabel;
+        send.onclick = async function(){ send.disabled = true; try { await onSend({subject: box.querySelector('.subj').value, text: box.querySelector('.body').value}); } catch(e){ show(rmsg,'err',e.message); send.disabled=false; } };
+        var cancel = document.createElement('button'); cancel.className='no'; cancel.textContent='Annuler'; cancel.onclick = function(){ box.remove(); };
+        a2.appendChild(send); a2.appendChild(cancel);
+        rmsg.parentNode.insertBefore(box, rmsg);
+        box.querySelector('.body').focus();
+      }
       if (q.status === 'new') {
-        if (isLic) btn('✅ Valider : créer la licence et l\'envoyer', 'ok', async function(){
+        if (isLic) btn('✅ Valider : relire le mail, puis créer la licence et l\'envoyer', 'ok', async function(){
           var m = chosen(); if (m && !m.length) { show(rmsg,'err','Coche au moins un monde.'); return; }
-          var r = await api('POST', {action:'approve', id:q.id, modules:m});
-          show(rmsg,'ok','Licence '+r.licence+(r.resent?' (déjà attribuée à cette adresse, renvoyée)':' créée')+(r.mailed?' et envoyée par e-mail.':'. E-mail NON envoyé : à transmettre à la main.'));
+          await relire('licence', '', '📧 Créer la licence et envoyer ce mail', async function(mail){
+            var r = await api('POST', {action:'approve', id:q.id, modules:m, mail:mail});
+            show(rmsg,'ok','Licence '+r.licence+(r.resent?' (déjà attribuée à cette adresse, renvoyée)':' créée')+(r.mailed?' et envoyée par e-mail.':'. E-mail NON envoyé : à transmettre à la main.'));
+            setTimeout(load, 1200);
+          });
+        });
+        if (isLic) btn('🔑 Créer la licence sans envoyer de mail', 'no', async function(){
+          var m = chosen(); if (m && !m.length) { show(rmsg,'err','Coche au moins un monde.'); return; }
+          var r = await api('POST', {action:'approve', id:q.id, modules:m, send:false});
+          show(rmsg,'ok','Licence '+r.licence+' créée, aucun mail envoyé (bouton « Renvoyer le numéro » pour l\'envoyer plus tard).');
           setTimeout(load, 1200);
         });
-        btn(isLic ? '✕ Refuser (e-mail poli à la famille)' : '✓ Traité', isLic ? 'warn' : 'no', async function(){
-          var note = isLic ? (prompt('Un mot pour la famille (facultatif, ajouté à l\'e-mail) :', '') || '') : '';
+        btn(isLic ? '✕ Refuser (relire l\'e-mail poli, puis l\'envoyer)' : '✓ Traité', isLic ? 'warn' : 'no', async function(){
+          if (!isLic) { await api('POST', {action:'refuse', id:q.id, note:'', notify:false}); load(); return; }
+          var note = prompt('Un mot pour la famille (facultatif, ajouté à l\'e-mail) :', '');
           if (note === null) return;
-          await api('POST', {action:'refuse', id:q.id, note:note, notify:isLic});
-          load();
+          await relire('refuse', note, '📧 Refuser et envoyer ce mail', async function(mail){
+            await api('POST', {action:'refuse', id:q.id, note:note, notify:true, mail:mail});
+            load();
+          });
         });
         if (isLic) btn('✕ Refuser sans e-mail', 'no', async function(){ await api('POST', {action:'refuse', id:q.id, notify:false}); load(); });
       } else {
@@ -131,7 +164,12 @@
           var m = chosen(); if (!m.length) { show(rmsg,'err','Coche au moins un monde.'); return; }
           var r = await api('POST',{action:'modules', id:q.id, modules:m}); show(rmsg,'ok','Mondes de la licence : '+r.modules+' (pris en compte à la prochaine vérification de l\'application).');
         });
-        if (q.licence_key) btn('📧 Renvoyer le numéro', 'no', async function(){ var r = await api('POST',{action:'resend', id:q.id}); show(rmsg, r.mailed?'ok':'err', r.mailed?'Numéro renvoyé à '+q.email:'E-mail non envoyé (SMTP non configuré ?)'); });
+        if (q.licence_key) btn('📧 Renvoyer le numéro (relire d\'abord)', 'no', async function(){
+          await relire('licence', '', '📧 Envoyer ce mail', async function(mail){
+            var r = await api('POST',{action:'resend', id:q.id, mail:mail}); show(rmsg, r.mailed?'ok':'err', r.mailed?'Numéro renvoyé à '+q.email:'E-mail non envoyé (SMTP non configuré ?)');
+            var b = el.querySelector('.mailbox'); if (b) b.remove();
+          });
+        });
         btn('↩ Remettre en attente', 'no', async function(){ await api('POST',{action:'reopen', id:q.id}); load(); });
       }
       list.appendChild(el);

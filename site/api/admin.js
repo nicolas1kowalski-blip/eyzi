@@ -3,7 +3,7 @@
 // Protégée par ADMIN_TOKEN (variable Vercel : une longue phrase secrète),
 // envoyé par le navigateur dans l'en-tête x-admin-token.
 import { supabaseAdmin, issueLicence, places, modulesText } from '../lib/licences.js';
-import { mailConfigured, sendLicence, refuse } from '../lib/mail.js';
+import { mailConfigured, sendLicence, refuse, licenceMail, refuseMail } from '../lib/mail.js';
 import catalogue from '../lib/activities.js';
 
 function authorized(req) {
@@ -149,11 +149,18 @@ export default async function handler(req, res) {
     if (rErr || !reqRow) { res.status(404).json({ ok: false, message: 'Demande introuvable.' }); return; }
     const r = { ...reqRow, licenceKey: reqRow.licence_key || '', resent: false, placesLeft: null };
 
+    if (action === 'preview') {
+      // Le mail tel qu'il partira, pour le relire et le corriger avant l'envoi.
+      const kind = String(body.kind || 'licence');
+      const mail = kind === 'refuse' ? refuseMail(r, String(body.note || '').slice(0, 500)) : licenceMail(r);
+      res.status(200).json({ ok: true, to: r.email || '', subject: mail.subject, text: mail.text, configured: mailConfigured() });
+      return;
+    }
     if (action === 'approve') {
       if (r.topic !== 'licence') { res.status(400).json({ ok: false, message: "Ce n'est pas une demande de licence." }); return; }
       await issueLicence(supabase, r, id, { force: true, modules: body.modules });
       let mailed = false;
-      if (mailConfigured() && r.email) { try { await sendLicence(r); mailed = true; } catch (e) { console.error('mail licence', e?.message || e); } }
+      if (body.send !== false && mailConfigured() && r.email) { try { await sendLicence(r, body.mail); mailed = true; } catch (e) { console.error('mail licence', e?.message || e); } }
       res.status(200).json({ ok: true, licence: r.licenceKey, mailed, resent: r.resent });
       return;
     }
@@ -169,7 +176,7 @@ export default async function handler(req, res) {
     if (action === 'resend') {
       if (!r.licenceKey) { res.status(400).json({ ok: false, message: 'Pas de numéro à renvoyer.' }); return; }
       let mailed = false;
-      if (mailConfigured() && r.email) { try { await sendLicence(r); mailed = true; } catch (e) { console.error('mail licence', e?.message || e); } }
+      if (mailConfigured() && r.email) { try { await sendLicence(r, body.mail); mailed = true; } catch (e) { console.error('mail licence', e?.message || e); } }
       res.status(200).json({ ok: true, licence: r.licenceKey, mailed });
       return;
     }
@@ -178,7 +185,7 @@ export default async function handler(req, res) {
       await supabase.from('licence_requests').update({ status: 'refused', note: note || 'refusée depuis la page admin' }).eq('id', id);
       let mailed = false;
       if (body.notify && mailConfigured() && r.email && r.topic === 'licence') {
-        try { await refuse(r, note); mailed = true; } catch (e) { console.error('mail refus', e?.message || e); }
+        try { await refuse(r, note, body.mail); mailed = true; } catch (e) { console.error('mail refus', e?.message || e); }
       }
       res.status(200).json({ ok: true, mailed });
       return;
