@@ -484,6 +484,16 @@
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
+                                    <TextBlock Text="📍 Où est l'enfant (Wi-Fi)" Style="{StaticResource CardTitle}" />
+                                    <CheckBox x:Name="LieuAutoCheck" Content="Régler le lieu tout seul d'après le réseau Wi-Fi de la tablette" FontSize="14" Click="LieuAuto_Changed" />
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="Le Wi-Fi de la maison, celui de l'école, le partage de connexion du téléphone dans la voiture : la première fois, Parler demande « on est où ? » (à la souris ou au doigt), puis s'en souvient. Le nom du réseau reste sur la tablette ; seul le mot « maison » ou « école » part avec une phrase à répondre. Le bouton de lieu dans Parler permet toujours de corriger." />
+                                    <TextBlock x:Name="LieuReseauText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
+                                    <StackPanel x:Name="LieuxPanel" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
                                     <TextBlock Text="🔑 Licence et mises à jour" Style="{StaticResource CardTitle}" />
                                     <TextBlock x:Name="LicenceText" Style="{StaticResource Hint}" Margin="0" FontSize="14.5" Foreground="#FF0B1A33" />
                                     <UniformGrid Columns="2">

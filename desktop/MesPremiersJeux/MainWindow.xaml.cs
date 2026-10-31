@@ -86,6 +86,7 @@ namespace MesPremiersJeux
             _views["edu"] = edu;
             var parler = new ParlerView();
             parler.BackRequested += () => Select("accueil");
+            parler.LieuChoisi += lieu => { if (_settings != null) _settings.ParlerLieu = lieu; };
             _views["parler"] = parler;
             _views["coloring"] = coloring;
             _views["music"] = new MusicView();
@@ -310,6 +311,7 @@ namespace MesPremiersJeux
             }
             RefreshLicenceText();
             if (Licence.HasModule(_settings, "parler")) Listening.Start(_settings);
+            if (Licence.HasModule(_settings, "parler") && _settings.LieuAuto) Lieux.Demarrer();
             _ = Licence.RecheckAsync(_settings).ContinueWith(t => Dispatcher.Invoke(RefreshLicenceText));
             _ = Usage.SendDailyAsync(_settings).ContinueWith(t => { if (t.Result != null) Lib.Log.Write("usage", "Envoi : " + t.Result); });
             Updater.Cleanup();
@@ -434,6 +436,22 @@ namespace MesPremiersJeux
                 if (!Licence.HasModule(_settings, "parler")) return;
                 Select("parler");
                 (_views["parler"] as ParlerView)?.ShowHeard(text);
+            }));
+            // 📍 Le lieu d'après le Wi-Fi.
+            LieuAutoCheck.IsChecked = _settings.LieuAuto;
+            RefreshLieux();
+            Lieux.Changed += (reseau, lieu) => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_settings == null || !_settings.LieuAuto) return;
+                if (_settings.ParlerLieu != lieu) { _settings.ParlerLieu = lieu; _settings.Save(); Lib.Log.Write("lieu", "Wi-Fi « " + reseau + " » → " + lieu); }
+                (_views["parler"] as ParlerView)?.AfficherLieu(lieu);
+                RefreshLieux();
+            }));
+            Lieux.Inconnu += reseau => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_settings == null || !_settings.LieuAuto) return;
+                (_views["parler"] as ParlerView)?.DemanderLieu(reseau);
+                RefreshLieux();
             }));
             try
             {
@@ -1861,6 +1879,47 @@ namespace MesPremiersJeux
             _settings.ListenAnswers = ListenAnswersCheck.IsChecked == true;
             _settings.Save();
             Listening.Start(_settings);
+        }
+
+        private void LieuAuto_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null || LieuAutoCheck == null) return;
+            _settings.LieuAuto = LieuAutoCheck.IsChecked == true;
+            _settings.Save();
+            if (_settings.LieuAuto && Licence.HasModule(_settings, "parler")) Lieux.Demarrer(); else Lieux.Arreter();
+            RefreshLieux();
+        }
+
+        /// <summary>La carte 📍 Lieux : le réseau actuel et les réseaux appris, modifiables.</summary>
+        private void RefreshLieux()
+        {
+            if (LieuxPanel == null || LieuReseauText == null) return;
+            try
+            {
+                var r = Lieux.ReseauActuel;
+                LieuReseauText.Text = r.Length == 0 ? "Pas de Wi-Fi connecté pour le moment : le lieu se règle avec le bouton dans Parler."
+                    : "Réseau actuel : « " + r + " »" + (Lieux.LieuDe(r).Length > 0 ? " → " + Lieux.Nom(Lieux.LieuDe(r)) : " (pas encore associé : Parler demandera « on est où ? »)");
+                LieuxPanel.Children.Clear();
+                foreach (var kv in Lieux.Associations())
+                {
+                    var reseau = kv.Key;
+                    var row = new DockPanel { Margin = new Thickness(0, 6, 0, 0), LastChildFill = true };
+                    var del = new Button { Content = "🗑", Width = 44, Height = 34, Margin = new Thickness(6, 0, 0, 0), ToolTip = "Oublier ce réseau" };
+                    del.Click += (s, e2) => { Lieux.Oublier(reseau); RefreshLieux(); };
+                    DockPanel.SetDock(del, Dock.Right);
+                    row.Children.Add(del);
+                    var combo = new ComboBox { Width = 190, Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+                    foreach (var l in Lieux.Tous) combo.Items.Add(new ComboBoxItem { Content = l.Icone + " " + l.Nom, Tag = l.Cle });
+                    combo.Items.Add(new ComboBoxItem { Content = "Ne pas demander", Tag = Lieux.Ignorer });
+                    foreach (ComboBoxItem it in combo.Items) if ((string)it.Tag == kv.Value) { combo.SelectedItem = it; break; }
+                    combo.SelectionChanged += (s, e2) => { if (combo.SelectedItem is ComboBoxItem it) Lieux.Associer(reseau, (string)it.Tag); };
+                    DockPanel.SetDock(combo, Dock.Right);
+                    row.Children.Add(combo);
+                    row.Children.Add(new TextBlock { Text = reseau, FontSize = 14.5, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
+                    LieuxPanel.Children.Add(row);
+                }
+            }
+            catch (Exception ex) { Lib.Log.Write("lieu", "Carte : " + ex.Message); }
         }
 
         private void Azure_Changed(object sender, RoutedEventArgs e)

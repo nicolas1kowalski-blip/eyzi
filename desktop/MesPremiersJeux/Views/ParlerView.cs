@@ -23,6 +23,11 @@ namespace MesPremiersJeux.Views
     {
         private readonly CommBoard _board;
         private readonly Border _panel;
+        private readonly Border _lieuPrompt;
+        private readonly TextBlock _lieuQuestion;
+        private string _reseauInconnu = "";
+        /// <summary>L'accompagnant ou l'enfant a changé le lieu à la main.</summary>
+        public event Action<string> LieuChoisi;
         private readonly Grid _answersHost;
         private readonly UniformGrid _answers;
         private readonly TextBlock _heard, _state, _wait;
@@ -77,7 +82,37 @@ namespace MesPremiersJeux.Views
                 Effect = new DropShadowEffect { BlurRadius = 16, ShadowDepth = 2, Opacity = 0.18 },
                 Child = head, Visibility = Visibility.Collapsed,
             };
-            root.Children.Add(_panel);
+            // 📍 Un Wi-Fi inconnu : « on est où ? », pour l'accompagnant (souris ou doigt, pas le regard).
+            _lieuQuestion = new TextBlock { FontSize = 20, FontWeight = FontWeights.Bold, Foreground = Dark, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0), TextWrapping = TextWrapping.Wrap };
+            var choix = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            foreach (var l in Lib.Lieux.Tous)
+            {
+                var cle = l.Cle;
+                var b = new Button { Style = (Style)Application.Current.Resources["AnswerButton"], Width = 130, Height = 64, Margin = new Thickness(0, 0, 6, 0), Background = new SolidColorBrush(Color.FromRgb(0xFF, 0xF0, 0xC8)), Content = new TextBlock { Text = l.Icone + " " + l.Nom, FontSize = 20, FontWeight = FontWeights.Bold, Foreground = Dark } };
+                Gaze.GazeTargets.SetParentOnly(b, true);
+                b.Click += (s, e) => RepondreLieu(cle);
+                choix.Children.Add(b);
+            }
+            var jamais = new Button { Style = (Style)Application.Current.Resources["AnswerButton"], Width = 150, Height = 64, Background = Brushes.WhiteSmoke, Content = new TextBlock { Text = "Ne plus demander", FontSize = 16, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center } };
+            Gaze.GazeTargets.SetParentOnly(jamais, true);
+            jamais.Click += (s, e) => RepondreLieu(Lib.Lieux.Ignorer);
+            choix.Children.Add(jamais);
+            var lieuRow = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(choix, Dock.Right);
+            lieuRow.Children.Add(choix);
+            lieuRow.Children.Add(_lieuQuestion);
+            _lieuPrompt = new Border
+            {
+                Background = Brushes.White, CornerRadius = new CornerRadius(18), Padding = new Thickness(14, 8, 14, 8), Margin = new Thickness(12, 8, 12, 0),
+                Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 1, Opacity = 0.15 },
+                Child = lieuRow, Visibility = Visibility.Collapsed,
+            };
+            Gaze.GazeTargets.SetParentOnly(_lieuPrompt, true);
+            Emoji.FixTree(_lieuPrompt);
+            var top = new StackPanel();
+            top.Children.Add(_panel);
+            top.Children.Add(_lieuPrompt);
+            root.Children.Add(top);
 
             // --- Le tableau, ou la grille de réponses en plein écran ---
             _board = new CommBoard();
@@ -107,7 +142,7 @@ namespace MesPremiersJeux.Views
             Emoji.FixTree(head);
         }
 
-        private static readonly (string Cle, string Icone, string Nom)[] Lieux = { ("maison", "🏠", "Maison"), ("ecole", "🏫", "École"), ("dehors", "🌳", "Dehors"), ("voiture", "🚗", "Voiture") };
+        private static (string Cle, string Icone, string Nom)[] Lieux => Lib.Lieux.Tous;
 
         private void MontrerLieu()
         {
@@ -129,6 +164,33 @@ namespace MesPremiersJeux.Views
             _settings.Save();
             MontrerLieu();
             Speech.SayAlways(next.Nom + " !");
+            try { LieuChoisi?.Invoke(next.Cle); } catch { }
+        }
+
+        /// <summary>Le Wi-Fi a dit où l'on est : on l'affiche (le réglage est déjà enregistré par la fenêtre principale).</summary>
+        public void AfficherLieu(string lieu)
+        {
+            if (_settings == null || string.IsNullOrWhiteSpace(lieu)) return;
+            _settings.ParlerLieu = lieu;
+            MontrerLieu();
+            if (_reseauInconnu.Length > 0 && Lib.Lieux.LieuDe(_reseauInconnu).Length > 0) { _reseauInconnu = ""; _lieuPrompt.Visibility = Visibility.Collapsed; }
+        }
+
+        /// <summary>Un réseau jamais vu : on demande une fois à l'accompagnant.</summary>
+        public void DemanderLieu(string reseau)
+        {
+            if (string.IsNullOrWhiteSpace(reseau)) return;
+            _reseauInconnu = reseau;
+            _lieuQuestion.Text = "📍 Nouveau Wi-Fi « " + reseau + " » : on est où ?";
+            Emoji.FixTree(_lieuQuestion);
+            if (_settings != null && (_settings.ListenMode ?? "off") != "off" && _settings.LieuAuto) _lieuPrompt.Visibility = Visibility.Visible;
+        }
+
+        private void RepondreLieu(string cle)
+        {
+            var r = _reseauInconnu; _reseauInconnu = "";
+            _lieuPrompt.Visibility = Visibility.Collapsed;
+            if (r.Length > 0) Lib.Lieux.Associer(r, cle); // → Lieux.Changed → la fenêtre principale enregistre et nous rappelle
         }
 
         private Button GrosBouton(string icone, string label, Color fond)
@@ -157,6 +219,7 @@ namespace MesPremiersJeux.Views
             _panel.Visibility = (_settings.ListenMode ?? "off") != "off" ? Visibility.Visible : Visibility.Collapsed;
             MontrerEtat(Listening.Status);
             MontrerLieu();
+            _lieuPrompt.Visibility = _reseauInconnu.Length > 0 && (_settings.ListenMode ?? "off") != "off" && _settings.LieuAuto ? Visibility.Visible : Visibility.Collapsed;
             if ((_settings.ListenMode ?? "off") != "off") Suggest.Reveiller(_settings); // le site se réveille pendant qu'on parle
         }
 
