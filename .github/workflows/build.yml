@@ -83,6 +83,14 @@ jobs:
           Copy-Item voix-cache/fr_FR-siwis-medium.onnx* $dst -Force
           Copy-Item voix-cache/fr_FR-upmc-medium.onnx* $dst -Force
           if (-not (Test-Path "$dst/piper.exe") -or -not (Test-Path "$dst/fr_FR-siwis-medium.onnx")) { Write-Error "voix hors ligne incomplète"; exit 1 }
+          # Piper est compilé avec Visual C++ : sur un Windows « nu », le runtime manque (VCRUNTIME140_1.dll introuvable).
+          # On livre les trois DLL redistribuables à côté de piper.exe (déploiement « app-local », autorisé par Microsoft).
+          $crt = Get-ChildItem "C:\Program Files\Microsoft Visual Studio\*\*\VC\Redist\MSVC\*\x64\Microsoft.VC14*.CRT" -Directory -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+          foreach ($dll in @("vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll")) {
+            $src = if ($crt) { Join-Path $crt.FullName $dll } else { "C:\Windows\System32\$dll" }
+            if (Test-Path $src) { Copy-Item $src $dst -Force } else { Write-Warning "runtime absent : $dll" }
+          }
+          if (-not (Test-Path "$dst/vcruntime140_1.dll")) { Write-Error "runtime Visual C++ non livré"; exit 1 }
           # L'identifiant de la voix livrée : l'application le compare à celui publié avec chaque version.
           Set-Content -Path "$dst/version.txt" -Value $env:PACK_ID -Encoding ascii -NoNewline
           "{0:N0} Mo" -f ((Get-ChildItem $dst -Recurse | Measure-Object Length -Sum).Sum / 1MB)
