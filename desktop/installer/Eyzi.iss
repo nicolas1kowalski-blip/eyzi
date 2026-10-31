@@ -14,11 +14,11 @@
 #endif
 ; Deux installeurs à partir des mêmes fichiers :
 ;  - COMPLET (Eyzi-Setup-*)  : l'application + la voix naturelle hors ligne (~200 Mo) — nouvelles installations.
-;  - LÉGER   (Eyzi-Leger-*)  : tout SAUF Voix\piper — mises à jour quand la voix installée est déjà la bonne
+;  - LÉGER   (Eyzi-Leger-*)  : tout SAUF Voix\piper et Images\arasaac — mises à jour quand la voix et les pictos installés sont déjà les bons
 ;    (l'application compare Voix\piper\version.txt à la voix publiée avec la version).
 #ifdef Light
   #define Base "Eyzi-Leger"
-  #define Excl "*.pdb,*.xml,Contenu\*,MiseAJour\*,Voix\piper\*"
+  #define Excl "*.pdb,*.xml,Contenu\*,MiseAJour\*,Voix\piper\*,Images\arasaac\*"
 #else
   #define Base "Eyzi-Setup"
   #define Excl "*.pdb,*.xml,Contenu\*,MiseAJour\*"
@@ -82,6 +82,7 @@ Filename: "{app}\Eyzi.exe"; Parameters: "--apres-maj"; Flags: nowait; Check: Wan
 [UninstallDelete]
 ; La voix hors ligne (posée par l'installeur complet, conservée par les installeurs légers) part avec l'application.
 Type: filesandordirs; Name: "{app}\Voix\piper"
+Type: filesandordirs; Name: "{app}\Images\arasaac"
 
 [InstallDelete]
 ; Transition depuis « Mes Premiers Jeux » : l'ancien exécutable et les anciens raccourcis disparaissent.

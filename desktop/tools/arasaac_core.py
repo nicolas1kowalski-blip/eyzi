@@ -11,9 +11,11 @@ Le reste est téléchargé à la demande par l'application et gardé en cache.
 Usage : python arasaac_core.py <dossier_sortie> [max_noyau]
 """
 import json, os, sys, time, unicodedata, urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "arasaac-cache"
-MAX = int(sys.argv[2]) if len(sys.argv) > 2 else 1500
+MAX = 10 ** 9 if len(sys.argv) > 2 and sys.argv[2] == "all" else (int(sys.argv[2]) if len(sys.argv) > 2 else 1500)
+PACK = sys.argv[3] if len(sys.argv) > 3 else ""   # l'identifiant du lot (version.txt), comparé par l'application à celui publié
 API = "https://api.arasaac.org/api/pictograms/all/fr"
 IMG = "https://static.arasaac.org/pictograms/{id}/{id}_300.png"
 
@@ -119,18 +121,25 @@ for e in sorted(entrees, key=lambda e: (not e["aac"], e["schematic"], -e["dl"]))
     noyau.setdefault(e["id"], e["kw"][0])
 print(len(noyau), "pictos dans le noyau")
 
-ok = 0
-for n, (pid, w) in enumerate(noyau.items(), 1):
+def telecharger(item):
+    pid, w = item
     dest = os.path.join(OUT, f"{pid}.png")
-    if os.path.exists(dest) and os.path.getsize(dest) > 500: ok += 1; continue
+    if os.path.exists(dest) and os.path.getsize(dest) > 500: return True
     try:
         data = fetch(IMG.format(id=pid), binary=True)
         with open(dest, "wb") as f: f.write(data)
-        ok += 1
+        return True
     except Exception as e:
-        print("raté", pid, w, e)
-    if n % 200 == 0: print(n, "…", flush=True)
+        print("raté", pid, w, e); return False
+
+ok = 0
+with ThreadPoolExecutor(max_workers=12) as ex:
+    for n, res in enumerate(ex.map(telecharger, list(noyau.items())), 1):
+        ok += 1 if res else 0
+        if n % 1000 == 0: print(n, "…", flush=True)
 print(ok, "images")
+if PACK:
+    with open(os.path.join(OUT, "version.txt"), "w", encoding="ascii") as f: f.write(PACK)
 
 with open(os.path.join(OUT, "LISEZ-MOI.txt"), "w", encoding="utf-8") as f:
     f.write("Pictogrammes ARASAAC\n\nAuteur des pictogrammes : Sergio Palao. Origine : ARASAAC (https://arasaac.org).\n"

@@ -22,6 +22,9 @@ env:
   # change de moteur ou de voix : les tablettes retéléchargent alors l'installeur complet
   # une fois, puis repassent aux mises à jour légères.
   PACK_ID: piper-2023.11.14-2-siwis-upmc-v2
+  # Identifiant du lot de pictogrammes ARASAAC livré (toute la banque). À changer pour
+  # reconstituer le lot : les tablettes reprennent alors une fois l'installeur complet.
+  PICTOS_ID: arasaac-2026.10.31-complet
 
 jobs:
   windows:
@@ -102,13 +105,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: arasaac-cache
-          key: arasaac-${{ hashFiles('desktop/tools/arasaac_core.py') }}
+          key: ${{ env.PICTOS_ID }}
 
       - name: Pictogrammes ARASAAC (index + noyau)
         if: steps.arasaac.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          python desktop/tools/arasaac_core.py arasaac-cache 1500
+          python desktop/tools/arasaac_core.py arasaac-cache all $env:PICTOS_ID
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Pictogrammes ARASAAC (installation dans l'application)
@@ -144,6 +147,8 @@ jobs:
           Copy-Item "desktop/installer/Output/Eyzi-Setup-$v.exe" "desktop/installer/Output/Eyzi-Setup.exe"
           # Le nom de ce fichier dit quelle voix hors ligne accompagne la version (l'appli lit le nom, pas le contenu).
           Set-Content -Path "desktop/installer/Output/voix-$env:PACK_ID.txt" -Value $env:PACK_ID -Encoding ascii
+          # Même chose pour les pictogrammes ARASAAC (lot complet, exclu de l'installeur léger).
+          Set-Content -Path "desktop/installer/Output/pictos-$env:PICTOS_ID.txt" -Value $env:PICTOS_ID -Encoding ascii
           Get-ChildItem desktop/installer/Output/*.exe, desktop/installer/Output/*.zip | ForEach-Object {
             $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
             "$h  $($_.Name)" | Out-File -Encoding ascii "$($_.FullName).sha256"

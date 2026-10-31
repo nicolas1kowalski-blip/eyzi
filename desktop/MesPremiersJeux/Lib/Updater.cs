@@ -53,6 +53,7 @@ namespace MesPremiersJeux.Lib
             public string Tag, Title, Notes, SetupName, SetupUrl, ShaUrl;
             public string LightName, LightUrl, LightShaUrl; // l'installeur léger (sans la voix hors ligne), s'il existe
             public string VoicePackId;                      // la voix hors ligne qui accompagne cette version (nom de l'asset voix-*.txt)
+            public string PictoPackId;                      // le lot de pictogrammes ARASAAC qui accompagne cette version (asset pictos-*.txt)
             public bool Prerelease;
             public bool IsNewer => Version > Current;
         }
@@ -80,6 +81,7 @@ namespace MesPremiersJeux.Lib
                 var light = Regex.Match(r, "\"browser_download_url\"\\s*:\\s*\"([^\"]*Eyzi-Leger-[^\"]*\\.exe)\"");
                 var lightSha = Regex.Match(r, "\"browser_download_url\"\\s*:\\s*\"([^\"]*Eyzi-Leger-[^\"]*\\.exe\\.sha256)\"");
                 var pack = Regex.Match(r, "\"name\"\\s*:\\s*\"voix-([^\"]+)\\.txt\"");
+                var pictos = Regex.Match(r, "\"name\"\\s*:\\s*\"pictos-([^\"]+)\\.txt\"");
                 if (best != null && v <= best.Version) continue;
                 best = new Info
                 {
@@ -92,6 +94,7 @@ namespace MesPremiersJeux.Lib
                     LightName = light.Success ? Path.GetFileName(light.Groups[1].Value) : null,
                     LightShaUrl = lightSha.Success ? lightSha.Groups[1].Value : null,
                     VoicePackId = pack.Success ? pack.Groups[1].Value : null,
+                    PictoPackId = pictos.Success ? pictos.Groups[1].Value : null,
                 };
             }
             return best;
@@ -106,6 +109,17 @@ namespace MesPremiersJeux.Lib
             try
             {
                 var p = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Voix", "piper", "version.txt");
+                return File.Exists(p) ? File.ReadAllText(p).Trim() : null;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>Le lot de pictogrammes ARASAAC installé (Images\arasaac\version.txt), ou null.</summary>
+        public static string LocalPictoPackId()
+        {
+            try
+            {
+                var p = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "arasaac", "version.txt");
                 return File.Exists(p) ? File.ReadAllText(p).Trim() : null;
             }
             catch { return null; }
@@ -129,13 +143,16 @@ namespace MesPremiersJeux.Lib
                 // léger suffit (dix fois plus petit). Sinon, ou en cas de doute, le complet.
                 string name = info.SetupName, url = info.SetupUrl, shaUrl = info.ShaUrl;
                 var local = LocalVoicePackId();
-                bool light = info.LightUrl != null && !string.IsNullOrEmpty(info.VoicePackId)
-                             && string.Equals(local, info.VoicePackId, StringComparison.OrdinalIgnoreCase)
-                             && PiperTts.Available; // l'étiquette ne suffit pas : les fichiers de la voix doivent être là
+                var localPictos = LocalPictoPackId();
+                bool voixOk = !string.IsNullOrEmpty(info.VoicePackId) && string.Equals(local, info.VoicePackId, StringComparison.OrdinalIgnoreCase)
+                              && PiperTts.Available; // l'étiquette ne suffit pas : les fichiers de la voix doivent être là
+                bool pictosOk = string.IsNullOrEmpty(info.PictoPackId) // une version sans lot de pictos : rien à comparer
+                                || (string.Equals(localPictos, info.PictoPackId, StringComparison.OrdinalIgnoreCase) && Arasaac.Available);
+                bool light = info.LightUrl != null && voixOk && pictosOk;
                 if (light) { name = info.LightName; url = info.LightUrl; shaUrl = info.LightShaUrl; }
                 Log.Write("maj", light
-                    ? "Mise à jour légère : la voix hors ligne « " + info.VoicePackId + " » est déjà installée"
-                    : "Mise à jour complète (voix installée : « " + (local ?? "aucune") + " », voix publiée : « " + (info.VoicePackId ?? "?") + " »)");
+                    ? "Mise à jour légère : la voix « " + info.VoicePackId + " » et les pictos « " + (info.PictoPackId ?? "-") + " » sont déjà installés"
+                    : "Mise à jour complète (voix installée : « " + (local ?? "aucune") + " », publiée : « " + (info.VoicePackId ?? "?") + " » ; pictos installés : « " + (localPictos ?? "aucun") + " », publiés : « " + (info.PictoPackId ?? "?") + " »)");
 
                 var path = Path.Combine(UpdatesDir, name);
                 status?.Invoke("Téléchargement de la version " + info.Version + (light ? " (mise à jour légère)" : "") + "…", 0);
