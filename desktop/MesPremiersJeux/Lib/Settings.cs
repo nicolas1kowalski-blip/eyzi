@@ -71,7 +71,20 @@ namespace MesPremiersJeux.Lib
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MesPremiersJeux");
         private static string FilePath => Path.Combine(Dir, "settings.ini");
 
+        private static Settings _current;
+
+        /// <summary>
+        /// LES réglages de l'application : un seul objet partagé par tous les écrans. Avant, chaque écran lisait sa
+        /// propre copie et, en l'enregistrant, écrasait ce que l'administration venait de changer (le temps de
+        /// fixation, par exemple). Lire une fois, puis tout le monde travaille sur le même objet.
+        /// </summary>
         public static Settings Load()
+        {
+            if (_current == null) _current = Lire();
+            return _current;
+        }
+
+        private static Settings Lire()
         {
             var s = new Settings();
             try
