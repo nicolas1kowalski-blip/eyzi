@@ -17,6 +17,8 @@ on:
   push:
     tags:
       - "prod-v*"
+    branches:
+      - "prod-v*"
 
 permissions:
   contents: write
@@ -31,7 +33,10 @@ jobs:
           TAG: ${{ inputs.tag }}
         run: |
           set -e
-          case "$GITHUB_REF" in refs/tags/prod-*) TAG="${GITHUB_REF#refs/tags/prod-}";; esac
+          case "$GITHUB_REF" in
+            refs/tags/prod-*) TAG="${GITHUB_REF#refs/tags/prod-}";;
+            refs/heads/prod-*) TAG="${GITHUB_REF#refs/heads/prod-}";;
+          esac
           if [ -z "$TAG" ]; then
             TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 --json tagName,isPrerelease,isDraft \
               --jq '[.[] | select(.isPrerelease and (.isDraft|not))] | sort_by(.tagName | ltrimstr("v") | split(".") | map(tonumber)) | last | .tagName')
@@ -48,3 +53,5 @@ jobs:
             echo "Ancienne prod $t → test"
             gh release edit "$t" --repo "$GITHUB_REPOSITORY" --prerelease=true || true
           done
+          # La branche qui a servi de déclencheur (« prod-v… ») ne sert plus : on la supprime.
+          case "$GITHUB_REF" in refs/heads/prod-*) gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/$GITHUB_REF" || true;; esac
