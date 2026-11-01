@@ -22,7 +22,7 @@ namespace MesPremiersJeux.Games
     ///   5. JE JOUE ! — on choisit un instrument (xylophone, piano, guitare,
     ///      trompette, violon, batterie) et on en joue librement au regard.
     ///   7. LA GUITARE — six cordes qui s'allument et chantent au regard, puis
-    ///      des chansons à jouer : la corde qui brille est la prochaine note.
+    ///      huit chansons à jouer : la corde qui brille est la prochaine note.
     /// Le parent peut déposer de vrais sons dans Contenu\Sons (tambour.wav,
     /// guitare.wav, xylophone.wav, piano.wav, trompette.wav, violon.wav,
     /// grosse-caisse.wav, caisse-claire.wav, tom.wav, cymbale.wav).
@@ -78,9 +78,39 @@ namespace MesPremiersJeux.Games
             },
             new Chanson
             {
+                Titre = "Sonnez les matines", Emoji = "⏰", Art = "reveil", Fin = "Sonnez les matines ! Ding, dang, dong !",
+                Notes = new[] { 4, 5, 4, 3, 2, 0, 4, 5, 4, 3, 2, 0, 0, 4, 0, 0, 4, 0 },
+                Mots = new[] { "Son", "nez", "les", "ma", "ti", "nes", "son", "nez", "les", "ma", "ti", "nes", "ding", "dang", "dong", "ding", "dang", "dong" },
+            },
+            new Chanson
+            {
                 Titre = "Ah ! vous dirai-je, maman", Emoji = "⭐", Art = "etoile", Fin = "Ah ! vous dirai-je, maman, ce qui cause mon tourment !",
                 Notes = new[] { 0, 0, 4, 4, 5, 5, 4, 3, 3, 2, 2, 1, 1, 0 },
                 Mots = new[] { "Ah", "vous", "di", "rai", "je", "ma", "man", "ce", "qui", "cau", "se", "mon", "tour", "ment" },
+            },
+            new Chanson
+            {
+                Titre = "La gamme : do, ré, mi…", Emoji = "🎼", Art = "note-musique", Fin = "Do, ré, mi, fa, sol, la ! Et on redescend !",
+                Notes = new[] { 0, 1, 2, 3, 4, 5, 5, 4, 3, 2, 1, 0 },
+                Mots = new[] { "do", "ré", "mi", "fa", "sol", "la", "la", "sol", "fa", "mi", "ré", "do" },
+            },
+            new Chanson
+            {
+                Titre = "Vive le vent", Emoji = "❄️", Art = "flocon", Fin = "Vive le vent, vive le vent, vive le vent d'hiver !",
+                Notes = new[] { 2, 2, 2, 2, 2, 2, 2, 4, 0, 1, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 2, 1, 4 },
+                Mots = new[] { "Vi", "ve le", "vent", "vi", "ve le", "vent", "vi", "ve le", "vent", "d'hi", "ver", "qui", "s'en", "va", "sif", "flant", "souf", "flant", "dans", "les", "grands", "sa", "pins", "verts", "!" },
+            },
+            new Chanson
+            {
+                Titre = "Dans la ferme de Mathurin", Emoji = "🐄", Art = "vache", Fin = "Dans la ferme de Mathurin, i a i a o !",
+                Notes = new[] { 3, 3, 3, 0, 1, 1, 0, 5, 5, 4, 4, 3 },
+                Mots = new[] { "Dans", "la", "fer-me", "de", "Ma", "thu", "rin", "i", "a", "i", "a", "o" },
+            },
+            new Chanson
+            {
+                Titre = "L'Hymne à la joie", Emoji = "🎶", Art = "nuage-musique", Fin = "L'Hymne à la joie, de Beethoven !",
+                Notes = new[] { 2, 2, 3, 4, 4, 3, 2, 1, 0, 0, 1, 2, 2, 1, 1 },
+                Mots = new[] { "la", "la", "la", "la", "la", "la", "la", "la", "la", "la", "la", "la", "la", "la", "la" },
             },
         };
 
@@ -608,23 +638,24 @@ namespace MesPremiersJeux.Games
             _gazeBar = -1;
             Question.Text = "🎸 Quelle chanson ?";
             _canvas = new Canvas { Width = W, Height = H };
-            double size = 330, gap = 60;
-            double x0 = (W - Chansons.Length * size - (Chansons.Length - 1) * gap) / 2;
+            int cols = 4;
+            double size = 290, gap = 30;
+            double x0 = (W - cols * size - (cols - 1) * gap) / 2;
             for (int i = 0; i < Chansons.Length; i++)
             {
                 var c = Chansons[i];
                 var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
-                content.Children.Add(Art.Visual(c.Art, c.Emoji, 170));
+                content.Children.Add(Art.Visual(c.Art, c.Emoji, 150));
                 content.Children.Add(new TextBlock
                 {
-                    Text = c.Titre, FontSize = 30, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
-                    MaxWidth = 280, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 0),
+                    Text = c.Titre, FontSize = 28, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
+                    MaxWidth = 250, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 0),
                 });
                 var btn = AnswerButton(new Viewbox { Child = content, Margin = new Thickness(14) }, size);
                 var ch = c;
                 btn.Click += (o, ev) => PlayGuitarSong(ch);
-                Canvas.SetLeft(btn, x0 + i * (size + gap));
-                Canvas.SetTop(btn, 140);
+                Canvas.SetLeft(btn, x0 + (i % cols) * (size + gap));
+                Canvas.SetTop(btn, 30 + (i / cols) * (size + gap));
                 _canvas.Children.Add(btn);
             }
             SetConsigne(Art.Visual("guitare", "🎸", 110), () => "Choisis une chanson à jouer sur la guitare !");
@@ -643,10 +674,11 @@ namespace MesPremiersJeux.Games
             BuildGuitar(SongStep);
             _lyrics = new TextBlock
             {
-                FontSize = 40, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)),
-                Width = W, TextAlignment = TextAlignment.Center,
+                FontSize = c.Notes.Length > 16 ? 30 : 40, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)),
+                Width = W - 180, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap,
             };
-            Canvas.SetTop(_lyrics, 14);
+            Canvas.SetLeft(_lyrics, 20);
+            Canvas.SetTop(_lyrics, 8);
             _canvas.Children.Add(_lyrics);
 
             // Changer de chanson (au clic, en haut à droite).
