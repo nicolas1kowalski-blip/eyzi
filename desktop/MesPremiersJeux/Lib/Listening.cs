@@ -148,16 +148,17 @@ namespace MesPremiersJeux.Lib
             return t.Trim();
         }
 
-        /// <summary>Le bouton 👂 : écoute UNE phrase maintenant (dans tous les modes).</summary>
+        /// <summary>Le bouton 👂, ou le mot-clé : écoute UNE phrase maintenant, puis revient TOUJOURS à la veille (ou recrée le moteur).</summary>
         public static async Task ListenOnce()
         {
             if (_busy) return;
             // Après une erreur (mauvaise clé, réseau), le moteur reste bloqué dans son état : on le recrée avant de réessayer.
             if (_rec == null || Status == "erreur") { if (_last == null) return; Start(_last); if (_rec == null) return; }
             _busy = true;
+            bool erreur = false;
             try
             {
-                if (_keywordMode) { try { await _rec.StopKeywordRecognitionAsync(); } catch { } }
+                if (_keywordMode) { try { await _rec.StopKeywordRecognitionAsync(); } catch (Exception ex) { Log.Write("ecoute", "Arrêt du mot-clé : " + ex.Message); } }
                 SetStatus("ecoute");
                 var result = await _rec.RecognizeOnceAsync();
                 if (result.Reason == ResultReason.Canceled)
@@ -166,7 +167,8 @@ namespace MesPremiersJeux.Lib
                     if (d0.Reason == CancellationReason.Error && (d0.ErrorDetails ?? "").Contains("INVALID_STATE_TRANSITION"))
                     {
                         Log.Write("ecoute", "État invalide : on recrée le moteur et on réessaie");
-                        Start(_last); if (_rec == null) { _busy = false; return; }
+                        Start(_last); if (_rec == null) return;
+                        if (_keywordMode) { try { await _rec.StopKeywordRecognitionAsync(); } catch { } }
                         SetStatus("ecoute");
                         result = await _rec.RecognizeOnceAsync();
                     }
@@ -181,13 +183,50 @@ namespace MesPremiersJeux.Lib
                 else if (result.Reason == ResultReason.Canceled)
                 {
                     var d = CancellationDetails.FromResult(result);
-                    if (d.Reason == CancellationReason.Error) { LastError = Humain(d.ErrorDetails, d.ErrorCode.ToString()); Log.Write("ecoute", "Bouton : " + d.ErrorCode + " " + d.ErrorDetails); SetStatus("erreur"); _busy = false; return; }
+                    if (d.Reason == CancellationReason.Error) { LastError = Humain(d.ErrorDetails, d.ErrorCode.ToString()); Log.Write("ecoute", "Écoute : " + d.ErrorCode + " " + d.ErrorDetails); erreur = true; }
                 }
-                if (_keywordMode && _kw != null) { try { await _rec.StartKeywordRecognitionAsync(_kw); } catch { } SetStatus("veille"); }
+            }
+            catch (Exception ex) { LastError = Humain(ex.Message, ""); Log.Write("ecoute", "Écoute : " + ex.Message); erreur = true; }
+            finally
+            {
+                _busy = false;
+                await RetourVeille(erreur);
+            }
+        }
+
+        /// <summary>Après une phrase : la veille sur le mot-clé reprend ; après une erreur, le moteur est recréé (ce qui relance la veille).</summary>
+        private static async Task RetourVeille(bool erreur)
+        {
+            try
+            {
+                if (erreur || _rec == null) { SetStatus("erreur"); if (_last != null) { Log.Write("ecoute", "Moteur recréé après erreur"); Start(_last); } return; }
+                if (_keywordMode && _kw != null)
+                {
+                    await _rec.StartKeywordRecognitionAsync(_kw);
+                    SetStatus("veille");
+                }
                 else SetStatus("pret");
             }
-            catch (Exception ex) { LastError = Humain(ex.Message, ""); Log.Write("ecoute", "Bouton : " + ex.Message); SetStatus("erreur"); }
-            finally { _busy = false; }
+            catch (Exception ex)
+            {
+                Log.Write("ecoute", "Reprise de la veille impossible (" + ex.Message + ") : moteur recréé");
+                if (_last != null) Start(_last);
+            }
         }
+
+        // Le chien de garde : en mode mot-clé, si la veille n'est plus active (après une erreur, une coupure réseau…),
+        // le moteur est recréé. Toutes les 20 secondes, quand rien n'est en cours.
+        private static readonly System.Threading.Timer _garde = new System.Threading.Timer(_ =>
+        {
+            try
+            {
+                if (_last == null || _busy) return;
+                var mode = (_last.ListenMode ?? "off").ToLowerInvariant();
+                if (mode == "off") return;
+                bool attendu = mode == "motcle" && KeywordAvailable ? (Status == "veille" || Status == "ecoute") : (Status == "pret" || Status == "ecoute");
+                if (!attendu) { Log.Write("ecoute", "Veille perdue (état « " + Status + " ») : moteur recréé"); Start(_last); }
+            }
+            catch (Exception ex) { Log.Write("ecoute", "Chien de garde : " + ex.Message); }
+        }, null, 20000, 20000);
     }
 }
