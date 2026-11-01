@@ -24,7 +24,8 @@ namespace MesPremiersJeux.Games
     ///   7. LA GUITARE — six cordes qui s'allument et chantent au regard, puis
     ///      des chansons à jouer : la corde qui brille est la prochaine note.
     ///  10. LE PIANO — huit touches qui s'allument au regard, et les mêmes
-    ///      chansons (plus celles qui montent jusqu'au do aigu).
+    ///      chansons (plus celles qui descendent sous le do ou montent au-dessus :
+    ///      le clavier s'élargit à l'étendue de la chanson).
     /// Le parent peut déposer de vrais sons dans Contenu\Sons (tambour.wav,
     /// guitare.wav, xylophone.wav, piano.wav, trompette.wav, violon.wav,
     /// grosse-caisse.wav, caisse-claire.wav, tom.wav, cymbale.wav).
@@ -60,9 +61,12 @@ namespace MesPremiersJeux.Games
         private sealed class Chanson
         {
             public string Titre, Emoji, Art, Fin;
-            public int[] Notes;
+            public int[] Notes; // degrés : 0 = do, 7 = do aigu ; négatifs = sous le do (sol grave = -3)
             public string[] Mots;
+            public bool Noel;
         }
+
+        private static string[] La(int n) => Enumerable.Repeat("la", n).ToArray();
 
         private static readonly Chanson[] Chansons =
         {
@@ -98,7 +102,7 @@ namespace MesPremiersJeux.Games
             },
             new Chanson
             {
-                Titre = "Vive le vent", Emoji = "❄️", Art = "flocon", Fin = "Vive le vent, vive le vent, vive le vent d'hiver !",
+                Titre = "Vive le vent", Emoji = "❄️", Art = "flocon", Noel = true, Fin = "Vive le vent, vive le vent, vive le vent d'hiver !",
                 Notes = new[] { 2, 2, 2, 2, 2, 2, 2, 4, 0, 1, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 2, 1, 4 },
                 Mots = new[] { "Vi", "ve le", "vent", "vi", "ve le", "vent", "vi", "ve le", "vent", "d'hi", "ver", "qui", "s'en", "va", "sif", "flant", "souf", "flant", "dans", "les", "grands", "sa", "pins", "verts", "!" },
             },
@@ -132,11 +136,72 @@ namespace MesPremiersJeux.Games
                 Notes = new[] { 2, 2, 4, 2, 2, 4, 2, 4, 7, 6, 5, 5, 4, 1, 2, 3, 1, 1, 2, 3, 1, 3, 6, 5, 4, 6, 7 },
                 Mots = new[] { "Bon", "ne", "nuit", "cher", "tré", "sor", "fer", "me", "tes", "yeux", "et", "dors", "bien", "les", "é", "toi", "les", "veillent", "sur", "toi", "dors", "dors", "mon", "pe", "tit", "tré", "sor" },
             },
+            new Chanson
+            {
+                Titre = "Sur le pont d'Avignon", Emoji = "💃", Art = "pont", Fin = "Sur le pont d'Avignon, l'on y danse tout en rond !",
+                Notes = new[] { 0, 0, 0, 1, 1, 1, 2, 3, 4, 7, 6, 7, 8, 4, 0, 0, 0, 1, 1, 1, 2, 3, 4, 7, 6, 8, 7 },
+                Mots = new[] { "Sur", "le", "pont", "d'A", "vi", "gnon", "l'on", "y", "dan", "se", "l'on", "y", "dan", "se", "sur", "le", "pont", "d'A", "vi", "gnon", "l'on", "y", "dan", "se", "tout", "en", "rond" },
+            },
+            new Chanson
+            {
+                Titre = "Mary Had a Little Lamb", Emoji = "🐑", Art = "mouton", Fin = "Mary had a little lamb ! Une chanson en anglais.",
+                Notes = new[] { 2, 1, 0, 1, 2, 2, 2, 1, 1, 1, 2, 4, 4, 2, 1, 0, 1, 2, 2, 2, 2, 1, 1, 2, 1, 0 },
+                Mots = new[] { "Ma", "ry", "had", "a", "lit", "tle", "lamb", "lit", "tle", "lamb", "lit", "tle", "lamb", "Ma", "ry", "had", "a", "lit", "tle", "lamb", "its", "fleece", "was", "white", "as", "snow" },
+            },
+            new Chanson
+            {
+                Titre = "Row, Row, Row Your Boat", Emoji = "🚣", Art = "bateau", Fin = "Row, row, row your boat ! Une chanson en anglais.",
+                Notes = new[] { 0, 0, 0, 1, 2, 2, 1, 2, 3, 4, 7, 7, 7, 4, 4, 4, 2, 2, 2, 0, 0, 0, 4, 3, 2, 1, 0 },
+                Mots = new[] { "Row", "row", "row", "your", "boat", "gent", "ly", "down", "the", "stream", "mer", "ri", "ly", "mer", "ri", "ly", "mer", "ri", "ly", "mer", "ri", "ly", "life", "is", "but", "a", "dream" },
+            },
+            new Chanson
+            {
+                Titre = "Oh When the Saints", Emoji = "🎺", Art = "trompette", Fin = "Oh when the saints go marching in ! Une chanson en anglais.",
+                Notes = new[] { 0, 2, 3, 4, 0, 2, 3, 4, 0, 2, 3, 4, 2, 0, 2, 1, 2, 2, 1, 0, 0, 2, 4, 4, 4, 3, 2, 3, 4, 2, 0, 1, 0 },
+                Mots = new[] { "Oh", "when", "the", "saints", "oh", "when", "the", "saints", "oh", "when", "the", "saints", "go", "march", "ing", "in", "oh", "Lord", "I", "want", "to", "be", "in", "that", "num", "ber", "when", "the", "saints", "go", "march", "ing", "in" },
+            },
+            new Chanson
+            {
+                Titre = "Mon beau sapin", Emoji = "🎄", Art = "sapin", Noel = true, Fin = "Mon beau sapin, roi des forêts, que j'aime ta verdure !",
+                Notes = new[] { -3, 0, 0, 0, 1, 2, 2, 2, 2, 1, 2, 3, -1, 1, 0 },
+                Mots = new[] { "Mon", "beau", "sa", "pin", "roi", "des", "fo", "rêts", "que", "j'ai", "me", "ta", "ver", "du", "re" },
+            },
+            new Chanson
+            {
+                Titre = "Douce nuit", Emoji = "🕯️", Art = "bougie", Noel = true, Fin = "Douce nuit, sainte nuit ! C'est l'amour infini.",
+                Notes = new[] { 4, 5, 4, 2, 4, 5, 4, 2, 8, 8, 6, 7, 7, 4, 5, 5, 7, 6, 5, 4, 5, 4, 2, 5, 5, 7, 6, 5, 4, 5, 4, 2, 8, 8, 10, 8, 6, 7, 9, 7, 4, 2, 4, 3, 1, 0 },
+                Mots = new[] { "Dou", "ce", "nuit", "nuit", "sain", "te", "nuit", "nuit", "dans", "les", "cieux", "l'as", "tre", "luit", "le", "mys", "tè", "re an", "non", "cé", "s'ac", "com", "plit", "cet", "en", "fant", "sur", "la", "paille", "en", "dor", "mi", "c'est", "l'a", "mour", "in", "fi", "ni", "ni", "c'est", "l'a", "mour", "in", "fi", "ni", "ni" },
+            },
+            new Chanson
+            {
+                Titre = "Il est né, le divin enfant", Emoji = "👶", Art = "bebe", Noel = true, Fin = "Il est né, le divin enfant ! Jouez hautbois, résonnez musettes !",
+                Notes = new[] { 0, 0, 0, 1, 2, 0, 2, 1, 0, 0, 1, 2, 3, 3, 2, 1, 0, 0, 0, 0, 1, 2, 0, 2, 1, 0, 0, 1, 2, 3, 2, 1, 0 },
+                Mots = new[] { "Il", "est", "né", "le", "di", "vin", "en", "fant", "jou", "ez", "haut", "bois", "ré", "son", "nez", "mu", "settes", "il", "est", "né", "le", "di", "vin", "en", "fant", "chan", "tons", "tous", "son", "a", "vè", "ne", "ment" },
+            },
+            new Chanson
+            {
+                Titre = "We Wish You a Merry Christmas", Emoji = "🎁", Art = "cadeau", Noel = true, Fin = "We wish you a merry Christmas ! Joyeux Noël !",
+                Notes = new[] { 0, 3, 3, 4, 3, 2, 1, 1, 1, 4, 4, 5, 4, 3, 2, 0, 0, 5, 5, 6, 5, 4, 3, 1, 0, 0, 1, 4, 2, 3 },
+                Mots = new[] { "We", "wish", "you", "a", "mer", "ry", "Christ", "mas", "we", "wish", "you", "a", "mer", "ry", "Christ", "mas", "we", "wish", "you", "a", "mer", "ry", "Christ", "mas", "and", "a", "hap", "py", "new", "year" },
+            },
+            new Chanson
+            {
+                Titre = "Joie dans le monde", Emoji = "🌍", Art = "planete-terre", Noel = true, Fin = "Joy to the world ! Joie dans le monde !",
+                Notes = new[] { 7, 6, 5, 4, 3, 2, 1, 0, 4, 5, 5, 6, 6, 7 },
+                Mots = La(14),
+            },
         };
 
         // Les chansons qu'un instrument peut jouer (la guitare n'a que six cordes, do … la).
+        // La guitare n'a que six cordes (do … la) ; le piano s'étend aux notes
+        // graves et aiguës de la chanson (du sol grave au fa aigu au plus).
         private IEnumerable<Chanson> ChansonsPour(string instrument) =>
-            Chansons.Where(c => c.Notes.Max() < (instrument == "guitare" ? 6 : 8));
+            Chansons.Where(c => instrument == "guitare" ? c.Notes.Min() >= 0 && c.Notes.Max() <= 5 : c.Notes.Min() >= -3 && c.Notes.Max() <= 10);
+
+        private static string NoteName(int degree) => Notes[((degree % 7) + 7) % 7].Name;
+        private static Color NoteColor(int degree) => Notes[((degree % 7) + 7) % 7].Color;
+        private int _pianoLo; // le degré de la première touche du piano
+        private int Idx(int degree) => _piano ? degree - _pianoLo : degree;
 
         private Chanson _chanson = Chansons[0];
         private string _timbre = "xylophone";
@@ -468,11 +533,22 @@ namespace MesPremiersJeux.Games
             Glow(_chanson.Notes[0]);
         }
 
+        // Les paroles, la syllabe en cours entre crochets. Une longue chanson
+        // ne montre qu'une fenêtre autour de la syllabe en cours.
         private void ShowLyrics()
         {
+            int n = _chanson.Notes.Length;
+            int from = 0, to = n;
+            if (n > 16)
+            {
+                from = Math.Max(0, Math.Min(_songPos - 5, n - 14));
+                to = Math.Min(n, from + 14);
+            }
             var parts = new List<string>();
-            for (int k = 0; k < _chanson.Notes.Length; k++)
+            if (from > 0) parts.Add("…");
+            for (int k = from; k < to; k++)
                 parts.Add(k == _songPos ? "[" + _chanson.Mots[k] + "]" : _chanson.Mots[k]);
+            if (to < n) parts.Add("…");
             _lyrics.Text = string.Join(" ", parts);
         }
 
@@ -505,7 +581,7 @@ namespace MesPremiersJeux.Games
                 Schedule(60 + k * 520, () =>
                 {
                     SoundFx.PlayNote(bar, _timbre, _guitare ? 0.9 : _piano ? 0.8 : 0.55);
-                    if (_guitare) Vibrate(_bars[bar]); else if (_piano) Press(_bars[bar]); else Pulse(_bars[bar]);
+                    if (_guitare) Vibrate(_bars[bar]); else if (_piano) Press(_bars[Idx(bar)]); else Pulse(_bars[bar]);
                 });
             }
             Schedule(60 + notes.Length * 520 + 400, () =>
@@ -521,6 +597,7 @@ namespace MesPremiersJeux.Games
         // gros halo doré, et une étoile sautille juste au-dessus.
         private void Glow(int bar)
         {
+            bar = Idx(bar);
             for (int i = 0; i < _bars.Count; i++)
             {
                 _bars[i].BeginAnimation(UIElement.OpacityProperty, null);
@@ -670,7 +747,7 @@ namespace MesPremiersJeux.Games
         // place aux chansons.
         private void Decouverte(int i)
         {
-            Speak(Notes[i].Name + " !");
+            Speak(NoteName(i) + " !");
             if (++_played == 1) RewardStar();
             if (_played >= 6)
             {
@@ -683,7 +760,12 @@ namespace MesPremiersJeux.Games
             }
         }
 
-        private void ChooseSong()
+        private int _songPage;
+        private const int SongsPerPage = 11; // + la tuile « encore » = 12 (6 × 2)
+
+        private void ChooseSong() => ChooseSong(_songPage);
+
+        private void ChooseSong(int page)
         {
             _act = 8;
             Locked = false;
@@ -693,26 +775,51 @@ namespace MesPremiersJeux.Games
             bool piano = _instrument == "piano";
             Question.Text = (piano ? "🎹" : "🎸") + " Quelle chanson ?";
             _canvas = new Canvas { Width = W, Height = H };
-            var liste = ChansonsPour(_instrument).ToList();
-            int cols = liste.Count <= 8 ? 4 : 6;
+            var toutes = ChansonsPour(_instrument).ToList();
+            int pages = Math.Max(1, (toutes.Count + SongsPerPage - 1) / SongsPerPage);
+            _songPage = ((page % pages) + pages) % pages;
+            var liste = toutes.Skip(_songPage * SongsPerPage).Take(SongsPerPage).ToList();
+            int tuiles = liste.Count + (pages > 1 ? 1 : 0);
+            int cols = tuiles <= 8 ? 4 : 6;
             double gap = 18;
             double size = Math.Min(290, (W - 40 - (cols - 1) * gap) / cols);
-            int rows = (liste.Count + cols - 1) / cols;
+            int rows = (tuiles + cols - 1) / cols;
             double x0 = (W - cols * size - (cols - 1) * gap) / 2;
             double y0 = Math.Max(10, (H - rows * size - (rows - 1) * gap) / 2);
-            for (int i = 0; i < liste.Count; i++)
+            for (int i = 0; i < tuiles; i++)
             {
-                var c = liste[i];
-                var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
-                content.Children.Add(Art.Visual(c.Art, c.Emoji, 150));
-                content.Children.Add(new TextBlock
+                Button btn;
+                if (i < liste.Count)
                 {
-                    Text = c.Titre, FontSize = 28, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
-                    MaxWidth = 250, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 0),
-                });
-                var btn = AnswerButton(new Viewbox { Child = content, Margin = new Thickness(14) }, size);
-                var ch = c;
-                btn.Click += (o, ev) => PlaySong(ch);
+                    var c = liste[i];
+                    var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+                    var image = new Grid();
+                    image.Children.Add(Art.Visual(c.Art, c.Emoji, 150));
+                    if (c.Noel) image.Children.Add(new TextBlock { Text = "🎄", FontSize = 44, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, -10, -16, 0) });
+                    content.Children.Add(image);
+                    content.Children.Add(new TextBlock
+                    {
+                        Text = c.Titre, FontSize = 28, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
+                        MaxWidth = 250, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 0),
+                    });
+                    btn = AnswerButton(new Viewbox { Child = content, Margin = new Thickness(14) }, size);
+                    var ch = c;
+                    btn.Click += (o, ev) => PlaySong(ch);
+                }
+                else
+                {
+                    // D'autres chansons : la page suivante (et retour à la première à la fin).
+                    var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+                    content.Children.Add(new TextBlock { Text = _songPage + 1 < pages ? "➡️" : "↩️", FontSize = 120, HorizontalAlignment = HorizontalAlignment.Center });
+                    content.Children.Add(new TextBlock
+                    {
+                        Text = _songPage + 1 < pages ? "D'autres chansons" : "Les premières", FontSize = 28, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center,
+                        Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)), HorizontalAlignment = HorizontalAlignment.Center,
+                    });
+                    btn = AnswerButton(new Viewbox { Child = content, Margin = new Thickness(14) }, size);
+                    int suivante = _songPage + 1;
+                    btn.Click += (o, ev) => { if (_act == 8) ChooseSong(suivante); };
+                }
                 Canvas.SetLeft(btn, x0 + (i % cols) * (size + gap));
                 Canvas.SetTop(btn, y0 + (i / cols) * (size + gap));
                 _canvas.Children.Add(btn);
@@ -732,10 +839,15 @@ namespace MesPremiersJeux.Games
             bool piano = _instrument == "piano";
             string quoi = piano ? "la touche" : "la corde";
             Question.Text = c.Emoji + " " + c.Titre;
-            if (piano) BuildPiano(SongStep); else BuildGuitar(SongStep);
+            if (piano)
+            {
+                int lo = Math.Min(0, c.Notes.Min()), hi = Math.Max(c.Notes.Max(), lo + 7);
+                BuildPiano(SongStep, lo, hi);
+            }
+            else BuildGuitar(SongStep);
             _lyrics = new TextBlock
             {
-                FontSize = c.Notes.Length > 16 ? 30 : 40, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)),
+                FontSize = c.Notes.Length > 16 ? 36 : 40, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)),
                 Width = W - 180, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap,
             };
             Canvas.SetLeft(_lyrics, 20);
@@ -758,17 +870,22 @@ namespace MesPremiersJeux.Games
 
         // Le piano : huit touches blanches (do … do aigu) avec leurs touches
         // noires, chaque touche blanche est une cible du regard.
-        private void BuildPiano(Action<int> onPlayed)
+        private void BuildPiano(Action<int> onPlayed) => BuildPiano(onPlayed, 0, 7);
+
+        // Les touches blanches du degré lo au degré hi (0 = do, 7 = do aigu).
+        private void BuildPiano(Action<int> onPlayed, int lo, int hi)
         {
             _canvas = new Canvas { Width = W, Height = H };
             _bars = new List<Border>();
             _lastPlay.Clear();
             _guitare = false;
             _piano = true;
+            _pianoLo = lo;
             _timbre = "piano";
             var pads = new List<FrameworkElement>();
-            const int n = 8;
-            double keyW = 150, gap = 8, keyH = 440, top = 150;
+            int n = hi - lo + 1;
+            double gap = 8, keyH = 440, top = 150;
+            double keyW = Math.Min(150, (W - 80 - (n - 1) * gap) / n);
             double x0 = (W - n * keyW - (n - 1) * gap) / 2;
 
             // Le corps du piano derrière les touches.
@@ -783,9 +900,12 @@ namespace MesPremiersJeux.Games
             Canvas.SetLeft(feutre, x0 - 10); Canvas.SetTop(feutre, top - 14);
             _canvas.Children.Add(feutre);
 
+            double pastilleD = Math.Min(96, keyW - 24);
             for (int i = 0; i < n; i++)
             {
-                var (name, col) = Notes[i];
+                int degre = lo + i;
+                string name = NoteName(degre);
+                var col = NoteColor(degre);
                 var touche = new Border
                 {
                     Width = keyW, Height = keyH, CornerRadius = new CornerRadius(0, 0, 18, 18),
@@ -795,9 +915,9 @@ namespace MesPremiersJeux.Games
                 };
                 var pastille = new Border
                 {
-                    Width = 96, Height = 96, CornerRadius = new CornerRadius(48), Background = new SolidColorBrush(col),
+                    Width = pastilleD, Height = pastilleD, CornerRadius = new CornerRadius(pastilleD / 2), Background = new SolidColorBrush(col),
                     HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 26),
-                    Child = new TextBlock { Text = name, FontSize = i == 7 ? 34 : 40, FontWeight = FontWeights.ExtraBold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+                    Child = new TextBlock { Text = name, FontSize = name.Length > 2 ? pastilleD * 0.34 : pastilleD * 0.42, FontWeight = FontWeights.ExtraBold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
                 };
                 touche.Child = pastille;
                 var btn = new Button
@@ -814,15 +934,18 @@ namespace MesPremiersJeux.Games
                 _bars.Add(touche);
                 pads.Add(btn);
             }
-            // Les touches noires (décor) : entre do-ré, ré-mi, fa-sol, sol-la, la-si.
-            foreach (int k in new[] { 0, 1, 3, 4, 5 })
+            // Les touches noires (décor) : après do, ré, fa, sol et la.
+            double noireW = Math.Min(72, keyW * 0.48);
+            for (int i = 0; i + 1 < n; i++)
             {
+                int d = ((lo + i) % 7 + 7) % 7;
+                if (d == 2 || d == 6) continue; // pas de noire après mi ni après si
                 var noire = new Border
                 {
-                    Width = 72, Height = 250, CornerRadius = new CornerRadius(0, 0, 10, 10), IsHitTestVisible = false,
+                    Width = noireW, Height = 250, CornerRadius = new CornerRadius(0, 0, 10, 10), IsHitTestVisible = false,
                     Background = new LinearGradientBrush(Color.FromRgb(0x3A, 0x2E, 0x45), Color.FromRgb(0x14, 0x0E, 0x1C), 90),
                 };
-                Canvas.SetLeft(noire, x0 + (k + 1) * (keyW + gap) - gap / 2 - 36);
+                Canvas.SetLeft(noire, x0 + (i + 1) * (keyW + gap) - gap / 2 - noireW / 2);
                 Canvas.SetTop(noire, top);
                 _canvas.Children.Add(noire);
             }
@@ -836,9 +959,9 @@ namespace MesPremiersJeux.Games
         private void PressKey(int i, Action<int> onPlayed, int cooldown)
         {
             if (Locked || !CanPlay(i, cooldown)) return;
-            SoundFx.PlayNote(i, "piano", 0.8);
+            SoundFx.PlayNote(_pianoLo + i, "piano", 0.8);
             Press(_bars[i]);
-            onPlayed?.Invoke(i);
+            onPlayed?.Invoke(_pianoLo + i);
         }
 
         // La touche s'enfonce et s'allume de sa couleur, puis s'éteint.

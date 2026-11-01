@@ -326,8 +326,17 @@ namespace MesPremiersJeux.Lib
         /// avec le timbre demandé (xylophone par défaut).</summary>
         public static void PlayNote(int degree, string timbre = "xylophone", double dur = 0.55)
         {
-            int d = Math.Max(0, Math.Min(Major.Length - 1, degree));
-            Play(timbre + "-n" + d + "-" + (int)(dur * 100), () => Timbre(timbre, Major[d], dur, 0.5));
+            int d = Math.Max(-7, Math.Min(14, degree)); // du do grave au do suraigu
+            Play(timbre + "-n" + (d < 0 ? "m" + (-d) : d.ToString()) + "-" + (int)(dur * 100), () => Timbre(timbre, Freq(d), dur, 0.5));
+        }
+
+        // La fréquence d'un degré de la gamme de do (0 = do 4) ; les degrés
+        // négatifs descendent, 7 et plus montent d'une octave.
+        private static double Freq(int degree)
+        {
+            int oct = (int)Math.Floor(degree / 7.0);
+            int d = ((degree % 7) + 7) % 7;
+            return Major[d] * Math.Pow(2, oct);
         }
 
         /// <summary>Le petit motif de présentation d'un instrument (3 notes, ou
