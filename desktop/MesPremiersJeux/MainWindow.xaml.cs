@@ -468,15 +468,19 @@ namespace MesPremiersJeux
             AzureTts.Voice = _settings.AzureVoice;
             AzureKeyBox.Text = _settings.AzureKey;
             AzureRegionBox.Text = _settings.AzureRegion;
+            _remplissage = true;
             foreach (var (label, name) in AzureTts.Voices)
                 AzureVoiceCombo.Items.Add(new ComboBoxItem { Content = label, Tag = name });
             foreach (ComboBoxItem it in AzureVoiceCombo.Items)
                 if ((string)it.Tag == _settings.AzureVoice) { AzureVoiceCombo.SelectedItem = it; break; }
-            // L'écoute (Parler).
+            // L'écoute (Parler). La case d'abord : choisir le mode dans la liste déclenche Listen_Changed, qui
+            // relit la case ; avant, la case encore vide était enregistrée à chaque démarrage (IA décochée).
+            _remplissage = true;
+            ListenAnswersCheck.IsChecked = _settings.ListenAnswers;
             foreach (ComboBoxItem it in ListenModeCombo.Items)
                 if ((string)it.Tag == (_settings.ListenMode ?? "off")) { ListenModeCombo.SelectedItem = it; break; }
             if (ListenModeCombo.SelectedItem == null) ListenModeCombo.SelectedIndex = 0;
-            ListenAnswersCheck.IsChecked = _settings.ListenAnswers;
+            _remplissage = false;
             ListenHint.Text += Listening.KeywordAvailable ? " Mot-clé installé : « Dis Eyzi »." : " Le fichier du mot-clé (Voix\\eyzi.table) n'est pas installé : seul le bouton marche pour l'instant.";
             Listening.Heard += text => Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -1953,9 +1957,11 @@ namespace MesPremiersJeux
             }
             catch (Exception ex) { Lib.Log.Write("nuage", "Envoi à la fermeture : " + ex.Message); }
         }
+        private bool _remplissage; // vrai pendant que l'administration se remplit depuis les réglages : rien à enregistrer
+
         private void Listen_Changed(object sender, RoutedEventArgs e)
         {
-            if (_settings == null || ListenModeCombo == null) return;
+            if (_settings == null || ListenModeCombo == null || _remplissage) return;
             if (ListenModeCombo.SelectedItem is ComboBoxItem it) _settings.ListenMode = (string)it.Tag;
             _settings.ListenAnswers = ListenAnswersCheck.IsChecked == true;
             _settings.Save();
@@ -1971,8 +1977,10 @@ namespace MesPremiersJeux
                 AzureKeyBox.Text = _settings.AzureKey; AzureRegionBox.Text = _settings.AzureRegion;
                 foreach (ComboBoxItem it in AzureVoiceCombo.Items) if ((string)it.Tag == _settings.AzureVoice) { AzureVoiceCombo.SelectedItem = it; break; }
                 AzureTts.Key = _settings.AzureKey; AzureTts.Region = _settings.AzureRegion; AzureTts.Voice = _settings.AzureVoice;
-                foreach (ComboBoxItem it in ListenModeCombo.Items) if ((string)it.Tag == (_settings.ListenMode ?? "off")) { ListenModeCombo.SelectedItem = it; break; }
+                _remplissage = true;
                 ListenAnswersCheck.IsChecked = _settings.ListenAnswers;
+                foreach (ComboBoxItem it in ListenModeCombo.Items) if ((string)it.Tag == (_settings.ListenMode ?? "off")) { ListenModeCombo.SelectedItem = it; break; }
+                _remplissage = false;
                 ChildAgeBox.Text = _settings.ChildAge.ToString(); ChildProfileBox.Text = _settings.ChildProfile ?? "";
                 TvIpBox.Text = _settings.TvIp ?? ""; RefreshTvText(); (_views["games"] as GamesView)?.ShowTv(!string.IsNullOrWhiteSpace(_settings.TvIp));
                 RefreshLieux();
@@ -2070,7 +2078,7 @@ namespace MesPremiersJeux
 
         private void Azure_Changed(object sender, RoutedEventArgs e)
         {
-            if (_settings == null || AzureKeyBox == null) return;
+            if (_settings == null || AzureKeyBox == null || _remplissage) return;
             _settings.AzureKey = AzureKeyBox.Text.Trim();
             _settings.AzureRegion = AzureRegionBox.Text.Trim();
             if (AzureVoiceCombo.SelectedItem is ComboBoxItem it)
