@@ -81,6 +81,7 @@ namespace MesPremiersJeux.Views
                     ("🥁", "Le petit orchestre", "PS · MS", c => new MusicSchoolGame(c, 1)),
                     ("🎹", "Le xylophone et la chanson", "PS · MS", c => new MusicSchoolGame(c, 3)),
                     ("🎸", "Je joue d'un instrument", "PS · MS", c => new MusicSchoolGame(c, 5)),
+                    ("🎸", "La guitare et ses chansons", "PS · MS", c => new MusicSchoolGame(c, 7)),
                     ("🐦", "Les oiseaux chanteurs", "PS", c => new BirdSongGame(c)),
                 },
             },

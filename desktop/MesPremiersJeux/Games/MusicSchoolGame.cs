@@ -21,6 +21,8 @@ namespace MesPremiersJeux.Games
     ///   4. LA CHANSON — « Au clair de la lune » : la lame à jouer brille.
     ///   5. JE JOUE ! — on choisit un instrument (xylophone, piano, guitare,
     ///      trompette, violon, batterie) et on en joue librement au regard.
+    ///   7. LA GUITARE — six cordes qui s'allument et chantent au regard, puis
+    ///      des chansons à jouer : la corde qui brille est la prochaine note.
     /// Le parent peut déposer de vrais sons dans Contenu\Sons (tambour.wav,
     /// guitare.wav, xylophone.wav, piano.wav, trompette.wav, violon.wav,
     /// grosse-caisse.wav, caisse-claire.wav, tom.wav, cymbale.wav).
@@ -52,11 +54,41 @@ namespace MesPremiersJeux.Games
             ("si", Color.FromRgb(0xC0, 0x7E, 0xE6)), ("do", Color.FromRgb(0xFF, 0x8F, 0xC8)),
         };
 
-        // « Au clair de la lune » (première phrase), en degrés.
-        private static readonly int[] Song = { 0, 0, 0, 1, 2, 1, 0, 2, 1, 1, 0 };
-        private static readonly string[] SongWords = { "Au", "clair", "de", "la", "lu", "ne", "mon", "a", "mi", "Pier", "rot" };
+        // Les chansons : notes en degrés (0 = do … 5 = la) et syllabes.
+        private sealed class Chanson
+        {
+            public string Titre, Emoji, Art, Fin;
+            public int[] Notes;
+            public string[] Mots;
+        }
 
-        private readonly int _startAct; // 1 instruments · 3 xylophone et chanson · 5 je joue
+        private static readonly Chanson[] Chansons =
+        {
+            new Chanson
+            {
+                Titre = "Au clair de la lune", Emoji = "🌙", Art = "lune", Fin = "Au clair de la lune, mon ami Pierrot !",
+                Notes = new[] { 0, 0, 0, 1, 2, 1, 0, 2, 1, 1, 0 },
+                Mots = new[] { "Au", "clair", "de", "la", "lu", "ne", "mon", "a", "mi", "Pier", "rot" },
+            },
+            new Chanson
+            {
+                Titre = "Frère Jacques", Emoji = "🔔", Art = "cloche", Fin = "Frère Jacques, dormez-vous ?",
+                Notes = new[] { 0, 1, 2, 0, 0, 1, 2, 0, 2, 3, 4, 2, 3, 4 },
+                Mots = new[] { "Frè", "re", "Jac", "ques", "Frè", "re", "Jac", "ques", "dor", "mez", "vous", "dor", "mez", "vous" },
+            },
+            new Chanson
+            {
+                Titre = "Ah ! vous dirai-je, maman", Emoji = "⭐", Art = "etoile", Fin = "Ah ! vous dirai-je, maman, ce qui cause mon tourment !",
+                Notes = new[] { 0, 0, 4, 4, 5, 5, 4, 3, 3, 2, 2, 1, 1, 0 },
+                Mots = new[] { "Ah", "vous", "di", "rai", "je", "ma", "man", "ce", "qui", "cau", "se", "mon", "tour", "ment" },
+            },
+        };
+
+        private Chanson _chanson = Chansons[0];
+        private string _timbre = "xylophone";
+        private bool _guitare; // les « lames » sont les cordes horizontales de la guitare
+
+        private readonly int _startAct; // 1 instruments · 3 xylophone et chanson · 5 je joue · 7 guitare
         private Canvas _canvas;
         private int _act;
         private bool[] _seen;
@@ -94,7 +126,8 @@ namespace MesPremiersJeux.Games
         protected override void NewRound()
         {
             _session = GameKit.Shuffle(Instruments).ToList();
-            if (_startAct >= 5) StartFreePlay();
+            if (_startAct >= 7) StartGuitar();
+            else if (_startAct >= 5) StartFreePlay();
             else if (_startAct >= 3) StartXylophone();
             else StartInstruments();
         }
@@ -281,6 +314,8 @@ namespace MesPremiersJeux.Games
             _canvas = new Canvas { Width = W, Height = H };
             _bars = new List<Border>();
             _lastPlay.Clear();
+            _guitare = false;
+            _timbre = timbre;
             var pads = new List<FrameworkElement>();
             double gap = n > 5 ? 18 : 34;
             double barW = Math.Min(190, (W - 80 - (n - 1) * gap) / n);
@@ -355,6 +390,7 @@ namespace MesPremiersJeux.Games
             _act = 4;
             Locked = false;
             _songPos = 0;
+            _chanson = Chansons[0];
             Question.Text = "🌙 Au clair de la lune";
             BuildBars(5, "xylophone", null);
             _lyrics = new TextBlock
@@ -371,24 +407,24 @@ namespace MesPremiersJeux.Games
             SetConsigne(Art.Visual("lune", "🌙", 110), () => "Au clair de la lune ! Regarde la lame qui brille, note après note !");
             SetBody(_canvas);
             ShowLyrics();
-            Glow(Song[0]);
+            Glow(_chanson.Notes[0]);
         }
 
         private void ShowLyrics()
         {
             var parts = new List<string>();
-            for (int k = 0; k < Song.Length; k++)
-                parts.Add(k == _songPos ? "[" + SongWords[k] + "]" : SongWords[k]);
+            for (int k = 0; k < _chanson.Notes.Length; k++)
+                parts.Add(k == _songPos ? "[" + _chanson.Mots[k] + "]" : _chanson.Mots[k]);
             _lyrics.Text = string.Join(" ", parts);
         }
 
         private void SongStep(int bar)
         {
-            int want = Song[_songPos];
+            int want = _chanson.Notes[_songPos];
             if (bar != want) { Glow(want); return; } // on a entendu la note ; la bonne rebrille
             _songPos++;
             if (_songPos == 1) RewardStar();
-            if (_songPos >= Song.Length)
+            if (_songPos >= _chanson.Notes.Length)
             {
                 Locked = true;
                 ShowLyrics();
@@ -399,21 +435,27 @@ namespace MesPremiersJeux.Games
                 return;
             }
             ShowLyrics();
-            Glow(Song[_songPos]);
+            Glow(_chanson.Notes[_songPos]);
         }
 
         private void PlayBack()
         {
-            for (int k = 0; k < Song.Length; k++)
+            var notes = _chanson.Notes;
+            for (int k = 0; k < notes.Length; k++)
             {
-                int bar = Song[k];
-                Schedule(60 + k * 520, () => { SoundFx.PlayNote(bar); Pulse(_bars[bar]); });
+                int bar = notes[k];
+                Schedule(60 + k * 520, () =>
+                {
+                    SoundFx.PlayNote(bar, _timbre, _guitare ? 0.9 : 0.55);
+                    if (_guitare) Vibrate(_bars[bar]); else Pulse(_bars[bar]);
+                });
             }
-            Schedule(60 + Song.Length * 520 + 400, () =>
+            Schedule(60 + notes.Length * 520 + 400, () =>
             {
-                Speak("Au clair de la lune, mon ami Pierrot ! Bravo ! " + GameKit.Praise());
+                Speak(_chanson.Fin + " Bravo ! " + GameKit.Praise());
                 Celebrate();
-                Schedule(4500, _startAct >= 3 ? (Action)StartFreePlay : NewRound);
+                Action suite = _guitare ? ChooseGuitarSong : _startAct >= 3 ? (Action)StartFreePlay : NewRound;
+                Schedule(4500, suite);
             });
         }
 
@@ -440,6 +482,13 @@ namespace MesPremiersJeux.Games
                 _canvas.Children.Add(_marker);
             }
             var btn = _barButtons[bar];
+            if (_guitare)
+            {
+                // À droite du chevalet, en face de la corde.
+                Canvas.SetLeft(_marker, GuitarStarX);
+                Canvas.SetTop(_marker, Canvas.GetTop(btn) + btn.Height / 2 - 55);
+                return;
+            }
             // Dans le haut de la lame (au-dessus, elle cacherait les paroles).
             Canvas.SetLeft(_marker, Canvas.GetLeft(btn) + btn.Width / 2 - 55);
             Canvas.SetTop(_marker, Canvas.GetTop(btn) + 22);
@@ -499,8 +548,10 @@ namespace MesPremiersJeux.Games
             if (_act != 5 || Locked) return;
             _act = 6;
             Question.Text = "🎵 " + name;
+            Action<int> compte = i => { if (_played++ == 0) RewardStar(); };
             if (key == "batterie") BuildDrums();
-            else BuildBars(8, key, i => { if (i == 0 && _played == 0) RewardStar(); _played++; });
+            else if (key == "guitare") BuildGuitar(compte);
+            else BuildBars(8, key, compte);
             _played = 0;
 
             // Le bouton pour changer d'instrument (au clic, en haut à droite).
@@ -510,9 +561,224 @@ namespace MesPremiersJeux.Games
             Canvas.SetTop(back, 16);
             _canvas.Children.Add(back);
 
-            SetConsigne(Art.Visual(key, "🎵", 110), () => name + " ! Regarde une touche, elle joue ! La flèche change d'instrument.");
+            string quoi = key == "guitare" ? "une corde" : key == "batterie" ? "un tambour" : "une touche";
+            SetConsigne(Art.Visual(key, "🎵", 110), () => name + " ! Regarde " + quoi + ", ça joue ! La flèche change d'instrument.");
             SetBody(_canvas);
-            Schedule(300, () => Speak(name + " ! Regarde les touches pour jouer !"));
+            Schedule(300, () => Speak(name + " ! Regarde " + quoi + " pour jouer !"));
+        }
+
+        // ==================================================================
+        // ACTE 7 — La guitare : six cordes qui s'allument au regard, puis des
+        // chansons à jouer corde après corde (la corde à jouer brille).
+        // ==================================================================
+        private const double GuitarStarX = 1190;
+        private static readonly double[] StringY = { 150, 234, 318, 402, 486, 570 };
+
+        private void StartGuitar()
+        {
+            _act = 7;
+            Locked = false;
+            _played = 0;
+            Question.Text = "🎸 La guitare";
+            BuildGuitar(i =>
+            {
+                Speak(Notes[i].Name + " !");
+                if (++_played == 1) RewardStar();
+                if (_played >= 6)
+                {
+                    Locked = true;
+                    Schedule(1600, () =>
+                    {
+                        Speak("Bravo ! Maintenant, on joue une chanson. Choisis-la !");
+                        Schedule(4200, ChooseGuitarSong);
+                    });
+                }
+            });
+            SetConsigne(Art.Visual("guitare", "🎸", 110), () => "La guitare ! Regarde une corde : elle s'allume et elle chante !");
+            SetBody(_canvas);
+            Schedule(450, () => Speak("La guitare ! Regarde une corde, elle s'allume et elle chante !"));
+        }
+
+        private void ChooseGuitarSong()
+        {
+            _act = 8;
+            Locked = false;
+            SetGazePads(null, null);
+            _repeatAction = null;
+            _gazeBar = -1;
+            Question.Text = "🎸 Quelle chanson ?";
+            _canvas = new Canvas { Width = W, Height = H };
+            double size = 330, gap = 60;
+            double x0 = (W - Chansons.Length * size - (Chansons.Length - 1) * gap) / 2;
+            for (int i = 0; i < Chansons.Length; i++)
+            {
+                var c = Chansons[i];
+                var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+                content.Children.Add(Art.Visual(c.Art, c.Emoji, 170));
+                content.Children.Add(new TextBlock
+                {
+                    Text = c.Titre, FontSize = 30, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
+                    MaxWidth = 280, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 0),
+                });
+                var btn = AnswerButton(new Viewbox { Child = content, Margin = new Thickness(14) }, size);
+                var ch = c;
+                btn.Click += (o, ev) => PlayGuitarSong(ch);
+                Canvas.SetLeft(btn, x0 + i * (size + gap));
+                Canvas.SetTop(btn, 140);
+                _canvas.Children.Add(btn);
+            }
+            SetConsigne(Art.Visual("guitare", "🎸", 110), () => "Choisis une chanson à jouer sur la guitare !");
+            SetBody(_canvas);
+            Schedule(450, () => Speak("Choisis une chanson !"));
+        }
+
+        private void PlayGuitarSong(Chanson c)
+        {
+            if (_act != 8 || Locked) return;
+            _act = 9;
+            Locked = false;
+            _chanson = c;
+            _songPos = 0;
+            Question.Text = c.Emoji + " " + c.Titre;
+            BuildGuitar(SongStep);
+            _lyrics = new TextBlock
+            {
+                FontSize = 40, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)),
+                Width = W, TextAlignment = TextAlignment.Center,
+            };
+            Canvas.SetTop(_lyrics, 14);
+            _canvas.Children.Add(_lyrics);
+
+            // Changer de chanson (au clic, en haut à droite).
+            var back = AnswerButton(new TextBlock { Text = "🔁", FontSize = 70, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center }, 130);
+            back.Click += (o, ev) => { if (_act == 9) ChooseGuitarSong(); };
+            Canvas.SetLeft(back, W - 150);
+            Canvas.SetTop(back, 16);
+            _canvas.Children.Add(back);
+
+            SetConsigne(Art.Visual(c.Art, c.Emoji, 110), () => c.Titre + " ! Regarde la corde qui brille, note après note !");
+            SetBody(_canvas);
+            ShowLyrics();
+            Glow(c.Notes[0]);
+            Schedule(400, () => Speak(c.Titre + " ! Regarde la corde qui brille !"));
+        }
+
+        // La guitare couchée : manche à gauche, caisse à droite, six cordes de
+        // couleur (do, ré, mi, fa, sol, la) qui traversent l'écran. Chaque corde
+        // est une cible du regard : elle s'allume, vibre et sonne.
+        private void BuildGuitar(Action<int> onPlayed)
+        {
+            _canvas = new Canvas { Width = W, Height = H };
+            _bars = new List<Border>();
+            _lastPlay.Clear();
+            _guitare = true;
+            _timbre = "guitare";
+            var pads = new List<FrameworkElement>();
+
+            var bois = new LinearGradientBrush(Color.FromRgb(0xF0, 0xB4, 0x6A), Color.FromRgb(0xC9, 0x7B, 0x2E), 90);
+            var boisSombre = new SolidColorBrush(Color.FromRgb(0x5A, 0x36, 0x1C));
+            var bord = new SolidColorBrush(Color.FromRgb(0x8A, 0x4B, 0x14));
+            var creme = new SolidColorBrush(Color.FromRgb(0xF3, 0xD9, 0xA6));
+
+            // La caisse : deux rondeurs (petite à gauche, grande à droite).
+            void Rond(double left, double top, double w, double h, bool trait)
+            {
+                var e = new System.Windows.Shapes.Ellipse { Width = w, Height = h, Fill = bois, Stroke = trait ? bord : null, StrokeThickness = 7 };
+                Canvas.SetLeft(e, left); Canvas.SetTop(e, top);
+                _canvas.Children.Add(e);
+            }
+            Rond(560, 115, 470, 470, true);
+            Rond(780, 70, 600, 560, true);
+            Rond(560, 115, 470, 470, false); // recouvre les traits intérieurs
+            Rond(780, 70, 600, 560, false);
+
+            // Le manche et la tête.
+            var manche = new System.Windows.Shapes.Rectangle { Width = 580, Height = 500, Fill = boisSombre, RadiusX = 14, RadiusY = 14 };
+            Canvas.SetLeft(manche, 110); Canvas.SetTop(manche, 110);
+            _canvas.Children.Add(manche);
+            var tete = new System.Windows.Shapes.Rectangle { Width = 130, Height = 540, Fill = new SolidColorBrush(Color.FromRgb(0x3B, 0x23, 0x14)), RadiusX = 30, RadiusY = 30 };
+            Canvas.SetLeft(tete, 24); Canvas.SetTop(tete, 90);
+            _canvas.Children.Add(tete);
+            for (int f = 0; f < 6; f++)
+            {
+                var frette = new System.Windows.Shapes.Rectangle { Width = 7, Height = 500, Fill = creme, Opacity = 0.8 };
+                Canvas.SetLeft(frette, 200 + f * 82); Canvas.SetTop(frette, 110);
+                _canvas.Children.Add(frette);
+            }
+            // La rosace et le chevalet.
+            var rosace = new System.Windows.Shapes.Ellipse { Width = 180, Height = 180, Fill = new SolidColorBrush(Color.FromRgb(0x2B, 0x18, 0x0C)), Stroke = creme, StrokeThickness = 9 };
+            Canvas.SetLeft(rosace, 800); Canvas.SetTop(rosace, 270);
+            _canvas.Children.Add(rosace);
+            var chevalet = new System.Windows.Shapes.Rectangle { Width = 36, Height = 470, Fill = new SolidColorBrush(Color.FromRgb(0x3B, 0x23, 0x14)), RadiusX = 12, RadiusY = 12 };
+            Canvas.SetLeft(chevalet, 1125); Canvas.SetTop(chevalet, 125);
+            _canvas.Children.Add(chevalet);
+
+            for (int i = 0; i < StringY.Length; i++)
+            {
+                var (name, col) = Notes[i];
+                double y = StringY[i];
+                // La mécanique (le bouton d'accord) sur la tête.
+                var meca = new System.Windows.Shapes.Ellipse { Width = 30, Height = 30, Fill = creme, Stroke = bord, StrokeThickness = 3 };
+                Canvas.SetLeft(meca, 8); Canvas.SetTop(meca, y - 15);
+                _canvas.Children.Add(meca);
+
+                var grid = new Grid();
+                var corde = new Border
+                {
+                    Height = 13 - i * 1.2, CornerRadius = new CornerRadius(7), VerticalAlignment = VerticalAlignment.Center,
+                    Background = new LinearGradientBrush(Lighten(col), col, 0), Margin = new Thickness(60, 0, 20, 0),
+                    BorderBrush = Brushes.White, BorderThickness = new Thickness(1.5),
+                };
+                grid.Children.Add(corde);
+                grid.Children.Add(new TextBlock
+                {
+                    Text = name, FontSize = 36, FontWeight = FontWeights.ExtraBold, Foreground = new SolidColorBrush(col),
+                    HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(44, 0, 0, 0),
+                });
+                var btn = new Button
+                {
+                    Style = (Style)Application.Current.Resources["AnswerButton"],
+                    Width = 1125, Height = 80, Padding = new Thickness(0),
+                    Background = Brushes.Transparent, Content = grid,
+                };
+                int idx = i;
+                btn.Click += (o, ev) => Pluck(idx, onPlayed, 0);
+                Canvas.SetLeft(btn, 40);
+                Canvas.SetTop(btn, y - 40);
+                _canvas.Children.Add(btn);
+                _bars.Add(corde);
+                pads.Add(btn);
+            }
+            _barButtons = pads.Cast<Button>().ToList();
+            _marker = null;
+            _gazeBar = -1;
+            _repeatAction = i => Pluck(i, onPlayed, 0);
+            SetGazePads(pads, i => { _gazeBar = i; if (i >= 0) Pluck(i, onPlayed, 350); });
+        }
+
+        private void Pluck(int i, Action<int> onPlayed, int cooldown)
+        {
+            if (Locked || !CanPlay(i, cooldown)) return;
+            SoundFx.PlayNote(i, "guitare", 0.9);
+            Vibrate(_bars[i]);
+            onPlayed?.Invoke(i);
+        }
+
+        // La corde s'allume (halo blanc qui s'éteint) et vibre un instant.
+        private static void Vibrate(Border corde)
+        {
+            var tr = new TranslateTransform();
+            corde.RenderTransform = tr;
+            tr.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(-7, 7, TimeSpan.FromMilliseconds(45))
+            { AutoReverse = true, RepeatBehavior = new RepeatBehavior(7), FillBehavior = FillBehavior.Stop });
+            var halo = corde.Effect as DropShadowEffect;
+            if (halo == null || halo.Color != Colors.White)
+            {
+                halo = new DropShadowEffect { BlurRadius = 45, ShadowDepth = 0, Color = Colors.White, Opacity = 1 };
+                corde.Effect = halo;
+                halo.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(900)) { BeginTime = TimeSpan.FromMilliseconds(250) });
+            }
+            else halo.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(900)) { BeginTime = TimeSpan.FromMilliseconds(250) });
         }
 
         // La batterie : quatre gros pads (grosse caisse, caisse claire, tom, cymbale).

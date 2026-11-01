@@ -412,6 +412,7 @@ namespace MesPremiersJeux.Lib
         private static float[] Timbre(string name, double f, double dur, double vol)
         {
             if (name == "tambour") return DrumHit(vol * 1.4);
+            if (name == "guitare") return Pluck(f, dur, vol);
             int n = (int)(Rate * dur);
             var s = new float[n];
             double phase = 0;
@@ -455,6 +456,35 @@ namespace MesPremiersJeux.Lib
                         break;
                 }
                 s[i] = (float)Math.Max(-1, Math.Min(1, w * env * vol));
+            }
+            return s;
+        }
+
+        // Corde pincée (Karplus-Strong) : une boucle de bruit qui s'adoucit à
+        // chaque tour — ça sonne vraiment comme une corde de guitare.
+        private static float[] Pluck(double f, double dur, double vol)
+        {
+            int n = (int)(Rate * dur);
+            var s = new float[n];
+            int len = Math.Max(2, (int)Math.Round(Rate / f));
+            var ring = new double[len];
+            var rng = new Random((int)f);
+            for (int i = 0; i < len; i++) ring[i] = rng.NextDouble() * 2 - 1;
+            // Un peu de rondeur dès l'attaque : on adoucit le bruit de départ.
+            for (int k = 0; k < 2; k++)
+                for (int i = 1; i < len; i++) ring[i] = 0.5 * (ring[i] + ring[i - 1]);
+            int pos = 0;
+            double prev = ring[len - 1];
+            for (int i = 0; i < n; i++)
+            {
+                double cur = ring[pos];
+                double next = 0.996 * 0.5 * (cur + prev); // le filtre qui fait mourir la note
+                ring[pos] = next;
+                prev = cur;
+                pos = (pos + 1) % len;
+                double t = i / (double)n;
+                double env = t < 0.85 ? 1 : (1 - t) / 0.15; // pas de clic à la fin
+                s[i] = (float)Math.Max(-1, Math.Min(1, cur * env * vol * 1.6));
             }
             return s;
         }
