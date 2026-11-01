@@ -12,6 +12,11 @@ on:
         description: "Version à promouvoir (ex. v2026.10.22.105). Vide = la version test la plus récente."
         required: false
         default: ""
+  # Ou en poussant un tag git « prod-v2026.11.1.210 » : la version nommée est promue
+  # (pour promouvoir depuis un outil qui ne peut pas lancer l'action à la main).
+  push:
+    tags:
+      - "prod-v*"
 
 permissions:
   contents: write
@@ -26,6 +31,7 @@ jobs:
           TAG: ${{ inputs.tag }}
         run: |
           set -e
+          case "$GITHUB_REF" in refs/tags/prod-*) TAG="${GITHUB_REF#refs/tags/prod-}";; esac
           if [ -z "$TAG" ]; then
             TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 --json tagName,isPrerelease,isDraft \
               --jq '[.[] | select(.isPrerelease and (.isDraft|not))] | sort_by(.tagName | ltrimstr("v") | split(".") | map(tonumber)) | last | .tagName')
