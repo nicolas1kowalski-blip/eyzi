@@ -347,7 +347,7 @@ namespace MesPremiersJeux.Views
             var mot = CommBoard.Trouver(r.Cle);
             bool grand = _grilleRows == 1;
             var st = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            st.Children.Add(new Viewbox { Child = Visuel(r, mot), Height = grand ? 260 : 170, Stretch = Stretch.Uniform });
+            st.Children.Add(new Viewbox { Child = Visuel(r, mot, _enCours?.Question), Height = grand ? 260 : 170, Stretch = Stretch.Uniform });
             st.Children.Add(new TextBlock { Text = r.Texte, FontSize = grand ? 40 : 30, FontWeight = FontWeights.Bold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = 380, Margin = new Thickness(0, 8, 0, 0) });
             var b = new Button
             {
@@ -369,7 +369,7 @@ namespace MesPremiersJeux.Views
             if (_enCours != null) _enCours.Reponse = r.Texte;
             ReponsesPref.Choisie(r.Texte);
             GazeStats.RecordComm("ecoute-" + type);
-            _confirmVisual.Child = new Viewbox { Stretch = Stretch.Uniform, Child = Visuel(r, mot) };
+            _confirmVisual.Child = new Viewbox { Stretch = Stretch.Uniform, Child = Visuel(r, mot, _enCours?.Question) };
             _confirmText.Text = (r.Texte ?? "").TrimEnd('!', '.') + " !";
             Emoji.FixTree(_confirm);
             Montrer("confirm");
@@ -387,7 +387,7 @@ namespace MesPremiersJeux.Views
         };
 
         /// <summary>Le visuel d'une réponse : la photo d'un proche d'abord, puis le picto ARASAAC du mot français, puis le secours (image du tableau, Mulberry, emoji).</summary>
-        public static FrameworkElement Visuel(Suggest.Reponse r, CommBoard.Mot mot)
+        public static FrameworkElement Visuel(Suggest.Reponse r, CommBoard.Mot mot, string question = null)
         {
             try
             {
@@ -403,7 +403,9 @@ namespace MesPremiersJeux.Views
                 if (secours == null && mot != null) { var src = Art.Find(mot.Img); if (src != null) secours = new Image { Source = src, Stretch = Stretch.Uniform }; }
                 if (secours == null) secours = Pictos.Picture(r.Picto, 200) ?? Pictos.Picture(r.Texte, 200);
                 if (secours == null && !string.IsNullOrWhiteSpace(r.Emoji)) secours = Art.Visual("", r.Emoji.Trim(), 200);
-                var a = Arasaac.Picture(r.Texte, 200, secours);
+                // Le mot français complet donné par l'IA (« yaourt nature ») d'abord, sinon la réponse lue dans le contexte de la question.
+                var a = string.IsNullOrWhiteSpace(r.Mot) ? null : Arasaac.Picture(r.Mot, 200, secours);
+                if (a == null) a = Arasaac.Picture(r.Texte, 200, secours, question);
                 if (a != null) return a;
                 if (secours != null) return secours;
             }

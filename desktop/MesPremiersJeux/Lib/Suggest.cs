@@ -20,7 +20,7 @@ namespace MesPremiersJeux.Lib
     /// </summary>
     public static class Suggest
     {
-        public sealed class Reponse { public string Texte, Emoji, Cle, Picto; }
+        public sealed class Reponse { public string Texte, Emoji, Cle, Picto, Mot; }  // Mot : le mot français complet de l'image (« yaourt nature »)
         public sealed class Resultat
         {
             public string Type = "autre";   // fermee | choix | ouverte | consigne | autre
@@ -148,7 +148,7 @@ namespace MesPremiersJeux.Lib
                         if (line.Contains("\"erreur\"")) { fin.Erreur = Cloud.JsonGet(line, "erreur"); break; }
                         if (line.Contains("\"reponse\""))
                         {
-                            var r = new Reponse { Texte = (Cloud.JsonGet(line, "texte") ?? "").Trim(), Emoji = Cloud.JsonGet(line, "emoji") ?? "", Cle = Cloud.JsonGet(line, "cle") ?? "", Picto = Cloud.JsonGet(line, "picto") ?? "" };
+                            var r = new Reponse { Texte = (Cloud.JsonGet(line, "texte") ?? "").Trim(), Emoji = Cloud.JsonGet(line, "emoji") ?? "", Cle = Cloud.JsonGet(line, "cle") ?? "", Picto = Cloud.JsonGet(line, "picto") ?? "", Mot = Cloud.JsonGet(line, "mot") ?? "" };
                             if (r.Texte.Length == 0) continue;
                             if (premiere == 0) premiere = chrono.ElapsedMilliseconds;
                             fin.Reponses.Add(r);
@@ -176,7 +176,7 @@ namespace MesPremiersJeux.Lib
                             int iRep = line.IndexOf("\"reponses\"", StringComparison.Ordinal);
                             foreach (Match m in Regex.Matches(line.Substring(iRep), @"\{[^{}]*\}"))
                             {
-                                var r = new Reponse { Texte = (Cloud.JsonGet(m.Value, "texte") ?? "").Trim(), Emoji = Cloud.JsonGet(m.Value, "emoji") ?? "", Cle = Cloud.JsonGet(m.Value, "cle") ?? "", Picto = Cloud.JsonGet(m.Value, "picto") ?? "" };
+                                var r = new Reponse { Texte = (Cloud.JsonGet(m.Value, "texte") ?? "").Trim(), Emoji = Cloud.JsonGet(m.Value, "emoji") ?? "", Cle = Cloud.JsonGet(m.Value, "cle") ?? "", Picto = Cloud.JsonGet(m.Value, "picto") ?? "", Mot = Cloud.JsonGet(m.Value, "mot") ?? "" };
                                 if (r.Texte.Length == 0) continue;
                                 fin.Reponses.Add(r);
                                 try { surReponse?.Invoke(r); } catch { }

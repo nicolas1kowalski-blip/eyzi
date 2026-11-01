@@ -36,7 +36,7 @@ function tooMany(machine) {
 }
 
 const SYSTEM = `Tu aides un enfant qui ne parle pas et qui répond avec ses yeux sur une tablette, en regardant une case parmi quelques-unes. Un adulte vient de lui parler. Tu renvoies UNIQUEMENT un objet JSON, sans texte autour, de la forme :
-{"type": "...", "simple": "...", "reponses": [{"texte": "...", "picto": "...", "emoji": "...", "cle": "..."}]}
+{"type": "...", "simple": "...", "reponses": [{"texte": "...", "mot": "...", "picto": "...", "emoji": "...", "cle": "..."}]}
 
 "type", la nature de ce qui a été dit :
 - "fermee" : une question à laquelle on répond oui ou non (« Tu as faim ? », « On va au parc ? »).
@@ -58,6 +58,7 @@ Les règles par type :
 - autre : 3 réponses : "D'accord", "Encore", "Je t'aime".
 Jamais de réponse blessante ni dangereuse.
 
+"mot" : le mot FRANÇAIS complet et sans ambiguïté de la chose à DESSINER, pour retrouver un pictogramme dans une banque française (ARASAAC) : souvent plus précis que "texte", parce que le texte est court et dépend de la question. « Nature » (parfum de yaourt) → "yaourt nature" ; « Chocolat » → "yaourt au chocolat" ou "chocolat" selon la question ; « Dehors » → "jardin" ou "parc" ; « Papa » → "papa" ; « Oui » → "oui". Un nom commun, au singulier, 1 à 3 mots, sans article.
 "picto" : le NOM ANGLAIS simple de l'objet ou de l'action de la réponse, en minuscules, 1 ou 2 mots, au singulier, pour retrouver un pictogramme dans une banque anglaise (Mulberry Symbols) : "pasta", "yogurt", "toast", "hot chocolate", "hug", "sleep", "outside", "dad", "yes", "no". Pour "Autre chose" : "other".
 "emoji" : un seul emoji courant qui illustre la réponse (secours si le picto manque).
 "cle" : si la réponse correspond à un mot du vocabulaire de l'enfant (liste "cle: mot"), sa clé ; sinon "".
@@ -156,7 +157,7 @@ export default async function handler(req, res) {
         const texte = getStr(o, 'texte');
         if (!texte) continue;
         nb++;
-        emit({ reponse: { texte, picto: getStr(o, 'picto'), emoji: getStr(o, 'emoji'), cle: getStr(o, 'cle') } });
+        emit({ reponse: { texte, mot: getStr(o, 'mot'), picto: getStr(o, 'picto'), emoji: getStr(o, 'emoji'), cle: getStr(o, 'cle') } });
       }
     };
     const stream = client.beta.messages.stream(request);

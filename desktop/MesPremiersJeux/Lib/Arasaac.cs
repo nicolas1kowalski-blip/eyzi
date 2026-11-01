@@ -103,6 +103,30 @@ namespace MesPremiersJeux.Lib
             return 0;
         }
 
+        /// <summary>
+        /// Le picto d'une réponse courte dans le contexte de la question : « Nature » après « quel yaourt tu veux ? »
+        /// → « yaourt nature » avant « nature ». On essaie les noms de la question (ceux qui sont dans l'index) composés
+        /// avec la réponse, dans les deux ordres et avec « au / à la / aux / de ».
+        /// </summary>
+        public static int FindEnContexte(string texte, string question)
+        {
+            Load();
+            var rep = Norm(texte);
+            for (int i = 0; i < 3; i++) { var t2 = Article.Replace(rep, ""); if (t2 == rep) break; rep = t2.Trim(); }
+            if (rep.Length == 0 || string.IsNullOrWhiteSpace(question)) return Find(texte);
+            var noms = Norm(question).Split(' ').Where(w => w.Length >= 4 && _parMot.ContainsKey(w) && !Article.IsMatch(w + " ")).Distinct().ToList();
+            foreach (var n in noms)
+            {
+                if (n == rep) continue;
+                foreach (var cand in new[] { n + " " + rep, n + " au " + rep, n + " a la " + rep, n + " a l'" + rep, n + " aux " + rep, n + " de " + rep, n + " d'" + rep, rep + " " + n, rep + " de " + n })
+                {
+                    int id = Exact(cand);
+                    if (id != 0) return id;
+                }
+            }
+            return Find(texte);
+        }
+
         private static int Exact(string k)
         {
             if (_parMot.TryGetValue(k, out var l) && l.Count > 0) return l[0];
@@ -159,11 +183,11 @@ namespace MesPremiersJeux.Lib
         /// Le picto d'un texte français, dans une case de « size » : tout de suite s'il est sur la tablette,
         /// sinon « secours » s'affiche et le picto le remplace quand il est téléchargé. Null si le mot est inconnu.
         /// </summary>
-        public static FrameworkElement Picture(string texte, double size, FrameworkElement secours = null)
+        public static FrameworkElement Picture(string texte, double size, FrameworkElement secours = null, string question = null)
         {
             if (!Available) return null;
             int id;
-            try { id = Find(texte); } catch { return null; }
+            try { id = string.IsNullOrWhiteSpace(question) ? Find(texte) : FindEnContexte(texte, question); } catch { return null; }
             if (id == 0) return null;
             var img = new Image { Width = size, Height = size, Stretch = Stretch.Uniform };
             var host = new Grid { Width = size, Height = size };
