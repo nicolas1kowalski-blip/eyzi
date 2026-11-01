@@ -71,7 +71,7 @@ namespace MesPremiersJeux.Games
             return sb.ToString();
         }
 
-        private void DireConsigne(string texte, int delay = 350) => Schedule(delay, () => Speak(texte));
+        private void DireConsigne(string texte, int delay = 350) => Schedule(delay, () => SpeakConsigne(texte)); // l'énoncé va au bout avant qu'une réponse soit prise
 
         private FrameworkElement Modele(Exercice ex) => _lecon.EstDefi || ex.Modele == null ? null : ex.Modele();
 
@@ -93,7 +93,7 @@ namespace MesPremiersJeux.Games
             Shake(btn);
             if (cacher) btn.Visibility = Visibility.Hidden; // une mauvaise cible en moins : on ne bloque jamais
             Speak(GameKit.Encourage());
-            Schedule(1500, () => Speak(consigne));
+            Schedule(1500, () => SpeakConsigne(consigne));
         }
 
         private double TailleReponse(int n, double voulue) => voulue > 0 ? voulue : n <= 2 ? 300 : n == 3 ? 260 : n == 4 ? 230 : 195;
@@ -201,7 +201,7 @@ namespace MesPremiersJeux.Games
                         index++;
                         if (index >= a.Objets.Count) { Reussite(btn, a.Bravo ?? "Tout est rangé ! Bravo !"); return; }
                         Speak("Oui !");
-                        Schedule(900, () => { Afficher(); if (!_lecon.EstDefi) ArmHint(boutons[a.Objets[index].Cible], () => ConsigneObjet(a)); Speak(ConsigneObjet(a)); });
+                        Schedule(900, () => { Afficher(); if (!_lecon.EstDefi) ArmHint(boutons[a.Objets[index].Cible], () => ConsigneObjet(a)); SpeakConsigne(ConsigneObjet(a)); });
                     }
                     else Erreur(btn, ConsigneObjet(a), false);
                 };
@@ -252,7 +252,7 @@ namespace MesPremiersJeux.Games
                         slots[next].Background = Brushes.White;
                         next++;
                         if (next >= o.Cartes.Count) { Reussite(null, o.Bravo ?? "Tout est dans l'ordre ! Bravo !"); return; }
-                        Speak(o.ConsigneSuite);
+                        SpeakConsigne(o.ConsigneSuite);
                         Locked = false;
                         if (!_lecon.EstDefi) ArmHint(boutons.First(b => b.Index == next).Btn, () => o.ConsigneSuite);
                     }

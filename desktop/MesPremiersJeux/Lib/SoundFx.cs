@@ -186,6 +186,42 @@ namespace MesPremiersJeux.Lib
         public static void Whistle()
             => Play("whistle", "siffle", () => Glide(500, 1400, 0.55, 0.16));
 
+        /// <summary>Les dés qu'on lance : un cliquetis qui ralentit, puis le petit choc de l'arrêt (fichier Sons\de.wav de la famille s'il existe).</summary>
+        public static void Dice()
+        {
+            Play("dice", "de", () =>
+            {
+                var rng = new Random(11);
+                int n = (int)(Rate * 1.15);
+                var s = new float[n];
+                // les chocs : rapprochés au début (le dé roule), de plus en plus espacés, le dernier plus franc
+                var chocs = new List<(int At, double Vol, double Tone)>();
+                double tms = 20; int k = 0;
+                while (tms < 1000)
+                {
+                    chocs.Add(((int)(Rate * tms / 1000.0), 0.35 + rng.NextDouble() * 0.4, 1800 + rng.Next(2200)));
+                    tms += 48 + k * 9 + rng.Next(18); k++;
+                }
+                chocs.Add(((int)(Rate * 1.02), 1.0, 900)); // l'arrêt
+                foreach (var c in chocs)
+                {
+                    int len = (int)(Rate * (c.Vol >= 1.0 ? 0.09 : 0.028));
+                    double hp = 0, prev = 0;
+                    for (int i = 0; i < len && c.At + i < n; i++)
+                    {
+                        double tt = i / (double)Rate;
+                        double noise = rng.NextDouble() * 2 - 1;
+                        hp = 0.7 * (hp + noise - prev); prev = noise;       // passe-haut : sec, « osseux »
+                        double ring = Math.Sin(2 * Math.PI * c.Tone * tt) * 0.5;
+                        double env = Math.Exp(-(c.Vol >= 1.0 ? 55 : 160) * tt);
+                        s[c.At + i] += (float)((hp * 0.9 + ring) * env * c.Vol * 0.7);
+                    }
+                }
+                for (int i = 0; i < n; i++) s[i] = (float)Math.Max(-1, Math.Min(1, s[i]));
+                return s;
+            });
+        }
+
         /// <summary>Boum sourd et rond du feu d'artifice.</summary>
         public static void Boom()
         {

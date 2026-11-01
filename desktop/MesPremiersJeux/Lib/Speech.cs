@@ -244,6 +244,10 @@ namespace MesPremiersJeux.Lib
         //  qu'une fois sur deux.
         // ------------------------------------------------------------------
         private static bool _gate;
+        private static bool _forceGate; // la prochaine phrase est une CONSIGNE d'exercice : à écouter jusqu'au bout, même courte, même déjà entendue
+
+        /// <summary>Une consigne d'exercice (« Où y a-t-il le plus de pommes ? ») : l'enfant ne peut répondre qu'une fois l'énoncé terminé.</summary>
+        public static void SayConsigne(string text) { _forceGate = true; Say(text); }
 
         /// <summary>La voix parle ET c'est une consigne à écouter.</summary>
         public static bool IsGating => _gate && IsBusy;
@@ -541,7 +545,8 @@ namespace MesPremiersJeux.Lib
             // Seules les phrases LONGUES (consignes, explications) verrouillent
             // les clics ; les petits retours laissent l'enfant enchaîner.
             // Une phrase déjà entendue ne verrouille plus.
-            _gate = text.Length >= 60 && !AlreadyHeard(text);
+            _gate = _forceGate || (text.Length >= 60 && !AlreadyHeard(text));
+            _forceGate = false;
             _currentText = text;
             _busyStart = DateTime.Now;
 

@@ -645,6 +645,9 @@ namespace MesPremiersJeux.Games
 
         protected void SpeakSlow(string text) { if (!Closed) Speech.SaySlow(text); }
 
+        /// <summary>La consigne d'un exercice : dite jusqu'au bout avant toute réponse (le clic attend, l'oreille 👂 s'affiche).</summary>
+        protected void SpeakConsigne(string text) { if (!Closed) Speech.SayConsigne(text); }
+
         /// <summary>
         /// Gros bouton 🔊 qui RÉPÈTE la consigne à voix haute — pour un enfant qui
         /// ne lit pas encore : la consigne s'entend et se voit (modèle en grand),

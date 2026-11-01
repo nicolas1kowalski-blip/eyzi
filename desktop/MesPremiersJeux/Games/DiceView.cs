@@ -96,6 +96,7 @@ namespace MesPremiersJeux.Games
         public void RollTo(int finalValue, Action done)
         {
             _timer?.Stop();
+            Lib.SoundFx.Dice();
             _rot.BeginAnimation(RotateTransform.AngleProperty,
                 new DoubleAnimation(0, 360, TimeSpan.FromMilliseconds(780))
                 { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } });
