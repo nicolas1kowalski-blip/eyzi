@@ -58,8 +58,8 @@ namespace MesPremiersJeux.Lib
                 var config = SpeechConfig.FromSubscription(_key, _region);
                 config.SpeechRecognitionLanguage = "fr-FR";
                 // La phrase est close après 450 ms de silence au lieu d'une seconde : la grille arrive plus tôt.
-                config.SetProperty(PropertyId.Speech_SegmentationSilenceTimeoutMs, "450");
-                config.SetProperty(PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "450");
+                config.SetProperty(PropertyId.Speech_SegmentationSilenceTimeoutMs, "600");
+                config.SetProperty(PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "600");
                 _rec = new SpeechRecognizer(config, AudioConfig.FromDefaultMicrophoneInput());
                 _rec.Recognized += OnRecognized;
                 _rec.Recognizing += (o, e) => { try { if (e.Result.Reason == ResultReason.RecognizingSpeech) Partial?.Invoke(Clean(e.Result.Text)); } catch { } };
@@ -109,7 +109,15 @@ namespace MesPremiersJeux.Lib
 
         private static void OnRecognized(object sender, SpeechRecognitionEventArgs e)
         {
-            if (e.Result.Reason == ResultReason.RecognizedKeyword) { SetStatus("ecoute"); return; }
+            if (e.Result.Reason == ResultReason.RecognizedKeyword)
+            {
+                // Le mot-clé est entendu : on n'enchaîne pas dans le même souffle (la pause après « Dis Eyzi »
+                // fermait la phrase, vide) ; on lance une vraie écoute de phrase, puis on revient à la veille.
+                Log.Write("ecoute", "Mot-clé entendu");
+                SetStatus("ecoute");
+                _ = Task.Run(() => ListenOnce());
+                return;
+            }
             if (e.Result.Reason != ResultReason.RecognizedSpeech) return;
             var text = Clean(e.Result.Text);
             if (_keywordMode) SetStatus("veille");
@@ -166,8 +174,10 @@ namespace MesPremiersJeux.Lib
                 if (result.Reason == ResultReason.RecognizedSpeech)
                 {
                     var text = Clean(result.Text);
-                    if (text.Length >= 2) { Log.Write("ecoute", "Entendu (bouton) : " + text); try { Heard?.Invoke(text); } catch { } }
+                    if (text.Length >= 2) { Log.Write("ecoute", "Entendu : " + text); try { Heard?.Invoke(text); } catch { } }
+                    else Log.Write("ecoute", "Phrase vide (« " + result.Text + " »)");
                 }
+                else if (result.Reason == ResultReason.NoMatch) Log.Write("ecoute", "Rien entendu");
                 else if (result.Reason == ResultReason.Canceled)
                 {
                     var d = CancellationDetails.FromResult(result);
