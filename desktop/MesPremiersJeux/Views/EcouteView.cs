@@ -37,7 +37,9 @@ namespace MesPremiersJeux.Views
         private readonly UniformGrid _answers;
         private readonly Border _confirmVisual;
         private readonly Ellipse _anneau1, _anneau2;
-        private readonly Border _bas;
+        private readonly Border _bas, _photoBox, _flash;
+        private readonly Button _btnScene, _btnEnfant;
+        private string _photoB64, _photoVue;
         private readonly List<Suggest.Echange> _historique = new List<Suggest.Echange>();
         private Suggest.Echange _enCours;
         private string _speculatif, _partiel, _etat = "attente";
@@ -68,7 +70,13 @@ namespace MesPremiersJeux.Views
                 Content = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Children = { Art.Visual("", "🧩", 48), new TextBlock { Text = "Mes mots", FontSize = 30, FontWeight = FontWeights.Bold, Foreground = Dark, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center } } },
             };
             mots.Click += (s, e) => { Arreter(); MotsRequested?.Invoke(); };
-            ap.Children.Add(mots);
+            var dire = new Button
+            {
+                Style = (Style)Application.Current.Resources["AnswerButton"], Width = 380, Height = 100, Margin = new Thickness(24, 40, 0, 0), Background = new SolidColorBrush(Color.FromRgb(0xFF, 0xE4, 0xF0)),
+                Content = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Children = { Art.Visual("", "💬", 48), new TextBlock { Text = "Je veux dire…", FontSize = 30, FontWeight = FontWeights.Bold, Foreground = Dark, Margin = new Thickness(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center } } },
+            };
+            dire.Click += (s, e) => ShowSpontane();
+            ap.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Children = { mots, dire } });
             _attente.Children.Add(ap);
             _root.Children.Add(_attente);
 
@@ -91,8 +99,14 @@ namespace MesPremiersJeux.Views
             _grilleP = new Grid { Visibility = Visibility.Collapsed };
             _grilleP.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             _grilleP.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            _question = new TextBlock { FontSize = 46, FontWeight = FontWeights.ExtraBold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(60, 22, 60, 8), MaxWidth = 1500 };
-            _grilleP.Children.Add(_question);
+            _question = new TextBlock { FontSize = 46, FontWeight = FontWeights.ExtraBold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(60, 22, 60, 8), MaxWidth = 1500 };
+            // 📷 La photo qui vient d'être prise, à gauche de la question (l'enfant voit ce que l'IA a vu).
+            _photoBox = new Border { Width = 250, Height = 188, CornerRadius = new CornerRadius(18), Margin = new Thickness(30, 14, 0, 8), Background = Brushes.White, Padding = new Thickness(6), Visibility = Visibility.Collapsed, Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 20, ShadowDepth = 4, Opacity = 0.18 } };
+            var tete = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(_photoBox, Dock.Left);
+            tete.Children.Add(_photoBox);
+            tete.Children.Add(_question);
+            _grilleP.Children.Add(tete);
             _answers = new UniformGrid { Margin = new Thickness(40, 0, 40, 10) };
             _wait = new TextBlock { FontSize = 34, Foreground = Dark, Opacity = 0.7, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
             var gh = new Grid { Children = { _answers, _wait } };
@@ -124,6 +138,16 @@ namespace MesPremiersJeux.Views
             maison.Click += (s, e) => Fermer();
             DockPanel.SetDock(maison, Dock.Left);
             basGrid.Children.Add(maison);
+            _btnScene = PetitBouton("📷", "Regarder ce qu'on montre (caméra arrière) et proposer des réponses dessus");
+            _btnScene.Margin = new Thickness(6, 0, 0, 0);
+            _btnScene.Click += (s, e) => { _ = Photographier(false, null); };
+            DockPanel.SetDock(_btnScene, Dock.Left);
+            basGrid.Children.Add(_btnScene);
+            _btnEnfant = PetitBouton("🙂", "Regarder l'enfant (caméra avant) et lui proposer ce qu'elle ressent peut-être");
+            _btnEnfant.Margin = new Thickness(4, 0, 0, 0);
+            _btnEnfant.Click += (s, e) => { _ = Photographier(true, null); };
+            DockPanel.SetDock(_btnEnfant, Dock.Left);
+            basGrid.Children.Add(_btnEnfant);
             var micro = PetitBouton("👂", "Écouter une phrase");
             micro.Click += async (s, e) => { if (Listening.Enabled) await Listening.ListenOnce(); else _statusEcoute = "l'écoute n'est pas réglée (⚙ → Licence & nuage → Écoute)"; MontrerStatus(); };
             DockPanel.SetDock(micro, Dock.Right);
@@ -137,6 +161,9 @@ namespace MesPremiersJeux.Views
             Gaze.GazeTargets.SetParentOnly(_bas, true);
             Grid.SetRow(_bas, 1);
             _root.Children.Add(_bas);
+            _flash = new Border { Background = Brushes.White, Opacity = 0, IsHitTestVisible = false };
+            Grid.SetRowSpan(_flash, 2);
+            _root.Children.Add(_flash);
 
             Content = _root;
             Emoji.FixTree(_root);
@@ -172,6 +199,8 @@ namespace MesPremiersJeux.Views
             _statusIa = "";
             _ia.Visibility = Visibility.Collapsed;
             _partielText.Text = "";
+            _photoB64 = null; _photoBox.Visibility = Visibility.Collapsed;
+            _btnScene.Visibility = _btnEnfant.Visibility = _settings.CameraParler ? Visibility.Visible : Visibility.Collapsed;
             Montrer(ecoute ? "ecoute" : "attente");
             SurEtatEcoute(Listening.Status);
             if ((_settings.ListenMode ?? "off") != "off") Suggest.Reveiller(_settings);
@@ -233,9 +262,115 @@ namespace MesPremiersJeux.Views
         // ------------------------------------------------------------------
         //  Une phrase entendue → la grille
         // ------------------------------------------------------------------
-        public async void ShowHeard(string text, bool speculatif = false)
+        public void ShowHeard(string text, bool speculatif = false)
         {
             if (!speculatif || _settings == null) _settings = Settings.Load();
+            // « Dis Eyzi, regarde » / « regarde Laura » : une photo part avec la question.
+            if (Suggest.EstRegard(text, _settings.ChildName, out bool avant))
+            {
+                if (speculatif) return;
+                if (_settings.CameraParler) { _ = Photographier(avant, Suggest.QuestionDuRegard(text, avant)); return; }
+                Ia("📷 La caméra n'est pas autorisée (⚙ → Licence & nuage → Écoute) : la question part sans image.");
+                text = Suggest.QuestionDuRegard(text, avant);
+            }
+            Lancer(text, speculatif, null);
+        }
+
+        /// <summary>📷 Prend la photo (flash, déclic), la montre, puis pose la question avec l'image.</summary>
+        private async System.Threading.Tasks.Task Photographier(bool avant, string question)
+        {
+            if (_settings == null) _settings = Settings.Load();
+            if (!_settings.CameraParler) { Ia("📷 La caméra n'est pas autorisée (⚙ → Licence & nuage → Écoute)."); return; }
+            _partielTimer.Stop(); _speculatif = null; _autoClose.Stop();
+            question = question ?? (avant ? "Comment tu te sens ?" : "Qu'est-ce que tu vois ? Qu'est-ce que tu veux ?");
+            Montrer("grille");
+            _answers.Children.Clear();
+            _photoBox.Visibility = Visibility.Collapsed;
+            _question.Text = avant ? "🙂 Je regarde " + (_settings.ChildName ?? "l'enfant") + "…" : "📷 Je regarde…";
+            Emoji.Fix(_question);
+            _wait.Visibility = Visibility.Visible; _wait.Text = "Clic !";
+            SoundFx.Shutter();
+            _flash.BeginAnimation(OpacityProperty, new DoubleAnimation(0.9, 0, TimeSpan.FromMilliseconds(500)));
+            var p = await Photo.Prendre(avant);
+            if (p.Jpeg == null)
+            {
+                _wait.Visibility = Visibility.Collapsed;
+                Ia("📷 " + (p.Erreur ?? "pas de photo") + " La question part sans image.");
+                Lancer(question, false, null);
+                return;
+            }
+            try
+            {
+                var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                using (var ms = new System.IO.MemoryStream(p.Jpeg))
+                {
+                    bmp.BeginInit(); bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad; bmp.StreamSource = ms; bmp.EndInit();
+                }
+                bmp.Freeze();
+                _photoBox.Child = new Image { Source = bmp, Stretch = Stretch.UniformToFill };
+                _photoBox.Visibility = Visibility.Visible;
+            }
+            catch { }
+            _photoB64 = Convert.ToBase64String(p.Jpeg);
+            _photoVue = avant ? "enfant" : "scene";
+            Lancer(question, false, new Suggest.Options { PhotoB64 = _photoB64, Vue = _photoVue });
+        }
+
+        /// <summary>😴 La veille fatigue : « Tu es fatiguée ? On arrête ? », sans IA.</summary>
+        public void ShowFatigue()
+        {
+            var r = Suggest.DefaultsFatigue();
+            ShowProposition(r.Simple, r.Reponses, r.Type);
+            GazeStats.RecordComm("fatigue-question");
+        }
+
+        /// <summary>Une question et ses cases, données d'avance (sans IA).</summary>
+        private void ShowProposition(string question, List<Suggest.Reponse> reponses, string type)
+        {
+            if (_settings == null) _settings = Settings.Load();
+            _partielTimer.Stop(); _speculatif = null; _autoClose.Stop();
+            _photoBox.Visibility = Visibility.Collapsed;
+            _enCours = new Suggest.Echange { Question = question, Type = type };
+            _historique.Add(_enCours);
+            while (_historique.Count > 3) _historique.RemoveAt(0);
+            Montrer("grille");
+            _question.Text = Titre(question, null);
+            Ia(null);
+            _wait.Visibility = Visibility.Collapsed;
+            PreparerGrille(type, reponses.Count);
+            foreach (var r in reponses) AjouterCase(r, type);
+            Speech.SayAlways(question);
+        }
+
+        /// <summary>💬 « Je veux dire… » : ce que l'enfant pourrait vouloir dire maintenant.</summary>
+        public async void ShowSpontane()
+        {
+            if (_settings == null) _settings = Settings.Load();
+            _partielTimer.Stop(); _speculatif = null; _autoClose.Stop();
+            _photoBox.Visibility = Visibility.Collapsed;
+            _enCours = new Suggest.Echange { Question = "Je veux dire", Type = "spontane" };
+            var monEchange = _enCours;
+            Montrer("grille");
+            _question.Text = "💬 Je veux dire…";
+            Emoji.Fix(_question);
+            Ia(null);
+            PreparerGrille("ouverte", 8);
+            _wait.Visibility = Visibility.Visible; _wait.Text = "Je réfléchis…";
+            Usage.Screen("je-veux-dire");
+            var res = await Spontane.Pour(_settings, rep => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_enCours != monEchange) return;
+                _wait.Visibility = Visibility.Collapsed;
+                AjouterCase(rep, "spontane");
+            })));
+            if (_enCours != monEchange) return;
+            _wait.Visibility = Visibility.Collapsed;
+            if (res.EnLigne) Ia("IA · " + res.Info, ok: true); else Ia("⚠️ " + res.Info);
+            if (_answers.Children.Count == 0) foreach (var r in Spontane.Defaults(_settings)) AjouterCase(r, "spontane");
+        }
+
+        private async void Lancer(string text, bool speculatif, Suggest.Options opt)
+        {
             if (!speculatif)
             {
                 _partielTimer.Stop();
@@ -258,8 +393,9 @@ namespace MesPremiersJeux.Views
             var precedent = histo.LastOrDefault();
             bool suite = precedent != null && (DateTime.Now - precedent.At).TotalSeconds < 120 && Suggest.EstSuite(text);
             monEchange.Suite = suite;
-            var secours = suite ? Suggest.DefaultsSuite(text, precedent) : Suggest.Defaults(text);
+            var secours = opt != null && opt.Vue == "enfant" ? Suggest.DefaultsHumeur(text) : suite ? Suggest.DefaultsSuite(text, precedent) : Suggest.Defaults(text);
             monEchange.Type = secours.Type;
+            if (opt == null || string.IsNullOrEmpty(opt.PhotoB64)) _photoBox.Visibility = Visibility.Collapsed;
             Montrer("grille");
             _question.Text = suite ? Titre(precedent.Question, precedent) + "\n+ « " + text + " »" : Titre(text, null);
             bool enLigne = _settings.ListenAnswers && !string.IsNullOrWhiteSpace(_settings.LicenceKey);
@@ -295,9 +431,10 @@ namespace MesPremiersJeux.Views
                         PreparerGrille(tete.Type, 0);
                         if (!suite && tete.Simple != null && tete.Simple != text) _question.Text = Titre(tete.Simple, null);
                     })),
-                    rep => Dispatcher.BeginInvoke(new Action(() => { if (_enCours == monEchange) AjouterCase(rep, _grilleType); })), suite);
+                    rep => Dispatcher.BeginInvoke(new Action(() => { if (_enCours == monEchange) AjouterCase(rep, _grilleType); })), suite, opt);
             }
             catch (Exception ex) { res = secours; res.Erreur = ex.Message; }
+            _photoB64 = null; // la photo ne sert qu'à cette question, et n'est gardée nulle part
             tick.Stop();
             _wait.Visibility = Visibility.Collapsed;
             if (_enCours != monEchange) return;
@@ -368,6 +505,7 @@ namespace MesPremiersJeux.Views
             if (mot == null || !VoiceBank.Play("comm-" + mot.Cle)) Speech.SayAlways(dit);
             if (_enCours != null) _enCours.Reponse = r.Texte;
             ReponsesPref.Choisie(r.Texte);
+            try { Habitudes.Choisie(_enCours?.Question, r.Texte); } catch { }
             GazeStats.RecordComm("ecoute-" + type);
             _confirmVisual.Child = new Viewbox { Stretch = Stretch.Uniform, Child = Visuel(r, mot, _enCours?.Question) };
             _confirmText.Text = (r.Texte ?? "").TrimEnd('!', '.') + " !";

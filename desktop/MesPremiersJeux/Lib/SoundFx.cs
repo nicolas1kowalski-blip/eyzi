@@ -187,6 +187,27 @@ namespace MesPremiersJeux.Lib
             => Play("whistle", "siffle", () => Glide(500, 1400, 0.55, 0.16));
 
         /// <summary>Les dés qu'on lance : un cliquetis qui ralentit, puis le petit choc de l'arrêt (fichier Sons\de.wav de la famille s'il existe).</summary>
+        /// <summary>📷 Le déclic de l'appareil photo (deux petits claquements).</summary>
+        public static void Shutter()
+        {
+            Play("shutter", "photo", () =>
+            {
+                var rng = new Random(7);
+                int n = (int)(Rate * 0.16);
+                var s = new float[n];
+                double lp = 0;
+                for (int i = 0; i < n; i++)
+                {
+                    double t = i / (double)Rate;
+                    double env = Math.Exp(-60 * t) + 0.7 * Math.Exp(-60 * Math.Max(0, t - 0.07));
+                    double noise = rng.NextDouble() * 2 - 1;
+                    lp += 0.5 * (noise - lp);
+                    s[i] = (float)Math.Max(-1, Math.Min(1, lp * env * 0.9));
+                }
+                return s;
+            });
+        }
+
         public static void Dice()
         {
             Play("dice", "de", () =>

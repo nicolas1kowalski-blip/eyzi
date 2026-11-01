@@ -7,6 +7,15 @@
 // tablette et par jour (compteur en mémoire : par instance, indicatif), phrase
 // limitée à 300 caractères. La clé Anthropic reste ici (ANTHROPIC_API_KEY).
 //
+// Trois demandes en plus de la question :
+//  - « photo » + « vue » : une image JPEG (base64, 1024 px au plus) prise par la
+//    tablette ; vue = "scene" (caméra arrière : ce que l'adulte montre) ou
+//    "enfant" (caméra avant : l'enfant, pour lui proposer ce qu'il ressent
+//    peut-être, à confirmer). L'image n'est ni gardée ni journalisée.
+//  - « habitudes » : ce que l'enfant a déjà choisi pour des questions proches.
+//  - « spontane » : « Je veux dire… », ce que l'enfant pourrait vouloir dire
+//    maintenant, sans question de l'adulte.
+//
 // RÉSERVÉ À L'ÉDITEUR pour l'instant : seules les licences du canal « test »
 // (celles de l'éditeur) et les numéros listés dans PARLER_LICENCES (séparés par
 // des virgules) obtiennent des réponses de Claude. Les familles (canal « prod »)
@@ -63,7 +72,19 @@ Jamais de réponse blessante ni dangereuse.
 "emoji" : un seul emoji courant qui illustre la réponse (secours si le picto manque).
 "cle" : si la réponse correspond à un mot du vocabulaire de l'enfant (liste "cle: mot"), sa clé ; sinon "".
 
-Le vocabulaire de l'enfant, le contexte (lieu, jour, ce qu'elle a fait, ce qu'elle choisit souvent) et, s'il y en a, les derniers échanges, sont donnés dans le message. Le lieu change tout : à l'école, les réponses parlent des copains, de la maîtresse, de la récré, de la cantine ; à la maison, de la famille, des jouets, des repas ; dehors ou en voiture, de ce qu'on voit et où l'on va. Les réponses qu'elle choisit souvent passent en premier quand elles conviennent à la question.`;
+Le vocabulaire de l'enfant, le contexte (lieu, jour, ce qu'elle a fait, ce qu'elle choisit souvent) et, s'il y en a, les derniers échanges, sont donnés dans le message. Le lieu change tout : à l'école, les réponses parlent des copains, de la maîtresse, de la récré, de la cantine ; à la maison, de la famille, des jouets, des repas ; dehors ou en voiture, de ce qu'on voit et où l'on va. Les réponses qu'elle choisit souvent passent en premier quand elles conviennent à la question. Si le message donne ce qu'elle a DÉJÀ CHOISI pour des questions proches (« habitudes »), ces réponses viennent en PREMIER dès qu'elles conviennent à la question : ce sont ses goûts à elle.`;
+
+const PHOTO_SCENE = `
+UNE PHOTO EST JOINTE : ce que l'adulte montre, ou ce qui entoure l'enfant (caméra arrière de la tablette). Les réponses s'appuient D'ABORD sur ce qu'on y voit : les objets, les aliments, les jouets, les vêtements, la page du livre, le lieu. Si l'adulte tient ou montre plusieurs choses, CHAQUE chose est une réponse, nommée simplement (« Le yaourt », « La compote »), les plus visibles d'abord, puis « Les deux » si ça a un sens, puis « Autre chose ». Si la question est ouverte (« qu'est-ce que tu vois ? »), 6 à 8 réponses sur ce que l'enfant peut vouloir dire de la photo (« Un chien ! », « Il est gros », « J'ai peur », « Encore »). "simple" peut nommer ce qu'on voit (« Tu veux le yaourt ou la compote ? »). Ne nomme JAMAIS une personne, ne décris ni visage ni apparence ni âge : dis « maman », « papa », « quelqu'un », « la dame ». Si la photo ne montre rien d'utile, réponds comme sans photo.`;
+
+const PHOTO_ENFANT = `
+UNE PHOTO EST JOINTE : c'est L'ENFANT lui-même (caméra avant de la tablette). Il ne parle pas. Propose-lui, à la première personne, 5 ou 6 ressentis POSSIBLES qu'il confirmera ou non avec ses yeux : d'abord ce que son visage et sa posture PEUVENT suggérer (sourire → « Je suis contente », yeux qui se ferment ou tête penchée → « Je suis fatiguée », grimace ou larmes → « J'ai mal » ou « Je suis triste »), puis le contraire ou une nuance, puis « Ça va », puis « Autre chose ». Prudence absolue : tu PROPOSES, tu n'affirmes rien ; l'enfant a le dernier mot. "type" = "humeur". "simple" = une question douce à l'enfant (« Tu es fatiguée ? », « Comment tu te sens ? »), jamais une affirmation sur son état. Ne décris pas son visage, ne juge pas, n'invente aucun diagnostic. "mot" pour chaque ressenti : "content", "fatigue", "douleur", "triste", "câlin", "calme"…`;
+
+const SYSTEM_SPONTANE = `Tu aides un enfant qui ne parle pas et qui s'exprime avec ses yeux sur une tablette, en regardant une case parmi quelques-unes. Personne ne lui a posé de question : c'est LUI qui veut dire quelque chose, maintenant. Tu renvoies UNIQUEMENT un objet JSON, sans texte autour, de la forme :
+{"type": "spontane", "simple": "Je veux dire…", "reponses": [{"texte": "...", "mot": "...", "picto": "...", "emoji": "...", "cle": "..."}]}
+
+"reponses" : 8 phrases courtes (2 à 6 mots) à la première personne, ce que cet enfant a le plus de chances de vouloir dire À CE MOMENT : d'après le lieu, l'heure et le moment de la journée, le jour, ce que la famille dit de lui, ce qu'il choisit souvent et ce qu'il a fait aujourd'hui. Mélange : des besoins (« Je veux aller aux toilettes », « J'ai soif », « J'ai mal », « Je suis fatiguée »), des envies (« Je veux jouer dehors », « Je veux une histoire », « Encore de la musique »), du lien (« Je veux jouer avec Inès », « Je veux ma maman », « Je t'aime »), et une ou deux propositions qui collent précisément au moment (à 16 h : « Je veux mon goûter » ; le soir : « Je veux mon doudou » ; à l'école : « Je veux jouer avec un copain »). Les plus probables d'abord. La dernière est "Autre chose". Jamais de phrase blessante ni dangereuse.
+"mot" : le mot FRANÇAIS complet de la chose à dessiner (« toilettes », « goûter », « câlin », « peluche »), 1 à 3 mots, sans article. "picto" : le mot ANGLAIS simple correspondant (« toilet », « snack », « hug »). "emoji" : un seul emoji. "cle" : la clé du vocabulaire de l'enfant si la phrase y correspond, sinon "".`;
 
 export default async function handler(req, res) {
   const tStart = Date.now();
@@ -87,6 +108,12 @@ export default async function handler(req, res) {
   const vocab = Array.isArray(body.vocab) ? body.vocab.slice(0, 120).map((v) => ({ cle: clean(v?.cle, 40), mot: clean(v?.mot, 40) })).filter((v) => v.cle && v.mot) : [];
   const historique = Array.isArray(body.historique) ? body.historique.slice(-3).map((h) => ({ q: clean(h?.q, 200), r: clean(h?.r, 60), t: clean(h?.t, 12), p: Array.isArray(h?.p) ? h.p.slice(0, 8).map((x) => clean(x, 40)).filter(Boolean) : [] })).filter((h) => h.q) : [];
   const suite = body.suite === true && historique.length > 0;
+  const spontane = body.spontane === true;
+  const habitudes = Array.isArray(body.habitudes) ? body.habitudes.slice(0, 10).map((h) => ({ q: clean(h?.q, 80), r: clean(h?.r, 60), n: Math.max(1, Math.min(999, parseInt(h?.n, 10) || 1)) })).filter((h) => h.q && h.r) : [];
+  const vue = body.vue === 'enfant' ? 'enfant' : body.vue === 'scene' ? 'scene' : '';
+  // La photo : JPEG en base64, 700 000 caractères au plus (≈ 500 Ko), jamais journalisée.
+  let photo = typeof body.photo === 'string' ? body.photo.replace(/^data:image\/\w+;base64,/, '').replace(/\s+/g, '') : '';
+  if (photo.length > 700000 || !/^[A-Za-z0-9+/]+=*$/.test(photo)) photo = '';
   if (!/^EYZ-[A-Z0-9-]{10,}$/.test(key) || !machine || question.length < 2) { res.status(400).json({ ok: false, message: 'Demande incomplète.' }); return; }
 
   const apiKey = String(process.env.ANTHROPIC_API_KEY || '').trim();
@@ -120,19 +147,27 @@ export default async function handler(req, res) {
     if (jour) contexte.push(`Jour : ${jour}.`);
     if (activites.length) contexte.push(`Ce que l'enfant a fait aujourd'hui sur la tablette : ${activites.join(', ')}.`);
     if (preferees.length) contexte.push(`Réponses qu'elle choisit souvent : ${preferees.join(', ')}.`);
-    const userContent =
+    if (habitudes.length) contexte.push(`Ce qu'elle a déjà choisi pour des questions proches (à mettre en premier si ça convient) : ${habitudes.map((h) => `« ${h.q} » → ${h.r} (${h.n} fois)`).join(' ; ')}.`);
+    const userText =
       (vocab.length ? `Vocabulaire de l'enfant :\n${vocab.map((v) => `${v.cle}: ${v.mot}`).join('\n')}\n\n` : '') +
       (contexte.length ? `Contexte :\n${contexte.join('\n')}\n\n` : '') +
       (historique.length ? `Derniers échanges :\n${historique.map((h) => `Adulte : « ${h.q} »${h.p.length ? ` → cases proposées : ${h.p.join(', ')}` : ''} → l'enfant a répondu : « ${h.r || '(rien)'} »`).join('\n')}\n\n` : '') +
       (suite ? `ATTENTION : ce que l'adulte vient de dire est la SUITE de sa question précédente « ${historique[historique.length - 1].q} » (il ajoute ou précise une option). Ce n'est PAS une question fermée. Garde le type de la question précédente (${historique[historique.length - 1].t || 'choix'}), mets d'abord la nouvelle option, puis les cases précédentes encore utiles, puis "Autre chose".\n\n` : '') +
-      `L'adulte vient de dire : « ${question} »`;
+      (spontane ? `L'enfant veut dire quelque chose maintenant. Propose ce qu'il a le plus de chances de vouloir dire.`
+        : photo ? `L'adulte vient de dire : « ${question} » (la photo jointe montre ${vue === 'enfant' ? "l'enfant" : "ce qu'il montre ou ce qui entoure l'enfant"}).`
+        : `L'adulte vient de dire : « ${question} »`);
+    const userContent = photo
+      ? [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photo } }, { type: 'text', text: userText }]
+      : userText;
+    const systemText = (spontane ? SYSTEM_SPONTANE : SYSTEM + (photo ? (vue === 'enfant' ? PHOTO_ENFANT : PHOTO_SCENE) : ''))
+      + `\nL'enfant s'appelle ${child} et a ${age} ans. Il est ${heure} h : c'est ${moment || 'la journée'}.` + (profil ? `\nCe que la famille dit de ${child} : ${profil}` : '');
     const request = {
       model: 'claude-haiku-5-5',
       max_tokens: 1500,
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
       output_config: { effort: 'low' },
-      system: SYSTEM + `\nL'enfant s'appelle ${child} et a ${age} ans. Il est ${heure} h : c'est ${moment || 'la journée'}.` + (profil ? `\nCe que la famille dit de ${child} : ${profil}` : ''),
+      system: systemText,
       messages: [{ role: 'user', content: userContent }],
     };
 
@@ -165,8 +200,8 @@ export default async function handler(req, res) {
     const final = await stream.finalMessage();
     flush();
     const msIa = Date.now() - t0;
-    console.log('parler', msIa, 'ms', final.stop_reason, text.length, nb, 'réponses');
-    if (!headerSent) emit({ type: 'autre', simple: question });
+    console.log('parler', spontane ? 'spontane' : photo ? 'photo-' + vue : 'question', msIa, 'ms', final.stop_reason, text.length, nb, 'réponses');
+    if (!headerSent) emit({ type: spontane ? 'spontane' : vue === 'enfant' ? 'humeur' : 'autre', simple: spontane ? 'Je veux dire…' : question });
     emit({ fin: true, ms: { ia: msIa, total: Date.now() - tStart }, stop: final.stop_reason, n: nb });
     res.end();
     return;

@@ -28,6 +28,8 @@ namespace MesPremiersJeux.Views
         public event Action<string> LieuChoisi;
         /// <summary>« Parle-moi » : ouvrir l'écoute (en surcouche) et écouter une phrase.</summary>
         public event Action EcouteRequested;
+        /// <summary>« Je veux dire… » : ce que l'enfant pourrait vouloir dire maintenant, sans question.</summary>
+        public event Action SpontaneRequested;
 
         private static readonly Brush Dark = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A));
 
@@ -44,6 +46,11 @@ namespace MesPremiersJeux.Views
             _ear.Click += (s, e) => EcouteRequested?.Invoke();
             DockPanel.SetDock(_ear, Dock.Left);
             head.Children.Add(_ear);
+            var dire = GrosBouton("💬", "Je veux dire…", Color.FromRgb(0xFF, 0xE4, 0xF0));
+            dire.Width = 250;
+            dire.Click += (s, e) => SpontaneRequested?.Invoke();
+            DockPanel.SetDock(dire, Dock.Left);
+            head.Children.Add(dire);
             _lieu = GrosBouton("🏠", "Maison", Color.FromRgb(0xFF, 0xF0, 0xC8));
             Gaze.GazeTargets.SetParentOnly(_lieu, false);
             _lieu.Click += (s, e) => CyclerLieu();

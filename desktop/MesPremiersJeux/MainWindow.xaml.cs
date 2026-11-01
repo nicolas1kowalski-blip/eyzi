@@ -87,6 +87,7 @@ namespace MesPremiersJeux
             var parler = new ParlerView();
             parler.BackRequested += () => Select("accueil");
             parler.EcouteRequested += () => { OuvrirEcoute(); _ = Listening.ListenOnce(); };
+            parler.SpontaneRequested += () => { OuvrirEcoute(); if (EcouteHost.Visibility == Visibility.Visible) _ecoute.ShowSpontane(); };
             parler.LieuChoisi += lieu => { if (_settings != null) _settings.ParlerLieu = lieu; };
             _views["parler"] = parler;
             _views["coloring"] = coloring;
@@ -477,10 +478,24 @@ namespace MesPremiersJeux
             // relit la case ; avant, la case encore vide était enregistrée à chaque démarrage (IA décochée).
             _remplissage = true;
             ListenAnswersCheck.IsChecked = _settings.ListenAnswers;
+            CameraCheck.IsChecked = _settings.CameraParler;
+            FatigueCheck.IsChecked = _settings.VeilleFatigue;
             foreach (ComboBoxItem it in ListenModeCombo.Items)
                 if ((string)it.Tag == (_settings.ListenMode ?? "off")) { ListenModeCombo.SelectedItem = it; break; }
             if (ListenModeCombo.SelectedItem == null) ListenModeCombo.SelectedIndex = 0;
             _remplissage = false;
+            RefreshHabitudes();
+            // 😴 La veille fatigue : le regard qui se dégrade pendant un jeu → « Tu es fatiguée ? ».
+            Fatigue.Signal += raison => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_settings == null || !_settings.VeilleFatigue || !Licence.HasModule(_settings, "parler")) return;
+                if (EcouteHost.Visibility == Visibility.Visible || AdminHost.Visibility == Visibility.Visible || PauseHost.Visibility == Visibility.Visible) return;
+                OuvrirEcoute();
+                if (EcouteHost.Visibility == Visibility.Visible) _ecoute.ShowFatigue();
+            }));
+            Fatigue.Demarrer(() => _settings != null && _settings.VeilleFatigue && Licence.HasModule(_settings, "parler") && IsActive
+                && EcouteHost.Visibility != Visibility.Visible && AdminHost.Visibility != Visibility.Visible && PauseHost.Visibility != Visibility.Visible && !CommBoard.IsOpen
+                && _views.Any(kv => kv.Value.IsVisible && (kv.Key == "games" || kv.Key == "edu" || kv.Key == "parcours" || kv.Key == "stories" || kv.Key == "coloring")));
             ListenHint.Text += Listening.KeywordAvailable ? " Mot-clé installé : « Dis Eyzi »." : " Le fichier du mot-clé (Voix\\eyzi.table) n'est pas installé : seul le bouton marche pour l'instant.";
             Listening.Heard += text => Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -1439,6 +1454,7 @@ namespace MesPremiersJeux
             PauseHost.Children.Clear();
             _pauseShown = false;
             _playedSeconds = 0;
+            Fatigue.Reprise();
             GazeStats.RecordComm(rest ? "pause-oui" : "pause-non");
             if (rest)
             {
@@ -2033,6 +2049,30 @@ namespace MesPremiersJeux
             if (string.IsNullOrWhiteSpace(_settings.TvIp)) TvStatusText.Text = "Pas de télé réglée : la tuile 📺 n'apparaît pas dans le monde Jouer.";
             else if (string.IsNullOrEmpty(_settings.TvKey)) TvStatusText.Text = "Télé à " + _settings.TvIp + ", pas encore associée.";
             else TvStatusText.Text = "Télé associée (" + _settings.TvIp + (string.IsNullOrEmpty(_settings.TvMac) ? ", allumage par le réseau impossible : adresse matérielle inconnue" : ", allumage par le réseau " + _settings.TvMac) + ").";
+        }
+
+        private void Parler_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null || CameraCheck == null || _remplissage) return;
+            _settings.CameraParler = CameraCheck.IsChecked == true;
+            _settings.VeilleFatigue = FatigueCheck.IsChecked == true;
+            _settings.Save();
+            Lib.Log.Write("ecoute", "Caméra " + (_settings.CameraParler ? "autorisée" : "interdite") + ", veille fatigue " + (_settings.VeilleFatigue ? "active" : "éteinte"));
+        }
+
+        private void RefreshHabitudes()
+        {
+            if (HabitudesText == null) return;
+            int n = 0; try { n = Habitudes.Total(); } catch { }
+            HabitudesText.Text = n == 0
+                ? "Habitudes : rien d'appris pour l'instant. Chaque réponse regardée est retenue avec sa question (fichier habitudes-<tablette>.ini dans le dossier de la famille, partagé entre les tablettes) ; les questions proches reprennent ces réponses en premier."
+                : "Habitudes : " + n + " choix retenus avec leur question (fichiers habitudes-*.ini du dossier de la famille, partagés entre les tablettes). Les questions proches reprennent ces réponses en premier.";
+        }
+
+        private void HabitudesForget_Click(object sender, RoutedEventArgs e)
+        {
+            try { Habitudes.Oublier(); } catch (Exception ex) { Lib.Log.Write("habitudes", ex.Message); }
+            RefreshHabitudes();
         }
 
         private void LieuAuto_Changed(object sender, RoutedEventArgs e)

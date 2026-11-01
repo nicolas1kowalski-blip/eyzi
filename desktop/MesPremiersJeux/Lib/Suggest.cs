@@ -68,6 +68,28 @@ namespace MesPremiersJeux.Lib
 
         public sealed class Contexte { public string Lieu, Jour; public List<string> Activites = new List<string>(); public List<string> Preferees = new List<string>(); }
 
+        /// <summary>Les options d'une demande : une photo (JPEG en base64) et ce qu'elle montre (« scene » ou « enfant »), ou « Je veux dire… ».</summary>
+        public sealed class Options { public string PhotoB64, Vue; public bool Spontane; }
+
+        /// <summary>« Regarde », « Dis Eyzi, regarde Laura » : la phrase demande une photo. Caméra avant si elle parle de l'enfant.</summary>
+        public static bool EstRegard(string text, string prenom, out bool avant)
+        {
+            avant = false;
+            var t = Arasaac.Norm(text ?? "");
+            if (!Regex.IsMatch(t, @"^(eyzi[ ,]*)?(regarde|regardes|regarde moi|regarde ca|regarde la|photo)\b")) return false;
+            var p = Arasaac.Norm(prenom ?? "");
+            avant = (p.Length > 0 && t.Contains(p)) || Regex.IsMatch(t, @"\b(l enfant|son visage|sa tete|comment (elle|il) va|comment (elle|il) se sent|humeur|moi)\b");
+            return true;
+        }
+
+        /// <summary>La question à poser à l'IA quand l'adulte n'a dit que « regarde » : ce qu'il reste après le mot.</summary>
+        public static string QuestionDuRegard(string text, bool avant)
+        {
+            var reste = Regex.Replace(text ?? "", @"^\s*(dis\s+)?(eyzi[ ,]*)?(regarde(s)?(\s+(moi|ça|ca|la|le|bien))?)[ ,:!.]*", "", RegexOptions.IgnoreCase).Trim();
+            if (reste.Length >= 4) return reste;
+            return avant ? "Comment tu te sens ?" : "Qu'est-ce que tu vois ? Qu'est-ce que tu veux ?";
+        }
+
         /// <summary>Le contexte du moment : lieu choisi, jour, activités du jour sur la tablette, réponses préférées.</summary>
         public static Contexte ContexteActuel(Settings s)
         {
@@ -100,13 +122,15 @@ namespace MesPremiersJeux.Lib
         /// connus, « surReponse » chaque réponse dès qu'elle est écrite. Renvoie le résultat complet.
         /// </summary>
         public static async Task<Resultat> PourFlux(Settings s, string question, IList<Mot> vocabulaire, IList<Echange> historique, Contexte ctx,
-                                                    Action<Resultat> surTete, Action<Reponse> surReponse, bool suite = false)
+                                                    Action<Resultat> surTete, Action<Reponse> surReponse, bool suite = false, Options opt = null)
         {
             var res = Defaults(question);
             if (s == null || !s.ListenAnswers || string.IsNullOrWhiteSpace(s.LicenceKey)) return res;
             try
             {
                 ctx = ctx ?? ContexteActuel(s);
+                var habitudes = new List<Habitudes.Entree>();
+                try { habitudes = opt != null && opt.Spontane ? Habitudes.Pour("je veux dire", 8) : Habitudes.Pour(question, 8); } catch { }
                 var sb = new StringBuilder();
                 sb.Append("{\"key\":\"").Append(Esc(s.LicenceKey)).Append("\",\"machine\":\"").Append(Esc(Environment.MachineName))
                   .Append("\",\"child\":\"").Append(Esc(s.ChildName ?? "")).Append("\",\"question\":\"").Append(Esc(question)).Append("\"")
@@ -120,6 +144,10 @@ namespace MesPremiersJeux.Lib
                 if (historique != null && historique.Count > 0)
                     sb.Append(",\"historique\":[").Append(string.Join(",", historique.Skip(Math.Max(0, historique.Count - 3)).Select(h => "{\"q\":\"" + Esc(h.Question) + "\",\"r\":\"" + Esc(h.Reponse ?? "") + "\",\"t\":\"" + Esc(h.Type ?? "") + "\",\"p\":[" + string.Join(",", h.Propositions.Take(8).Select(x => "\"" + Esc(x) + "\"")) + "]}"))).Append("]");
                 if (suite) sb.Append(",\"suite\":true");
+                if (habitudes.Count > 0)
+                    sb.Append(",\"habitudes\":[").Append(string.Join(",", habitudes.Select(h => "{\"q\":\"" + Esc(h.Question) + "\",\"r\":\"" + Esc(h.Reponse) + "\",\"n\":" + h.N + "}"))).Append("]");
+                if (opt != null && opt.Spontane) sb.Append(",\"spontane\":true");
+                if (opt != null && !string.IsNullOrEmpty(opt.PhotoB64)) sb.Append(",\"vue\":\"").Append(Esc(opt.Vue ?? "scene")).Append("\",\"photo\":\"").Append(opt.PhotoB64).Append("\"");
                 sb.Append("}");
 
                 var chrono = System.Diagnostics.Stopwatch.StartNew();
@@ -257,6 +285,25 @@ namespace MesPremiersJeux.Lib
             res.AddRange(morceaux.Skip(1));
             res.Add(droite.Trim());
             return res.Select(Nettoie).Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Take(6).ToList();
+        }
+
+        /// <summary>Sans IA, quand la caméra avant a regardé l'enfant : des ressentis à confirmer.</summary>
+        public static Resultat DefaultsHumeur(string q)
+        {
+            var r = new Resultat { Simple = q, Type = "humeur" };
+            void Add(string t, string mot, string e) => r.Reponses.Add(new Reponse { Texte = t, Mot = mot, Emoji = e, Cle = "", Picto = "" });
+            Add("Ça va", "content", "🙂"); Add("Je suis fatiguée", "fatigue", "😴"); Add("Je suis contente", "joie", "🥳"); Add("J'ai mal", "douleur", "🤕");
+            Add("Je suis triste", "triste", "😢"); Add("Je veux un câlin", "câlin", "🤗"); Add("Autre chose", "", "💭");
+            return r;
+        }
+
+        /// <summary>😴 La veille fatigue : la question et ses réponses, sans IA.</summary>
+        public static Resultat DefaultsFatigue()
+        {
+            var r = new Resultat { Simple = "Tu es fatiguée ? On arrête ?", Type = "humeur" };
+            void Add(string t, string mot, string e) => r.Reponses.Add(new Reponse { Texte = t, Mot = mot, Emoji = e, Cle = "", Picto = "" });
+            Add("Oui, je suis fatiguée", "fatigue", "😴"); Add("Non, je continue", "jouer", "💪"); Add("Je veux autre chose", "", "💭"); Add("Je veux un câlin", "câlin", "🤗");
+            return r;
         }
 
         public static Resultat Defaults(string q)

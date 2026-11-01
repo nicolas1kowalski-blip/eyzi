@@ -47,6 +47,8 @@ namespace MesPremiersJeux.Lib
         public bool ListenAnswers = true;     // réponses proposées en ligne (eyzi.fr → Claude)
         public string ParlerLieu = "maison";  // où est l'enfant (maison | ecole | dehors | voiture) : contexte des réponses
         public bool LieuAuto = true;          // le lieu se règle d'après le Wi-Fi (réseaux appris dans lieux.ini)
+        public bool CameraParler = false;     // 📷 « Dis Eyzi, regarde » : une photo (caméra arrière : la scène ; avant : l'enfant) part avec la question
+        public bool VeilleFatigue = true;     // 😴 le regard qui se dégrade pendant un jeu → « Tu es fatiguée ? »
         public string TvIp = "";              // 📺 la télé LG (webOS) : adresse sur le réseau de la maison
         public string TvKey = "";             // la clé d'association donnée par la télé
         public string TvMac = "";             // son adresse matérielle, pour l'allumer par le réseau
@@ -132,6 +134,8 @@ namespace MesPremiersJeux.Lib
                         case "ListenMode": if (val.Length > 0) s.ListenMode = val.Trim().ToLowerInvariant(); break;
                         case "MotCleAuto": s.MotCleAuto = val != "0"; break;
                         case "ListenAnswers": s.ListenAnswers = val != "0"; break;
+                        case "CameraParler": s.CameraParler = val == "1"; break;
+                        case "VeilleFatigue": s.VeilleFatigue = val != "0"; break;
                         case "ParlerLieu": if (val.Length > 0) s.ParlerLieu = val.Trim(); break;
                         case "LieuAuto": s.LieuAuto = val != "0"; break;
                         case "TvIp": s.TvIp = val.Trim(); break;
@@ -211,6 +215,8 @@ namespace MesPremiersJeux.Lib
                     "ListenMode=" + (ListenMode ?? "off"),
                     "MotCleAuto=" + (MotCleAuto ? "1" : "0"),
                     "ListenAnswers=" + (ListenAnswers ? "1" : "0"),
+                    "CameraParler=" + (CameraParler ? "1" : "0"),
+                    "VeilleFatigue=" + (VeilleFatigue ? "1" : "0"),
                     "ParlerLieu=" + (ParlerLieu ?? "maison"),
                     "LieuAuto=" + (LieuAuto ? "1" : "0"),
                     "TvIp=" + (TvIp ?? ""),
