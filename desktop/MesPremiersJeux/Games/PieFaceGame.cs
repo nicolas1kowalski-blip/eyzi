@@ -21,12 +21,17 @@ namespace MesPremiersJeux.Games
         private double W = 1500;
         private const double H = 720;
         // LA PRÉCISION SE TRAVAILLE : les visages rapetissent au fil des tartes
-        // (dans la manche) et d'une manche à l'autre (niveau mémorisé), jusqu'à
-        // la moitié de la taille de départ.
+        // (dans la manche) et d'une manche à l'autre (niveau mémorisé), jusqu'au
+        // tiers de la taille de départ ; et la ZONE qui lance la tarte se resserre
+        // sur le milieu du visage : il faut poser le regard dedans, pas à côté.
         private const double BaseFace = 290;
         private double _scale = 1;
+        private double _zone = 0.9;                  // la part du visage qui compte comme cible
         private double FaceSize => BaseFace * _scale;
-        private double Inner => FaceSize * 0.914; // l'image dans sa cible
+        private double Inner => FaceSize * 0.914;    // l'image dans sa cible
+        private double ZoneSize => FaceSize * _zone; // la cible du regard, au centre
+        private int _aides;                          // visages qu'il a fallu agrandir dans la manche
+        private Grid _holder;                        // le visage à l'écran (pour l'aide)
 
         private static readonly string[] Faces = { "😀", "🤠", "🤓", "😮", "🥸", "😊", "🧐", "😁" };
         private static readonly string[] Hit = { "😵", "🤪", "😝", "😜" };
@@ -43,14 +48,17 @@ namespace MesPremiersJeux.Games
 
         private void UpdateScale()
         {
-            double start = 1 - 0.15 * Math.Min(2, Adaptive.Level("tartes-precision")); // 1 → 0.85 → 0.7 selon le niveau
-            _scale = Math.Max(0.5, start * (1 - 0.05 * _splats));                       // puis 5 % de moins par tarte
+            int level = Math.Min(2, Adaptive.Level("tartes-precision"));
+            double start = 1 - 0.2 * level;                              // 1 → 0,8 → 0,6 selon le niveau
+            _scale = Math.Max(0.32, start * (1 - 0.06 * _splats));       // puis 6 % de moins par tarte (plancher : un tiers)
+            _zone = Math.Max(0.5, (0.9 - 0.12 * level) * (1 - 0.02 * _splats)); // 90 % du visage au début, 50 % au plus serré
         }
 
         protected override void NewRound()
         {
             Locked = false;
             _splats = 0;
+            _aides = 0;
             UpdateScale();
             Question.Text = "🥧 Tartes à la crème";
             SetConsigne(new TextBlock { Text = "🔍🥧" },
@@ -134,27 +142,66 @@ namespace MesPremiersJeux.Games
             var visual = imgF != null
                 ? (FrameworkElement)new Image { Source = imgF, Width = Inner, Height = Inner, Stretch = Stretch.Uniform }
                 : FaceArt.Make(fi, Inner);
-            // Bouton INVISIBLE : le visage vit directement dans la scène, sans
-            // carte blanche — le halo doré du regard montre la cible.
-            var face = SceneButton(new ContentControl { Content = visual }, FaceSize, FaceSize);
+            visual.IsHitTestVisible = false;
+            var contenu = new ContentControl { Content = visual, IsHitTestVisible = false, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            // Le visage (l'image, qu'on ne peut pas viser) et, au milieu, la CIBLE :
+            // un bouton invisible plus petit que le visage, que le regard doit atteindre.
+            // Un fin anneau clair montre où viser.
+            var holder = new Grid { Width = FaceSize, Height = FaceSize, RenderTransformOrigin = new Point(0.5, 0.5) };
+            holder.Children.Add(contenu);
+            var anneau = new Ellipse
+            {
+                Width = ZoneSize, Height = ZoneSize, Stroke = new SolidColorBrush(Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF)), StrokeThickness = 3,
+                StrokeDashArray = new DoubleCollection { 3, 3 }, IsHitTestVisible = false, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            };
+            holder.Children.Add(anneau);
+            var face = SceneButton(null, ZoneSize, ZoneSize);
+            face.HorizontalAlignment = HorizontalAlignment.Center; face.VerticalAlignment = VerticalAlignment.Center;
             // Cible de précision : l'aimant du regard ne l'attrape pas de loin, il
-            // faut poser le regard sur le visage — c'est tout l'intérêt du jeu.
+            // faut poser le regard dedans — c'est tout l'intérêt du jeu.
             Gaze.GazeTargets.SetPrecise(face, true);
-            face.RenderTransformOrigin = new Point(0.5, 0.5);
-            var captured = face;
-            face.Click += (s, e) => ThrowPie(captured, fx, fy, fi);
-            Canvas.SetLeft(face, fx);
-            Canvas.SetTop(face, fy);
-            _canvas.Children.Add(face);
+            holder.Children.Add(face);
+            var captured = holder;
+            face.Click += (s, e) => ThrowPie(captured, contenu, fx, fy, fi);
+            Canvas.SetLeft(holder, fx);
+            Canvas.SetTop(holder, fy);
+            _canvas.Children.Add(holder);
+            _holder = holder;
 
             // Il SURGIT (pop) avec un petit bruit, pour attirer l'œil.
             SoundFx.PopSound();
             var sc = new ScaleTransform(0.15, 0.15);
-            face.RenderTransform = sc;
+            holder.RenderTransform = sc;
             var grow = new DoubleAnimation(0.15, 1, TimeSpan.FromMilliseconds(450))
             { EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.8 } };
             sc.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
             sc.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+
+            // L'AIDE : au bout de 12 s sans tarte, le visage grossit d'un tiers et sa
+            // cible s'élargit à tout le visage ; deux aides dans la manche, et le
+            // niveau redescend d'un cran à la prochaine.
+            Schedule(12000, () =>
+            {
+                if (Closed || Locked || _holder != holder || !holder.IsHitTestVisible) return;
+                _aides++;
+                Speak("Regarde bien le visage !");
+                face.Width = face.Height = FaceSize; anneau.Width = anneau.Height = FaceSize;
+                var big = new DoubleAnimation(1, 1.35, TimeSpan.FromMilliseconds(500)) { EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.6 } };
+                sc.BeginAnimation(ScaleTransform.ScaleXProperty, big);
+                sc.BeginAnimation(ScaleTransform.ScaleYProperty, big);
+            });
+        }
+
+        // La secousse du choc, sans compter d'erreur (Shake, lui, en compte une).
+        private static void Tremble(FrameworkElement el)
+        {
+            var tr = new TranslateTransform();
+            var old = el.RenderTransform;
+            var grp = new TransformGroup();
+            if (old != null && !(old is MatrixTransform)) grp.Children.Add(old);
+            grp.Children.Add(tr);
+            el.RenderTransform = grp;
+            tr.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(-10, 10, TimeSpan.FromMilliseconds(50)) { AutoReverse = true, RepeatBehavior = new RepeatBehavior(5), FillBehavior = FillBehavior.Stop });
         }
 
         // Bouton transparent (cible de regard sans habillage).
@@ -171,7 +218,7 @@ namespace MesPremiersJeux.Games
             return new Button { Template = tpl, Width = w, Height = h, Focusable = false, Content = content, Cursor = System.Windows.Input.Cursors.Hand };
         }
 
-        private void ThrowPie(Button face, double fx, double fy, int fi)
+        private void ThrowPie(Grid face, ContentControl contenu, double fx, double fy, int fi)
         {
             if (Locked) return;
             face.IsHitTestVisible = false;
@@ -188,7 +235,7 @@ namespace MesPremiersJeux.Games
             var rot = new RotateTransform(0);
             pie.RenderTransform = rot;
             double px0 = W / 2 - 70, py0 = H - 110;
-            double px1 = fx + 75, py1 = fy + 65;
+            double px1 = fx + FaceSize / 2 - 70, py1 = fy + FaceSize * 0.45 - 70;
             Canvas.SetLeft(pie, px0);
             Canvas.SetTop(pie, py0);
             pie.SetValue(Panel.ZIndexProperty, 70);
@@ -201,13 +248,13 @@ namespace MesPremiersJeux.Games
             ay.Completed += (s, e) =>
             {
                 _canvas.Children.Remove(pie);
-                Splat(face, fx, fy, fi);
+                Splat(face, contenu, fx, fy, fi);
             };
             pie.BeginAnimation(Canvas.LeftProperty, ax);
             pie.BeginAnimation(Canvas.TopProperty, ay);
         }
 
-        private void Splat(Button face, double fx, double fy, int fi)
+        private void Splat(Grid face, ContentControl contenu, double fx, double fy, int fi)
         {
             SoundFx.Splat();
             // La grimace du MÊME personnage (visage-touche-N assorti) ; sinon
@@ -215,12 +262,12 @@ namespace MesPremiersJeux.Games
             var imgH = Art.Find("visage-touche-" + (fi + 1));
             int hi = _rng.Next(Hit.Length);
             if (imgH == null) imgH = Art.Find("visage-touche-" + (hi + 1));
-            ((ContentControl)face.Content).Content = imgH != null
+            contenu.Content = imgH != null
                 ? (FrameworkElement)new Image { Source = imgH, Width = Inner, Height = Inner, Stretch = Stretch.Uniform }
                 : FaceArt.Hit(hi, Inner);
 
-            // Le visage tremble sous le choc.
-            Shake(face);
+            // Le visage tremble sous le choc (sans compter d'erreur : la tarte est partie, c'est gagné).
+            Tremble(face);
 
             // La crème : un gros nuage blanc qui s'écrase sur le visage…
             double cx = fx + FaceSize / 2, cy = fy + FaceSize * 0.45;
@@ -289,7 +336,9 @@ namespace MesPremiersJeux.Games
                 if (_splats >= 8 && !Locked)
                 {
                     Locked = true;
-                    Adaptive.Report("tartes-precision", true); // manche gagnée : la prochaine commence plus petit (3 manches = un cran)
+                    // Manche gagnée sans aide : la prochaine commence plus petit (3 manches = un cran) ;
+                    // deux aides ou plus : c'était trop dur, le niveau redescend.
+                    Adaptive.Report("tartes-precision", _aides < 2);
                     Speak("Quelle bataille de tartes ! Bravo !");
                     GameKit.Success();
                     Celebrate();
