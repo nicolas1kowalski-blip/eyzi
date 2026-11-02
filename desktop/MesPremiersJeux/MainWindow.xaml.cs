@@ -1526,6 +1526,7 @@ namespace MesPremiersJeux
             else ChildAgeBox.Text = _settings.ChildAge.ToString();
             _settings.ChildProfile = (ChildProfileBox.Text ?? "").Trim();
             _settings.Save();
+            EnvoyerReglagesBientot();
         }
 
         private void ChildName_Changed(object sender, RoutedEventArgs e)
@@ -1972,6 +1973,7 @@ namespace MesPremiersJeux
         private void CloudSyncAtExit()
         {
             if (!FamilyCloud.Available(_settings)) return;
+            Partage.Ecrire(_settings); // une clé Azure tapée aujourd'hui doit partir, même sans nouveau contenu
             if (FamilyCloud.LocalFingerprint() == _settings.CloudLastFingerprint) return;
             try
             {
@@ -1991,6 +1993,7 @@ namespace MesPremiersJeux
             _settings.Save();
             Listening.Start(_settings);
             RefreshEarButton();
+            EnvoyerReglagesBientot();
         }
 
         /// <summary>Le nuage a apporté des réglages partagés : on les affiche et on relance ce qui en dépend.</summary>
@@ -2047,6 +2050,7 @@ namespace MesPremiersJeux
             var mac = await LgTv.GetMacAsync();
             if (mac != null) _settings.TvMac = mac;
             _settings.Save();
+            EnvoyerReglagesBientot();
             await LgTv.Toast("Eyzi est associée à la télé !");
             RefreshTvText();
         }
@@ -2137,6 +2141,31 @@ namespace MesPremiersJeux
             AzureTts.Region = _settings.AzureRegion;
             AzureTts.Voice = _settings.AzureVoice;
             Listening.Start(_settings); // l'écoute utilise la même clé
+            EnvoyerReglagesBientot();   // … et descend sur les autres tablettes de la famille
+        }
+
+        // Un réglage partagé vient de changer : on l'envoie au nuage une minute plus tard (le temps de finir de taper),
+        // pour que les autres tablettes le trouvent à leur prochain démarrage sans attendre la fermeture de celle-ci.
+        private System.Windows.Threading.DispatcherTimer _envoiReglages;
+        private void EnvoyerReglagesBientot()
+        {
+            if (_settings == null || !FamilyCloud.Available(_settings)) return;
+            if (_envoiReglages == null)
+            {
+                _envoiReglages = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(60) };
+                _envoiReglages.Tick += async (s, e) =>
+                {
+                    _envoiReglages.Stop();
+                    try
+                    {
+                        var err = await FamilyCloud.UploadAsync(_settings, force: false);
+                        Lib.Log.Write("nuage", err == null ? "Réglages partagés envoyés (" + FamilyCloud.Status + ")" : "Réglages partagés : " + err);
+                        RefreshCloudStatus();
+                    }
+                    catch (Exception ex) { Lib.Log.Write("nuage", "Réglages partagés : " + ex.Message); }
+                };
+            }
+            _envoiReglages.Stop(); _envoiReglages.Start();
         }
 
         private void Tab_Click(object sender, RoutedEventArgs e)

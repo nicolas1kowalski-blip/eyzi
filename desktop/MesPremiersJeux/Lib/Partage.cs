@@ -56,30 +56,68 @@ namespace MesPremiersJeux.Lib
                 if (!change && File.Exists(FilePath)) return;
                 if (string.IsNullOrEmpty(s.PartageStamp)) return; // rien n'a jamais été réglé ici : on n'écrase pas ce que les autres ont envoyé
                 Directory.CreateDirectory(UserContent.RootDir);
+                // Ce que les autres tablettes ont déjà mis dans le fichier et que nous n'avons pas (une clé Azure,
+                // une télé, un Wi-Fi) reste : une tablette sans clé n'efface jamais la clé des autres.
+                var avant = Lire();
                 var lines = new List<string> { "Stamp=" + s.PartageStamp, "Machine=" + Environment.MachineName };
-                lines.AddRange(Valeurs(s).Select(kv => kv.Key + "=" + kv.Value));
+                var vus = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var kv in Valeurs(s))
+                {
+                    vus.Add(kv.Key);
+                    var v = kv.Value;
+                    if (v.Length == 0 && avant.TryGetValue(kv.Key, out var ancien) && ancien.Length > 0 && Remplissable(kv.Key)) v = ancien;
+                    lines.Add(kv.Key + "=" + v);
+                }
+                foreach (var kv in avant) if (kv.Key.StartsWith("Lieu:") && !vus.Contains(kv.Key)) lines.Add(kv.Key + "=" + kv.Value);
                 File.WriteAllLines(FilePath, lines, Encoding.UTF8);
                 Log.Write("nuage", "Réglages partagés écrits (" + s.PartageStamp + ")");
             }
             catch (Exception ex) { Log.Write("nuage", "Réglages partagés : " + ex.Message); }
         }
 
-        /// <summary>Après réception du nuage : applique famille.ini s'il est plus récent que nos propres changements. Renvoie vrai si quelque chose a changé.</summary>
-        public static bool Appliquer(Settings s)
+        // Les réglages qu'une tablette prend aux autres dès qu'elle ne les a pas, quel que soit l'âge du fichier.
+        private static bool Remplissable(string k) => k == "AzureKey" || k == "AzureRegion" || k == "AzureVoice" || k == "TvIp" || k == "TvKey" || k == "TvMac" || k == "ChildProfile";
+
+        private static Dictionary<string, string> Lire()
         {
+            var map = new Dictionary<string, string>(StringComparer.Ordinal);
             try
             {
-                if (!File.Exists(FilePath)) return false;
-                var map = new Dictionary<string, string>(StringComparer.Ordinal);
+                if (!File.Exists(FilePath)) return map;
                 foreach (var line in File.ReadAllLines(FilePath, Encoding.UTF8))
                 {
                     int eq = line.IndexOf('='); if (eq <= 0) continue;
                     map[line.Substring(0, eq)] = line.Substring(eq + 1);
                 }
+            }
+            catch { }
+            return map;
+        }
+
+        /// <summary>Après réception du nuage : applique famille.ini s'il est plus récent que nos propres changements ;
+        /// et dans tous les cas, prend ce qui nous MANQUE (une clé Azure, une télé, un Wi-Fi appris) même d'un fichier plus ancien.
+        /// Renvoie vrai si quelque chose a changé.</summary>
+        public static bool Appliquer(Settings s)
+        {
+            try
+            {
+                if (!File.Exists(FilePath)) return false;
+                var map = Lire();
                 var stamp = map.TryGetValue("Stamp", out var st) ? st : "";
-                if (stamp.Length == 0 || string.CompareOrdinal(stamp, s.PartageStamp ?? "") <= 0) return false;
+                if (stamp.Length == 0) return false;
                 string V(string k) => map.TryGetValue(k, out var v) ? v : null;
                 bool changed = false;
+                if (string.CompareOrdinal(stamp, s.PartageStamp ?? "") <= 0)
+                {
+                    // Nos propres réglages sont plus récents : on garde les nôtres, mais on complète les trous.
+                    void Prendre(ref string champ, string k) { var v = V(k); if (!string.IsNullOrEmpty(v) && string.IsNullOrEmpty(champ)) { champ = v; changed = true; } }
+                    if (string.IsNullOrEmpty(s.AzureKey)) { Prendre(ref s.AzureKey, "AzureKey"); if (changed) { Prendre(ref s.AzureRegion, "AzureRegion"); Prendre(ref s.AzureVoice, "AzureVoice"); } }
+                    if (string.IsNullOrEmpty(s.TvIp)) { Prendre(ref s.TvIp, "TvIp"); Prendre(ref s.TvKey, "TvKey"); Prendre(ref s.TvMac, "TvMac"); }
+                    Prendre(ref s.ChildProfile, "ChildProfile"); if (s.ChildProfile != null) s.ChildProfile = s.ChildProfile.Replace("\\n", "\n");
+                    foreach (var kv in map) if (kv.Key.StartsWith("Lieu:") && Lieux.LieuDe(kv.Key.Substring(5)).Length == 0) { Lieux.Associer(kv.Key.Substring(5), kv.Value); changed = true; }
+                    if (changed) { s.PartageEmpreinte = Empreinte(s); s.Save(); Log.Write("nuage", "Réglages partagés (plus anciens) : ce qui manquait ici a été pris de " + (V("Machine") ?? "?")); }
+                    return changed;
+                }
                 void Set(ref string champ, string k, bool garderLocalSiVide = true)
                 {
                     var v = V(k); if (v == null) return;
