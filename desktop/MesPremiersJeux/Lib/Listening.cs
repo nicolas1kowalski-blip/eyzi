@@ -215,16 +215,24 @@ namespace MesPremiersJeux.Lib
         }
 
         // Le chien de garde : en mode mot-clé, si la veille n'est plus active (après une erreur, une coupure réseau…),
-        // le moteur est recréé. Toutes les 20 secondes, quand rien n'est en cours.
+        // le moteur est recréé. Toutes les 20 secondes, quand rien n'est en cours ; après trois échecs de suite
+        // (pas de clé, pas de micro, pas de réseau), on n'insiste plus que toutes les cinq minutes.
+        private static int _echecsGarde;
+        private static DateTime _prochainEssai = DateTime.MinValue;
         private static readonly System.Threading.Timer _garde = new System.Threading.Timer(_ =>
         {
             try
             {
                 if (_last == null || _busy) return;
                 var mode = (_last.ListenMode ?? "off").ToLowerInvariant();
-                if (mode == "off") return;
+                if (mode == "off" || string.IsNullOrWhiteSpace(_last.AzureKey)) return;
                 bool attendu = mode == "motcle" && KeywordAvailable ? (Status == "veille" || Status == "ecoute") : (Status == "pret" || Status == "ecoute");
-                if (!attendu) { Log.Write("ecoute", "Veille perdue (état « " + Status + " ») : moteur recréé"); Start(_last); }
+                if (attendu) { _echecsGarde = 0; return; }
+                if (DateTime.Now < _prochainEssai) return;
+                _echecsGarde++;
+                if (_echecsGarde >= 3) { _prochainEssai = DateTime.Now.AddMinutes(5); Log.Write("ecoute", "Veille perdue (état « " + Status + " ») : " + _echecsGarde + " échecs, prochain essai dans 5 min"); }
+                else Log.Write("ecoute", "Veille perdue (état « " + Status + " ») : moteur recréé");
+                Start(_last);
             }
             catch (Exception ex) { Log.Write("ecoute", "Chien de garde : " + ex.Message); }
         }, null, 20000, 20000);

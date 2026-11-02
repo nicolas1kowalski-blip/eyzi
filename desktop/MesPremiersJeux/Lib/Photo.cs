@@ -70,7 +70,9 @@ namespace MesPremiersJeux.Lib
 
         private static async Task PrendreInterne(bool avant, int maxPx, Resultat res, Action<MediaCapture> garde)
         {
-            var devices = await Wait(DeviceInformation.FindAllAsync(DeviceClass.VideoCapture));
+            var toutes = await Wait(DeviceInformation.FindAllAsync(DeviceClass.VideoCapture));
+            // Jamais la caméra du capteur oculaire (Tobii IS5…) : on ne touche qu'aux vraies caméras de la tablette.
+            var devices = toutes.Where(d => { var n = (d.Name ?? "").ToLowerInvariant(); return !(n.Contains("tobii") || n.Contains("is5") || n.Contains("is4") || n.Contains("eye track") || n.Contains("eyetrack")); }).ToList();
             if (devices.Count == 0) { res.Erreur = "Aucune caméra sur cette tablette."; return; }
             var voulu = avant ? Panel.Front : Panel.Back;
             var cam = devices.FirstOrDefault(d => d.EnclosureLocation != null && d.EnclosureLocation.Panel == voulu)
