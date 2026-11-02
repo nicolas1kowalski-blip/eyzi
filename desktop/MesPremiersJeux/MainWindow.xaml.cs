@@ -520,6 +520,8 @@ namespace MesPremiersJeux
             // 📺 La télé.
             TvIpBox.Text = _settings.TvIp ?? "";
             RefreshTvText();
+            SpotifyIdBox.Text = _settings.SpotifyClientId ?? "";
+            RefreshSpotifyText();
             // 📍 Le lieu d'après le Wi-Fi.
             LieuAutoCheck.IsChecked = _settings.LieuAuto;
             RefreshLieux();
@@ -1111,7 +1113,7 @@ namespace MesPremiersJeux
         {
             var pages = new Dictionary<string, StackPanel>
             {
-                ["regard"] = PageRegard, ["enfant"] = PageEnfant, ["parler"] = PageParler, ["voix"] = PageVoix,
+                ["regard"] = PageRegard, ["enfant"] = PageEnfant, ["parler"] = PageParler, ["maison"] = PageMaison, ["voix"] = PageVoix,
                 ["contenu"] = PageContenu, ["nuage"] = PageNuage, ["suivi"] = PageSuivi, ["avance"] = PageAvance,
             };
             foreach (var kv in pages)
@@ -2182,6 +2184,42 @@ namespace MesPremiersJeux
             if (string.IsNullOrWhiteSpace(_settings.TvIp)) TvStatusText.Text = "Pas de télé réglée : la tuile 📺 n'apparaît pas dans le monde Jouer.";
             else if (string.IsNullOrEmpty(_settings.TvKey)) TvStatusText.Text = "Télé à " + _settings.TvIp + ", pas encore associée.";
             else TvStatusText.Text = "Télé associée (" + _settings.TvIp + (string.IsNullOrEmpty(_settings.TvMac) ? ", allumage par le réseau impossible : adresse matérielle inconnue" : ", allumage par le réseau " + _settings.TvMac) + ").";
+        }
+
+        // 🎧 Spotify : le Client ID et la connexion, depuis la page Maison connectée.
+        private void RefreshSpotifyText()
+        {
+            if (SpotifyStatusText == null) return;
+            SpotifyStatusText.Text = string.IsNullOrWhiteSpace(_settings?.SpotifyClientId) ? "Pas de Client ID : collez-le ci-dessus."
+                : Spotify.IsConnected ? "Spotify est connecté : la tuile Musique du monde Jouer joue vos playlists." : "Client ID enregistré, pas encore connecté : cliquez Connecter.";
+        }
+
+        private void Spotify_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null || SpotifyIdBox == null) return;
+            var id = SpotifyIdBox.Text.Trim();
+            if (id != (_settings.SpotifyClientId ?? "")) { _settings.SpotifyClientId = id; _settings.Save(); }
+            RefreshSpotifyText();
+        }
+
+        private async void SpotifyConnect_Click(object sender, RoutedEventArgs e)
+        {
+            Spotify_Changed(sender, e);
+            if (!Spotify.IsConfigured) { SpotifyStatusText.Text = "Collez d'abord le Client ID."; return; }
+            SpotifyConnectBtn.IsEnabled = false; SpotifyConnectBtn.Content = "⏳  Connexion… (le navigateur s'ouvre)";
+            try
+            {
+                var err = await Spotify.LoginAsync();
+                SpotifyStatusText.Text = err ?? "Spotify est connecté !";
+            }
+            catch (Exception ex) { SpotifyStatusText.Text = "Échec : " + ex.Message; }
+            finally { SpotifyConnectBtn.IsEnabled = true; SpotifyConnectBtn.Content = "🎧  Connecter Spotify"; if (Spotify.IsConnected) RefreshSpotifyText(); }
+        }
+
+        private void SpotifyDisconnect_Click(object sender, RoutedEventArgs e)
+        {
+            try { Spotify.Disconnect(); } catch (Exception ex) { Lib.Log.Write("spotify", ex.Message); }
+            RefreshSpotifyText();
         }
 
         private void Parler_Changed(object sender, RoutedEventArgs e)

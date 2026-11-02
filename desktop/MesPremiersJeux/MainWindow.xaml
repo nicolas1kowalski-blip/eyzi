@@ -255,6 +255,7 @@
                             <Button Tag="regard"  Content="👁   Regard"            Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="enfant"  Content="🧒   Enfant &amp; jeux"  Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="parler"  Content="💬   Parler &amp; IA"     Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
+                            <Button Tag="maison"  Content="🏠   Maison connectée"  Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="voix"    Content="🔊   Voix"              Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="contenu" Content="📁   Contenu"           Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="nuage"   Content="☁️   Licence &amp; nuage" Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
@@ -393,7 +394,7 @@
 
                         <!-- 🧒 ENFANT & JEUX -->
                         <StackPanel x:Name="PageEnfant" Style="{StaticResource Page}">
-                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="L'enfant, son niveau, les tuiles Parler et Oui/Non, les histoires, la pause, la télé." />
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="L'enfant, son niveau, les tuiles Parler et Oui/Non, les histoires, la pause." />
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="L'enfant" Style="{StaticResource CardTitle}" />
@@ -449,20 +450,6 @@
                                                Text="Au lieu de lire mot à mot, l'enfant regarde une grande tuile par phrase (ou bout de phrase) et l'entend en entier. Chaque tuile porte un picto : le personnage ou l'objet de l'image dont on parle, sinon une image de la banque (chat, maison, pomme…)." />
                                 </StackPanel>
                             </Border>
-                            <Border Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <TextBlock Text="📺 La télé de la maison (LG webOS)" Style="{StaticResource CardTitle}" />
-                                    <TextBlock Text="Adresse de la télé sur le réseau" Style="{StaticResource Label}" />
-                                    <TextBox x:Name="TvIpBox" Style="{StaticResource Field}" LostFocus="Tv_Changed" />
-                                    <UniformGrid Columns="2">
-                                        <Button Content="🔍  Chercher la télé" Style="{StaticResource AdminBtn}" Margin="0,6,4,0" Click="TvFind_Click" />
-                                        <Button Content="🔗  Associer" Style="{StaticResource AdminPrimary}" Margin="4,6,0,0" Click="TvPair_Click" />
-                                    </UniformGrid>
-                                    <TextBlock x:Name="TvStatusText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
-                                    <TextBlock Style="{StaticResource Hint}"
-                                               Text="Une télécommande au regard dans le monde Jouer (tuile 📺) : allumer, éteindre, le son, les chaînes, pause, YouTube, Netflix, les flèches. La télé et la tablette doivent être sur le même Wi-Fi. La première association est à accepter sur l'écran de la télé. Pour l'allumage par le réseau, activez dans la télé : Réglages → Général → Appareils externes (ou Réseau) → « Allumage via mobile / Quick Start+ ». Tout reste dans la maison." />
-                                </StackPanel>
-                            </Border>
                         </StackPanel>
 
                         <!-- 💬 PARLER & IA -->
@@ -498,6 +485,46 @@
                                                Text="Le Wi-Fi de la maison, celui de l'école, le partage de connexion du téléphone dans la voiture : la première fois, Parler demande « on est où ? » (à la souris ou au doigt), puis s'en souvient. Le nom du réseau reste sur la tablette ; seul le mot « maison » ou « école » part avec une phrase à répondre. Le bouton de lieu dans Parler permet toujours de corriger." />
                                     <TextBlock x:Name="LieuReseauText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
                                     <StackPanel x:Name="LieuxPanel" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- 🏠 MAISON CONNECTÉE -->
+                        <StackPanel x:Name="PageMaison" Style="{StaticResource Page}">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="Ce que l'enfant peut piloter du regard dans la maison : la télé, la musique Spotify, et bientôt les prises et ampoules connectées." />
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="📺 La télé de la maison (LG webOS)" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Adresse de la télé sur le réseau" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="TvIpBox" Style="{StaticResource Field}" LostFocus="Tv_Changed" />
+                                    <UniformGrid Columns="2">
+                                        <Button Content="🔍  Chercher la télé" Style="{StaticResource AdminBtn}" Margin="0,6,4,0" Click="TvFind_Click" />
+                                        <Button Content="🔗  Associer" Style="{StaticResource AdminPrimary}" Margin="4,6,0,0" Click="TvPair_Click" />
+                                    </UniformGrid>
+                                    <TextBlock x:Name="TvStatusText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="Une télécommande au regard dans le monde Jouer (tuile 📺) : allumer, éteindre, le son, les chaînes, pause, YouTube, Netflix, les flèches. La télé et la tablette doivent être sur le même Wi-Fi. La première association est à accepter sur l'écran de la télé. Pour l'allumage par le réseau, activez dans la télé : Réglages → Général → Appareils externes (ou Réseau) → « Allumage via mobile / Quick Start+ ». Tout reste dans la maison." />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="🎧 Spotify (monde Jouer, tuile Musique)" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Client ID de votre application Spotify" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="SpotifyIdBox" Style="{StaticResource Field}" LostFocus="Spotify_Changed" />
+                                    <UniformGrid Columns="2">
+                                        <Button x:Name="SpotifyConnectBtn" Content="🎧  Connecter Spotify" Style="{StaticResource AdminPrimary}" Margin="0,6,4,0" Click="SpotifyConnect_Click" />
+                                        <Button Content="⏏  Déconnecter" Style="{StaticResource AdminBtn}" Margin="4,6,0,0" Click="SpotifyDisconnect_Click" />
+                                    </UniformGrid>
+                                    <TextBlock x:Name="SpotifyStatusText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="Créez une application sur developer.spotify.com (gratuit, compte Spotify Premium conseillé), avec l'adresse de retour http://127.0.0.1:8888/callback, et collez ici son Client ID. Puis Connecter : le navigateur s'ouvre pour autoriser Eyzi. Les musiques elles-mêmes s'ajoutent dans le monde Jouer, tuile Musique, avec les outils d'édition." />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="🔌 Bientôt" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Style="{StaticResource Hint}" Margin="0"
+                                               Text="Les prises et ampoules connectées Philips Hue (allumer le sapin de Noël, la lampe de la chambre, changer la couleur), et d'autres appareils de la maison. Dites-nous lesquels vous avez : contact@eyzi.fr." />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
