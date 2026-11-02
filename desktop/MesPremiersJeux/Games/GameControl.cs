@@ -639,6 +639,10 @@ namespace MesPremiersJeux.Games
 
         // Jeu QUITTÉ (retour au menu) : plus un mot, plus une suite programmée.
         protected bool Closed { get; private set; }
+
+        /// <summary>Une surcouche est ouverte (la grille Parler, l'écoute) : les suites
+        /// programmées des jeux attendent, et reprennent quand elle se referme.</summary>
+        public static bool Paused { get; set; }
         private readonly List<DispatcherTimer> _scheduled = new List<DispatcherTimer>();
 
         protected void Speak(string text) { if (!Closed) Speech.Say(text); }
@@ -707,6 +711,7 @@ namespace MesPremiersJeux.Games
             double extra = 0;
             t.Tick += (s, e) =>
             {
+                if (Paused) { t.Interval = TimeSpan.FromMilliseconds(150); return; } // le jeu attend derrière la surcouche
                 if (transition && Speech.IsBusy && extra < 6)
                 {
                     extra += 0.12;

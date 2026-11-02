@@ -204,6 +204,8 @@ namespace MesPremiersJeux
         {
             Speech.Stop();
             Speech.Hold = true;              // les jeux se taisent, la grille parle
+            SoundFx.Hold = true;             // … leurs bruitages aussi
+            Games.GameControl.Paused = true; // … et leurs suites programmées attendent
             GazeTargets.ModalRoot = _comm;   // le regard ne vise que la grille
             _comm.Visibility = Visibility.Visible;
             _comm.Open();
@@ -216,6 +218,8 @@ namespace MesPremiersJeux
             _comm.MarkClosed();
             GazeTargets.ModalRoot = null;
             Speech.Hold = false;
+            SoundFx.Hold = false;
+            Games.GameControl.Paused = EcouteHost.Visibility == Visibility.Visible;
             ApplyTiles();
             Speech.Say("On reprend !");
         }
@@ -268,6 +272,9 @@ namespace MesPremiersJeux
             if (AdminHost.Visibility == Visibility.Visible) return;
             if (EcouteHost.Visibility == Visibility.Visible) { if (ecoute) _ecoute.Ecouter(); return; }
             Speech.Stop();
+            Speech.Hold = true;              // le jeu du dessous se tait (la surcouche parle avec SayAlways)
+            SoundFx.Hold = true;
+            Games.GameControl.Paused = true; // … et attend, sans avancer tout seul
             EcouteHost.Visibility = Visibility.Visible;
             GazeTargets.ModalRoot = EcouteHost;
             _ecoute.Open(ecoute);
@@ -280,6 +287,7 @@ namespace MesPremiersJeux
             if (EcouteHost.Visibility != Visibility.Visible) return;
             EcouteHost.Visibility = Visibility.Collapsed;
             if (ReferenceEquals(GazeTargets.ModalRoot, EcouteHost)) GazeTargets.ModalRoot = null;
+            if (!CommBoard.IsOpen) { Speech.Hold = false; SoundFx.Hold = false; Games.GameControl.Paused = false; }
         }
 
         private void Ear_Click(object sender, RoutedEventArgs e)
@@ -2182,6 +2190,9 @@ namespace MesPremiersJeux
             }
             if (id == "tv" && _views.TryGetValue("tv", out var tvv) && tvv is TvView tvView && tvView.Visibility != Visibility.Visible) tvView.Enter();
             foreach (var kv in _views) kv.Value.Visibility = kv.Key == id ? Visibility.Visible : Visibility.Collapsed;
+            // Un jeu resté ouvert dans un autre monde attend qu'on y revienne : il n'avance pas tout seul, caché.
+            Games.GameControl.Paused = CommBoard.IsOpen || EcouteHost.Visibility == Visibility.Visible
+                || !(id == "games" || id == "edu" || id == "parcours" || id == "stories" || id == "coloring" || id == "music");
             HighlightWorld(WorldOf(id));
             ApplyTiles();
             Usage.Screen(id);

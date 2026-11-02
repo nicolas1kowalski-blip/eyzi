@@ -5,6 +5,8 @@ User-agent: *
 Disallow: /admin.html
 Disallow: /api/
 
+Sitemap: https://eyzi.fr/sitemap.xml
+
 User-agent: GPTBot
 User-agent: ChatGPT-User
 User-agent: OAI-SearchBot

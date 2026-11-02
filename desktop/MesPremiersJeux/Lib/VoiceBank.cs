@@ -70,6 +70,7 @@ namespace MesPremiersJeux.Lib
         /// Renvoie false s'il n'y en a aucun.</summary>
         public static bool Play(string category)
         {
+            if (Speech.Hold && !category.StartsWith("comm-")) return false; // une surcouche parle : les voix des jeux attendent
             var files = Files(category);
             if (files.Length == 0) return false;
             return PlayFile(files[Rng.Next(files.Length)]);

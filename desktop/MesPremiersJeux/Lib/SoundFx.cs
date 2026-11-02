@@ -190,6 +190,12 @@ namespace MesPremiersJeux.Lib
         /// <summary>📷 Le déclic de l'appareil photo (deux petits claquements).</summary>
         public static void Shutter()
         {
+            bool h = Hold; Hold = false; // le déclic se fait entendre même sous la surcouche (c'est elle qui photographie)
+            try { PlayShutter(); } finally { Hold = h; }
+        }
+
+        private static void PlayShutter()
+        {
             Play("shutter", "photo", () =>
             {
                 var rng = new Random(7);
@@ -583,8 +589,12 @@ namespace MesPremiersJeux.Lib
 
         private static void Play(string key, Func<float[]> make) => Play(key, null, make);
 
+        /// <summary>Une surcouche est ouverte (grille Parler, écoute) : les bruitages des jeux se taisent.</summary>
+        public static bool Hold;
+
         private static void Play(string key, string fileName, Func<float[]> make)
         {
+            if (Hold) return;
             try
             {
                 if (fileName != null)
