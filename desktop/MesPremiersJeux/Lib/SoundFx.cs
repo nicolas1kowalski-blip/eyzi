@@ -315,6 +315,13 @@ namespace MesPremiersJeux.Lib
         public static void PopSound()
             => Play("pop", "pop", () => Glide(420, 180, 0.1, 0.5));
 
+        /// <summary>Le petit « tic » d'une sélection au regard (option du curseur) : court, doux, jamais couvert par une surcouche.</summary>
+        public static void GazeClick()
+        {
+            bool h = Hold; Hold = false;
+            try { Play("gaze-click", "selection", () => Glide(880, 660, 0.07, 0.35)); } finally { Hold = h; }
+        }
+
         /// <summary>Une note de musique douce et chantante (gamme pentatonique,
         /// degré 0..5) AVEC un petit coup de tambour dessous — la mélodie
         /// scandée des syllabes, en un seul son.</summary>

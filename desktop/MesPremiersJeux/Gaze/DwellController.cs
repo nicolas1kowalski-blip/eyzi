@@ -918,9 +918,16 @@ namespace MesPremiersJeux.Gaze
             Canvas.SetTop(_indicator, local.Y - _indicator.Height / 2);
         }
 
+        /// <summary>La forme du remplissage : "arc" (le cercle se remplit sur le bord) ou "disque" (un camembert).</summary>
+        public static string FillStyle = "arc";
+
+        /// <summary>L'avancement de la fixation en cours (0 → 1), pour les habillages du curseur.</summary>
+        public event Action<double> Progress;
+
         private void UpdateProgress(double frac)
         {
             frac = Math.Max(0, Math.Min(1, frac));
+            try { Progress?.Invoke(frac); } catch { }
             double cx = _indicator.Width / 2, cy = _indicator.Height / 2, r = IndicatorR;
             if (frac <= 0.001)
             {
@@ -935,11 +942,28 @@ namespace MesPremiersJeux.Gaze
             double ang = frac * 2 * Math.PI;
             var start = new Point(cx, cy - r);
             var end = new Point(cx + r * Math.Sin(ang), cy - r * Math.Cos(ang));
+            _progress.Data = FillStyle == "disque" ? Camembert(cx, cy, r, start, end, frac) : Arc(start, end, r, frac);
+        }
+
+        /// <summary>L'arc sur le bord du cercle.</summary>
+        public static Geometry Arc(Point start, Point end, double r, double frac)
+        {
             var fig = new PathFigure { StartPoint = start, IsClosed = false };
             fig.Segments.Add(new ArcSegment(end, new Size(r, r), 0, frac > 0.5, SweepDirection.Clockwise, true));
             var geo = new PathGeometry();
             geo.Figures.Add(fig);
-            _progress.Data = geo;
+            return geo;
+        }
+
+        /// <summary>Le camembert : une part pleine qui grandit depuis le centre.</summary>
+        public static Geometry Camembert(double cx, double cy, double r, Point start, Point end, double frac)
+        {
+            var fig = new PathFigure { StartPoint = new Point(cx, cy), IsClosed = true };
+            fig.Segments.Add(new LineSegment(start, true));
+            fig.Segments.Add(new ArcSegment(end, new Size(r, r), 0, frac > 0.5, SweepDirection.Clockwise, true));
+            var geo = new PathGeometry();
+            geo.Figures.Add(fig);
+            return geo;
         }
     }
 }

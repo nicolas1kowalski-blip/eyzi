@@ -149,7 +149,7 @@ namespace MesPremiersJeux.Views
             DockPanel.SetDock(_btnEnfant, Dock.Left);
             basGrid.Children.Add(_btnEnfant);
             var micro = PetitBouton("👂", "Écouter une phrase");
-            micro.Click += async (s, e) => { if (Listening.Enabled) await Listening.ListenOnce(); else _statusEcoute = "l'écoute n'est pas réglée (⚙ → Licence & nuage → Écoute)"; MontrerStatus(); };
+            micro.Click += async (s, e) => { if (Listening.Enabled) await Listening.ListenOnce(); else _statusEcoute = "l'écoute n'est pas réglée (⚙ → Parler & IA → Écoute)"; MontrerStatus(); };
             DockPanel.SetDock(micro, Dock.Right);
             basGrid.Children.Add(micro);
             var textes = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 12, 0) };
@@ -270,7 +270,7 @@ namespace MesPremiersJeux.Views
             {
                 if (speculatif) return;
                 if (_settings.CameraParler) { _ = Photographier(avant, Suggest.QuestionDuRegard(text, avant)); return; }
-                Ia("📷 La caméra n'est pas autorisée (⚙ → Licence & nuage → Écoute) : la question part sans image.");
+                Ia("📷 La caméra n'est pas autorisée (⚙ → Parler & IA → Écoute) : la question part sans image.");
                 text = Suggest.QuestionDuRegard(text, avant);
             }
             Lancer(text, speculatif, null);
@@ -280,7 +280,7 @@ namespace MesPremiersJeux.Views
         private async System.Threading.Tasks.Task Photographier(bool avant, string question)
         {
             if (_settings == null) _settings = Settings.Load();
-            if (!_settings.CameraParler) { Ia("📷 La caméra n'est pas autorisée (⚙ → Licence & nuage → Écoute)."); return; }
+            if (!_settings.CameraParler) { Ia("📷 La caméra n'est pas autorisée (⚙ → Parler & IA → Écoute)."); return; }
             _partielTimer.Stop(); _speculatif = null; _autoClose.Stop();
             question = question ?? (avant ? "Comment tu te sens ?" : "Qu'est-ce que tu vois ? Qu'est-ce que tu veux ?");
             Montrer("grille");
@@ -403,7 +403,7 @@ namespace MesPremiersJeux.Views
             {
                 PreparerGrille(secours.Type, secours.Reponses.Count);
                 foreach (var r in secours.Reponses) AjouterCase(r, secours.Type);
-                Ia("⚠️ Réponses devinées, sans IA : " + (!_settings.ListenAnswers ? "la case « Proposer des réponses » est décochée (⚙ → Licence & nuage → Écoute)." : "pas de licence en ligne."));
+                Ia("⚠️ Réponses devinées, sans IA : " + (!_settings.ListenAnswers ? "la case « Proposer des réponses » est décochée (⚙ → Parler & IA → Écoute)." : "pas de licence en ligne."));
                 if (!speculatif) Speech.SayAlways(text);
                 return;
             }

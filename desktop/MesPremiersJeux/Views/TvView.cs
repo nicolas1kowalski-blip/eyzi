@@ -69,7 +69,7 @@ namespace MesPremiersJeux.Views
 
             _empty = new TextBlock
             {
-                Text = "📺\nDemande à un grand de régler la télé dans les réglages ⚙, page Licence & nuage.",
+                Text = "📺\nDemande à un grand de régler la télé dans les réglages ⚙, page Enfant & jeux.",
                 TextAlignment = TextAlignment.Center, FontSize = 26, Foreground = Dark, TextWrapping = TextWrapping.Wrap,
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed,
             };

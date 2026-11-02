@@ -18,6 +18,12 @@ namespace MesPremiersJeux.Lib
         public bool PointerSimple = false; // seulement le cercle qui se remplit : ni le point rose du regard, ni le halo doré sur la cible
         public string PointerColor = "#7E3FF2"; // la couleur du cercle qui se remplit
         public string PointerThickness = "normal"; // fin | normal | epais
+        public string PointerFill = "arc";       // arc (le bord se remplit) | disque (un camembert)
+        public string PointerImage = "";         // une image à la place du cercle : etoile, coeur, ballon, soleil, fleur, papillon, lune, curseur (l'image de la famille), vide = aucune
+        public bool PointerHideIdle = false;     // le cercle n'apparaît qu'une fois la fixation commencée
+        public bool PointerSound = false;        // un petit « tic » à chaque sélection
+        public bool PointerContrast = false;     // gros contraste : noir cerclé de blanc, trait épais
+        public bool PointerWorldColors = false;  // une couleur par monde (jouer orange, apprendre vert, parler violet)
         public string VoiceName = "";    // voix Windows choisie (vide = par défaut)
         public string VoiceEngine = "auto"; // auto | azure | piper | windows (le moteur de la voix)
         public string PiperVoice = "siwis"; // voix naturelle hors ligne choisie (siwis | jessica)
@@ -109,6 +115,12 @@ namespace MesPremiersJeux.Lib
                         case "PointerSimple": s.PointerSimple = val == "1"; break;
                         case "PointerColor": if (System.Text.RegularExpressions.Regex.IsMatch(val, "^#[0-9A-Fa-f]{6}$")) s.PointerColor = val; break;
                         case "PointerThickness": if (val == "fin" || val == "normal" || val == "epais") s.PointerThickness = val; break;
+                        case "PointerFill": if (val == "arc" || val == "disque") s.PointerFill = val; break;
+                        case "PointerImage": if (System.Text.RegularExpressions.Regex.IsMatch(val, "^[a-z-]{0,30}$")) s.PointerImage = val; break;
+                        case "PointerHideIdle": s.PointerHideIdle = val == "1"; break;
+                        case "PointerSound": s.PointerSound = val == "1"; break;
+                        case "PointerContrast": s.PointerContrast = val == "1"; break;
+                        case "PointerWorldColors": s.PointerWorldColors = val == "1"; break;
                         case "VoiceName": s.VoiceName = val; break;
                         case "VoiceEngine": s.VoiceEngine = string.IsNullOrWhiteSpace(val) ? "auto" : val; break;
                         case "PiperVoice": s.PiperVoice = string.IsNullOrWhiteSpace(val) ? "siwis" : val; break;
@@ -193,6 +205,12 @@ namespace MesPremiersJeux.Lib
                     "PointerSimple=" + (PointerSimple ? "1" : "0"),
                     "PointerColor=" + (PointerColor ?? "#7E3FF2"),
                     "PointerThickness=" + (PointerThickness ?? "normal"),
+                    "PointerFill=" + (PointerFill ?? "arc"),
+                    "PointerImage=" + (PointerImage ?? ""),
+                    "PointerHideIdle=" + (PointerHideIdle ? "1" : "0"),
+                    "PointerSound=" + (PointerSound ? "1" : "0"),
+                    "PointerContrast=" + (PointerContrast ? "1" : "0"),
+                    "PointerWorldColors=" + (PointerWorldColors ? "1" : "0"),
                     "VoiceName=" + (VoiceName ?? ""),
                     "VoicePitch=" + VoicePitch.ToString(CultureInfo.InvariantCulture),
                     "VoiceEngine=" + (VoiceEngine ?? "auto"),

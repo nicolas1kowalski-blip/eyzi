@@ -254,6 +254,7 @@
                         <StackPanel>
                             <Button Tag="regard"  Content="👁   Regard"            Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="enfant"  Content="🧒   Enfant &amp; jeux"  Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
+                            <Button Tag="parler"  Content="💬   Parler &amp; IA"     Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="voix"    Content="🔊   Voix"              Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="contenu" Content="📁   Contenu"           Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
                             <Button Tag="nuage"   Content="☁️   Licence &amp; nuage" Style="{StaticResource AdminNav}" Click="AdminNav_Click" />
@@ -268,9 +269,10 @@
 
                         <!-- 👁 REGARD -->
                         <StackPanel x:Name="PageRegard" Style="{StaticResource Page}">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="Comment la tablette lit le regard de l'enfant : le pilote, le temps de fixation, l'apparence du curseur, le calibrage." />
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
-                                    <TextBlock Text="Pilotage au regard" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="👁 Pilotage au regard" Style="{StaticResource CardTitle}" />
                                     <CheckBox x:Name="GazeModeCheck" Content="Piloter au regard (fixation = clic)" Style="{StaticResource Check}"
                                               Checked="GazeMode_Changed" Unchecked="GazeMode_Changed" />
                                     <CheckBox x:Name="AutoDwellCheck" Content="Ajuster tout seul le temps de fixation" Style="{StaticResource Check}"
@@ -290,7 +292,7 @@
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
-                                    <TextBlock Text="Réglage fin" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="⏱ Temps de fixation et stabilité" Style="{StaticResource CardTitle}" />
                                     <DockPanel Margin="0,6,0,0">
                                         <TextBlock x:Name="DwellValue" DockPanel.Dock="Right" FontSize="15" FontWeight="Bold" Foreground="#FF13306B" VerticalAlignment="Center" />
                                         <TextBlock Text="Durée de fixation avant le clic" FontSize="15" Foreground="#FF0B1A33" />
@@ -303,9 +305,23 @@
                                         <TextBlock Text="réactif" DockPanel.Dock="Left" Style="{StaticResource Hint}" Margin="0" />
                                         <TextBlock Text="très stable" DockPanel.Dock="Right" Style="{StaticResource Hint}" Margin="0" />
                                     </DockPanel>
-                                    <TextBlock Text="Taille du cercle de fixation" Style="{StaticResource Label}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="🎯 Le curseur du regard" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,6" Text="Ce que l'enfant voit quand il regarde une cible : le cercle qui se remplit, le point rose qui suit son regard, le halo doré sur la cible. L'aperçu montre le résultat des réglages." />
+                                    <Grid x:Name="PointerPreview" Width="170" Height="150" HorizontalAlignment="Left" Margin="0,4,0,10" Background="#FFF3ECFF">
+                                        <Border x:Name="PreviewHalo" Width="150" Height="130" CornerRadius="18" BorderBrush="#FFFFC107" BorderThickness="5" Background="#22FFC107" />
+                                        <Image x:Name="PreviewImage" Width="78" Height="78" Visibility="Collapsed" />
+                                        <Ellipse x:Name="PreviewRing" Width="74" Height="74" Stroke="#33512DA8" StrokeThickness="9" />
+                                        <Path x:Name="PreviewArc" Stroke="#FF7E3FF2" StrokeThickness="9" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                        <Ellipse x:Name="PreviewCenter" Width="56" Height="56" Fill="#33FFFFFF" />
+                                        <Ellipse x:Name="PreviewDot" Width="24" Height="24" Fill="#88FF3D7F" Stroke="White" StrokeThickness="2" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,16,14" />
+                                    </Grid>
+                                    <TextBlock Text="Taille du cercle" Style="{StaticResource Label}" />
                                     <Slider x:Name="CircleSlider" Minimum="60" Maximum="170" ValueChanged="CircleSlider_Changed" />
-                                    <TextBlock Text="Couleur et épaisseur du cercle" Style="{StaticResource Label}" />
+                                    <TextBlock Text="Couleur et épaisseur du trait" Style="{StaticResource Label}" />
                                     <DockPanel LastChildFill="False">
                                         <ComboBox x:Name="PointerColorCombo" Style="{StaticResource Pick}" Width="220" SelectionChanged="PointerStyle_Changed">
                                             <ComboBoxItem Content="Violet (d'origine)" Tag="#7E3FF2" />
@@ -324,14 +340,44 @@
                                             <ComboBoxItem Content="Trait épais" Tag="epais" />
                                         </ComboBox>
                                     </DockPanel>
-                                    <CheckBox x:Name="PointerSimpleCheck" FontSize="14" Margin="0,8,0,0" Click="PointerSimple_Changed">
-                                        <TextBlock TextWrapping="Wrap" Text="Montrer seulement le cercle qui se remplit : ni le point rose qui suit le regard, ni le halo doré autour de la cible visée (pour un enfant que ces repères distraient)" />
+                                    <TextBlock Text="Comment il se remplit" Style="{StaticResource Label}" />
+                                    <ComboBox x:Name="PointerFillCombo" Style="{StaticResource Pick}" SelectionChanged="PointerStyle_Changed">
+                                        <ComboBoxItem Content="Un cercle qui se remplit sur le bord" Tag="arc" />
+                                        <ComboBoxItem Content="Un disque qui se remplit comme un camembert (plus visible)" Tag="disque" />
+                                    </ComboBox>
+                                    <TextBlock Text="Une image à la place du cercle" Style="{StaticResource Label}" />
+                                    <ComboBox x:Name="PointerImageCombo" Style="{StaticResource Pick}" SelectionChanged="PointerStyle_Changed">
+                                        <ComboBoxItem Content="Aucune : le cercle" Tag="" />
+                                        <ComboBoxItem Content="⭐ Une étoile" Tag="etoile" />
+                                        <ComboBoxItem Content="❤️ Un cœur" Tag="coeur" />
+                                        <ComboBoxItem Content="🎈 Un ballon" Tag="ballon" />
+                                        <ComboBoxItem Content="☀️ Un soleil" Tag="soleil" />
+                                        <ComboBoxItem Content="🌸 Une fleur" Tag="fleur" />
+                                        <ComboBoxItem Content="🦋 Un papillon" Tag="papillon" />
+                                        <ComboBoxItem Content="🌙 Une lune" Tag="lune" />
+                                        <ComboBoxItem Content="🖼️ Votre image : curseur.png dans le dossier Images de la famille" Tag="curseur" />
+                                    </ComboBox>
+                                    <TextBlock Style="{StaticResource Hint}" Text="L'image grandit à mesure que la fixation avance, et le trait de remplissage reste par-dessus." />
+                                    <CheckBox x:Name="PointerSimpleCheck" FontSize="14" Margin="0,10,0,0" Click="PointerSimple_Changed">
+                                        <TextBlock TextWrapping="Wrap" Text="Seulement le curseur qui se remplit : ni le point rose qui suit le regard, ni le halo doré autour de la cible visée" />
+                                    </CheckBox>
+                                    <CheckBox x:Name="PointerHideIdleCheck" FontSize="14" Margin="0,6,0,0" Click="PointerSimple_Changed">
+                                        <TextBlock TextWrapping="Wrap" Text="Le curseur se cache au repos et n'apparaît qu'une fois la fixation commencée (moins de choses qui bougent)" />
+                                    </CheckBox>
+                                    <CheckBox x:Name="PointerSoundCheck" FontSize="14" Margin="0,6,0,0" Click="PointerSimple_Changed">
+                                        <TextBlock TextWrapping="Wrap" Text="Un petit « tic » à chaque sélection : l'enfant entend que c'est pris" />
+                                    </CheckBox>
+                                    <CheckBox x:Name="PointerContrastCheck" FontSize="14" Margin="0,6,0,0" Click="PointerSimple_Changed">
+                                        <TextBlock TextWrapping="Wrap" Text="Gros contraste : trait épais, noir cerclé de blanc, pour un enfant qui voit mal (remplace la couleur choisie)" />
+                                    </CheckBox>
+                                    <CheckBox x:Name="PointerWorldColorsCheck" FontSize="14" Margin="0,6,0,0" Click="PointerSimple_Changed">
+                                        <TextBlock TextWrapping="Wrap" Text="Une couleur par monde : orange dans Jouer, vert dans Apprendre, violet dans Parler" />
                                     </CheckBox>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
-                                    <TextBlock Text="Calibrage et précision" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="🎯 Calibrage et précision" Style="{StaticResource CardTitle}" />
                                     <Button Content="👁  Vérifier la position des yeux" Style="{StaticResource AdminBtn}" Click="EyeTrack_Click" />
                                     <Button Content="🎯  Calibrer la tablette (logiciel Tobii)" Style="{StaticResource AdminBtn}" Click="DeviceCalib_Click" />
                                     <Button Content="⭐  Réglage éclair (3 s, 1 étoile)" Style="{StaticResource AdminBtn}" Click="QuickFix_Click" />
@@ -347,6 +393,7 @@
 
                         <!-- 🧒 ENFANT & JEUX -->
                         <StackPanel x:Name="PageEnfant" Style="{StaticResource Page}">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="L'enfant, son niveau, les tuiles Parler et Oui/Non, les histoires, la pause, la télé." />
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="L'enfant" Style="{StaticResource CardTitle}" />
@@ -402,10 +449,62 @@
                                                Text="Au lieu de lire mot à mot, l'enfant regarde une grande tuile par phrase (ou bout de phrase) et l'entend en entier. Chaque tuile porte un picto : le personnage ou l'objet de l'image dont on parle, sinon une image de la banque (chat, maison, pomme…)." />
                                 </StackPanel>
                             </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="📺 La télé de la maison (LG webOS)" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Adresse de la télé sur le réseau" Style="{StaticResource Label}" />
+                                    <TextBox x:Name="TvIpBox" Style="{StaticResource Field}" LostFocus="Tv_Changed" />
+                                    <UniformGrid Columns="2">
+                                        <Button Content="🔍  Chercher la télé" Style="{StaticResource AdminBtn}" Margin="0,6,4,0" Click="TvFind_Click" />
+                                        <Button Content="🔗  Associer" Style="{StaticResource AdminPrimary}" Margin="4,6,0,0" Click="TvPair_Click" />
+                                    </UniformGrid>
+                                    <TextBlock x:Name="TvStatusText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="Une télécommande au regard dans le monde Jouer (tuile 📺) : allumer, éteindre, le son, les chaînes, pause, YouTube, Netflix, les flèches. La télé et la tablette doivent être sur le même Wi-Fi. La première association est à accepter sur l'écran de la télé. Pour l'allumage par le réseau, activez dans la télé : Réglages → Général → Appareils externes (ou Réseau) → « Allumage via mobile / Quick Start+ ». Tout reste dans la maison." />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- 💬 PARLER & IA -->
+                        <StackPanel x:Name="PageParler" Style="{StaticResource Page}">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="Le monde Parler : l'écoute « Dis Eyzi », les réponses proposées par l'IA, la caméra, la veille fatigue, les habitudes apprises, le lieu d'après le Wi-Fi. La clé Azure qui sert à l'écoute se règle dans la page Voix." />
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="👂 L'écoute et les réponses de l'IA" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Mode" Style="{StaticResource Label}" />
+                                    <ComboBox x:Name="ListenModeCombo" Style="{StaticResource Pick}" SelectionChanged="Listen_Changed">
+                                        <ComboBoxItem Content="Éteinte" Tag="off" />
+                                        <ComboBoxItem Content="Bouton 👂 dans Parler : on appuie, la tablette écoute une phrase" Tag="bouton" />
+                                        <ComboBoxItem Content="Mot-clé « Dis Eyzi », partout : la tablette veille en local, puis écoute la phrase" Tag="motcle" />
+                                    </ComboBox>
+                                    <CheckBox x:Name="ListenAnswersCheck" Content="Proposer des réponses (la phrase entendue, en texte seulement, est envoyée à eyzi.fr qui demande des réponses à une IA)" FontSize="14" Margin="0,8,0,0" Click="Listen_Changed" />
+                                    <TextBlock x:Name="ListenHint" Style="{StaticResource Hint}"
+                                               Text="Utilise la clé Azure Speech ci-dessus (page Voix). La reconnaissance se fait en ligne et se facture à l'usage ; le mot-clé est détecté sur la tablette, rien ne part avant qu'il soit dit." />
+                                    <CheckBox x:Name="CameraCheck" FontSize="14" Margin="0,10,0,0" Click="Parler_Changed">
+                                        <TextBlock TextWrapping="Wrap" Text="📷 Autoriser la caméra pour « Dis Eyzi, regarde » : la caméra arrière voit ce qu'on montre (deux objets, l'assiette, une page de livre), la caméra avant voit l'enfant (« regarde Laura ») et lui propose ce qu'elle ressent peut-être, à confirmer avec ses yeux. Une seule photo par demande, envoyée à eyzi.fr avec la question, jamais enregistrée ; l'IA ne nomme jamais les personnes." />
+                                    </CheckBox>
+                                    <CheckBox x:Name="FatigueCheck" FontSize="14" Margin="0,6,0,0" Click="Parler_Changed">
+                                        <TextBlock TextWrapping="Wrap" Text="😴 Veille fatigue : quand le regard se dégrade pendant un jeu (agitation, erreurs en série), la tablette demande « Tu es fatiguée ? On arrête ? ». Sans caméra ni IA, au plus une fois toutes les dix minutes." />
+                                    </CheckBox>
+                                    <TextBlock x:Name="HabitudesText" Style="{StaticResource Hint}" Text="" />
+                                    <Button Content="🧹  Oublier les habitudes apprises sur cette tablette" Style="{StaticResource AdminBtn}" HorizontalAlignment="Left" Click="HabitudesForget_Click" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="📍 Où est l'enfant (Wi-Fi)" Style="{StaticResource CardTitle}" />
+                                    <CheckBox x:Name="LieuAutoCheck" Content="Régler le lieu tout seul d'après le réseau Wi-Fi de la tablette" FontSize="14" Click="LieuAuto_Changed" />
+                                    <TextBlock Style="{StaticResource Hint}"
+                                               Text="Le Wi-Fi de la maison, celui de l'école, le partage de connexion du téléphone dans la voiture : la première fois, Parler demande « on est où ? » (à la souris ou au doigt), puis s'en souvient. Le nom du réseau reste sur la tablette ; seul le mot « maison » ou « école » part avec une phrase à répondre. Le bouton de lieu dans Parler permet toujours de corriger." />
+                                    <TextBlock x:Name="LieuReseauText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
+                                    <StackPanel x:Name="LieuxPanel" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
 
                         <!-- 🔊 VOIX -->
                         <StackPanel x:Name="PageVoix" Style="{StaticResource Page}">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="La voix de la tablette : le moteur, les voix naturelles Azure (la même clé sert à l'écoute), vos propres enregistrements." />
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="Le moteur de la voix" Style="{StaticResource CardTitle}" />
@@ -462,6 +561,7 @@
 
                         <!-- 📁 CONTENU -->
                         <StackPanel x:Name="PageContenu" Style="{StaticResource Page}">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="Les images, photos, livres et sons de la famille, et où ils sont rangés." />
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="Outils d'édition" Style="{StaticResource CardTitle}" />
@@ -489,6 +589,7 @@
 
                         <!-- ☁️ LICENCE & NUAGE -->
                         <StackPanel x:Name="PageNuage" Style="{StaticResource Page}">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="Le code d'accès, la licence, les mises à jour, et le nuage qui fait voyager le contenu et les réglages entre les tablettes de la famille." />
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="🔒 Sécurité" Style="{StaticResource CardTitle}" />
@@ -499,52 +600,6 @@
                                     </DockPanel>
                                     <TextBlock Style="{StaticResource Hint}"
                                                Text="Une fois le code enregistré, l'appui long sur ⚙ demande ce code, à taper à la souris ou au doigt (le regard est en pause). Sans code, l'appui long suffit." />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <TextBlock Text="👂 Écoute (monde Parler)" Style="{StaticResource CardTitle}" />
-                                    <TextBlock Text="Mode" Style="{StaticResource Label}" />
-                                    <ComboBox x:Name="ListenModeCombo" Style="{StaticResource Pick}" SelectionChanged="Listen_Changed">
-                                        <ComboBoxItem Content="Éteinte" Tag="off" />
-                                        <ComboBoxItem Content="Bouton 👂 dans Parler : on appuie, la tablette écoute une phrase" Tag="bouton" />
-                                        <ComboBoxItem Content="Mot-clé « Dis Eyzi », partout : la tablette veille en local, puis écoute la phrase" Tag="motcle" />
-                                    </ComboBox>
-                                    <CheckBox x:Name="ListenAnswersCheck" Content="Proposer des réponses (la phrase entendue, en texte seulement, est envoyée à eyzi.fr qui demande des réponses à une IA)" FontSize="14" Margin="0,8,0,0" Click="Listen_Changed" />
-                                    <TextBlock x:Name="ListenHint" Style="{StaticResource Hint}"
-                                               Text="Utilise la clé Azure Speech ci-dessus (page Voix). La reconnaissance se fait en ligne et se facture à l'usage ; le mot-clé est détecté sur la tablette, rien ne part avant qu'il soit dit." />
-                                    <CheckBox x:Name="CameraCheck" FontSize="14" Margin="0,10,0,0" Click="Parler_Changed">
-                                        <TextBlock TextWrapping="Wrap" Text="📷 Autoriser la caméra pour « Dis Eyzi, regarde » : la caméra arrière voit ce qu'on montre (deux objets, l'assiette, une page de livre), la caméra avant voit l'enfant (« regarde Laura ») et lui propose ce qu'elle ressent peut-être, à confirmer avec ses yeux. Une seule photo par demande, envoyée à eyzi.fr avec la question, jamais enregistrée ; l'IA ne nomme jamais les personnes." />
-                                    </CheckBox>
-                                    <CheckBox x:Name="FatigueCheck" FontSize="14" Margin="0,6,0,0" Click="Parler_Changed">
-                                        <TextBlock TextWrapping="Wrap" Text="😴 Veille fatigue : quand le regard se dégrade pendant un jeu (agitation, erreurs en série), la tablette demande « Tu es fatiguée ? On arrête ? ». Sans caméra ni IA, au plus une fois toutes les dix minutes." />
-                                    </CheckBox>
-                                    <TextBlock x:Name="HabitudesText" Style="{StaticResource Hint}" Text="" />
-                                    <Button Content="🧹  Oublier les habitudes apprises sur cette tablette" Style="{StaticResource AdminBtn}" HorizontalAlignment="Left" Click="HabitudesForget_Click" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <TextBlock Text="📍 Où est l'enfant (Wi-Fi)" Style="{StaticResource CardTitle}" />
-                                    <CheckBox x:Name="LieuAutoCheck" Content="Régler le lieu tout seul d'après le réseau Wi-Fi de la tablette" FontSize="14" Click="LieuAuto_Changed" />
-                                    <TextBlock Style="{StaticResource Hint}"
-                                               Text="Le Wi-Fi de la maison, celui de l'école, le partage de connexion du téléphone dans la voiture : la première fois, Parler demande « on est où ? » (à la souris ou au doigt), puis s'en souvient. Le nom du réseau reste sur la tablette ; seul le mot « maison » ou « école » part avec une phrase à répondre. Le bouton de lieu dans Parler permet toujours de corriger." />
-                                    <TextBlock x:Name="LieuReseauText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
-                                    <StackPanel x:Name="LieuxPanel" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource Card}">
-                                <StackPanel>
-                                    <TextBlock Text="📺 La télé de la maison (LG webOS)" Style="{StaticResource CardTitle}" />
-                                    <TextBlock Text="Adresse de la télé sur le réseau" Style="{StaticResource Label}" />
-                                    <TextBox x:Name="TvIpBox" Style="{StaticResource Field}" LostFocus="Tv_Changed" />
-                                    <UniformGrid Columns="2">
-                                        <Button Content="🔍  Chercher la télé" Style="{StaticResource AdminBtn}" Margin="0,6,4,0" Click="TvFind_Click" />
-                                        <Button Content="🔗  Associer" Style="{StaticResource AdminPrimary}" Margin="4,6,0,0" Click="TvPair_Click" />
-                                    </UniformGrid>
-                                    <TextBlock x:Name="TvStatusText" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="14" Foreground="#FF0B1A33" />
-                                    <TextBlock Style="{StaticResource Hint}"
-                                               Text="Une télécommande au regard dans le monde Jouer (tuile 📺) : allumer, éteindre, le son, les chaînes, pause, YouTube, Netflix, les flèches. La télé et la tablette doivent être sur le même Wi-Fi. La première association est à accepter sur l'écran de la télé. Pour l'allumage par le réseau, activez dans la télé : Réglages → Général → Appareils externes (ou Réseau) → « Allumage via mobile / Quick Start+ ». Tout reste dans la maison." />
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}">
@@ -579,6 +634,7 @@
 
                         <!-- 📊 SUIVI -->
                         <StackPanel x:Name="PageSuivi" Style="{StaticResource Page}">
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10" FontSize="14.5" Text="Ce que l'enfant a fait et appris, et un rapport technique du regard pour l'éditeur." />
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="Progrès de l'enfant" Style="{StaticResource CardTitle}" />
@@ -628,6 +684,8 @@
             <Ellipse x:Name="GazeDot" Width="38" Height="38" Visibility="Collapsed"
                      Fill="#88FF3D7F" Stroke="White" StrokeThickness="3" />
             <Grid x:Name="GazeIndicator" Width="90" Height="90" Visibility="Collapsed">
+                <Image x:Name="GazeImage" Width="78" Height="78" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" />
                 <Ellipse x:Name="GazeRing" Width="74" Height="74" Stroke="#33512DA8" StrokeThickness="9"
                          HorizontalAlignment="Center" VerticalAlignment="Center" />
                 <Path x:Name="GazeProgress" Stroke="#FF7E3FF2" StrokeThickness="9"

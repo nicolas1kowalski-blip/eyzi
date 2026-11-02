@@ -407,7 +407,9 @@ namespace MesPremiersJeux
             // L'écran de démarrage s'efface une fois la fenêtre principale dessinée.
             Views.Splash.Status("C'est prêt !");
             Dispatcher.BeginInvoke(new Action(Views.Splash.Close), System.Windows.Threading.DispatcherPriority.ContextIdle);
-            _dwell.Clicked += p => Dispatcher.Invoke(() => _clicks++);
+            _dwell.Clicked += p => Dispatcher.Invoke(() => { _clicks++; if (_settings != null && _settings.PointerSound) SoundFx.GazeClick(); });
+            // L'avancement de la fixation : l'image qui grandit, le curseur caché au repos.
+            _dwell.Progress += frac => Dispatcher.BeginInvoke(new Action(() => SurAvancement(frac)));
 
             // Diagnostic en direct : source active + « points valides/reçus » du
             // flux direct + compteur de clics. Rafraîchi toutes les 700 ms.
@@ -627,6 +629,14 @@ namespace MesPremiersJeux
             if (PointerColorCombo.SelectedItem == null) PointerColorCombo.SelectedIndex = 0;
             foreach (ComboBoxItem it in PointerThickCombo.Items) if ((string)it.Tag == (_settings.PointerThickness ?? "normal")) { PointerThickCombo.SelectedItem = it; break; }
             if (PointerThickCombo.SelectedItem == null) PointerThickCombo.SelectedIndex = 1;
+            foreach (ComboBoxItem it in PointerFillCombo.Items) if ((string)it.Tag == (_settings.PointerFill ?? "arc")) { PointerFillCombo.SelectedItem = it; break; }
+            if (PointerFillCombo.SelectedItem == null) PointerFillCombo.SelectedIndex = 0;
+            foreach (ComboBoxItem it in PointerImageCombo.Items) if ((string)it.Tag == (_settings.PointerImage ?? "")) { PointerImageCombo.SelectedItem = it; break; }
+            if (PointerImageCombo.SelectedItem == null) PointerImageCombo.SelectedIndex = 0;
+            PointerHideIdleCheck.IsChecked = _settings.PointerHideIdle;
+            PointerSoundCheck.IsChecked = _settings.PointerSound;
+            PointerContrastCheck.IsChecked = _settings.PointerContrast;
+            PointerWorldColorsCheck.IsChecked = _settings.PointerWorldColors;
             _remplissage = false;
 
             // Le pilotage au regard est actif par défaut. Sans SDK (TD I-13), on
@@ -1101,7 +1111,7 @@ namespace MesPremiersJeux
         {
             var pages = new Dictionary<string, StackPanel>
             {
-                ["regard"] = PageRegard, ["enfant"] = PageEnfant, ["voix"] = PageVoix,
+                ["regard"] = PageRegard, ["enfant"] = PageEnfant, ["parler"] = PageParler, ["voix"] = PageVoix,
                 ["contenu"] = PageContenu, ["nuage"] = PageNuage, ["suivi"] = PageSuivi, ["avance"] = PageAvance,
             };
             foreach (var kv in pages)
@@ -1784,44 +1794,105 @@ namespace MesPremiersJeux
 
         /// <summary>Le style du pointeur : complet (point rose, halo doré, cercle) ou seulement le cercle qui se remplit.
         /// Le moteur du regard pose et retire ces repères lui-même ; on joue sur leur opacité, qu'il ne touche pas.</summary>
+        private string _monde = ""; // le monde affiché (pour une couleur par monde)
+
         private void ApplyPointerStyle()
         {
             if (_settings == null || GazeDot == null) return;
             bool simple = _settings.PointerSimple;
             GazeDot.Opacity = simple ? 0 : 1;
-            // La couleur et l'épaisseur du cercle.
             try
             {
+                // La couleur : celle choisie, ou celle du monde, ou le gros contraste.
                 var c = (Color)ColorConverter.ConvertFromString(_settings.PointerColor ?? "#7E3FF2");
-                GazeProgress.Stroke = new SolidColorBrush(c);
-                GazeRing.Stroke = new SolidColorBrush(Color.FromArgb(0x44, c.R, c.G, c.B));
-                // Sur du blanc, un liseré sombre pour rester visible sur un fond clair.
-                GazeProgress.Effect = c.R + c.G + c.B > 600 ? new System.Windows.Media.Effects.DropShadowEffect { Color = Colors.Black, BlurRadius = 6, ShadowDepth = 0, Opacity = 0.7 } : null;
-                double e = _settings.PointerThickness == "fin" ? 5 : _settings.PointerThickness == "epais" ? 14 : 9;
-                GazeProgress.StrokeThickness = e;
-                GazeRing.StrokeThickness = e;
-                GazeCenter.Opacity = simple ? 0.5 : 1;
+                if (_settings.PointerWorldColors)
+                {
+                    if (_monde == "jouer") c = Color.FromRgb(0xF5, 0x7C, 0x00);
+                    else if (_monde == "apprendre") c = Color.FromRgb(0x2E, 0x9E, 0x4F);
+                    else if (_monde == "parler") c = Color.FromRgb(0x7E, 0x3F, 0xF2);
+                }
+                bool contraste = _settings.PointerContrast;
+                if (contraste) c = Color.FromRgb(0x11, 0x11, 0x11);
+                double e = contraste ? 14 : _settings.PointerThickness == "fin" ? 5 : _settings.PointerThickness == "epais" ? 14 : 9;
+                bool disque = _settings.PointerFill == "disque";
+                Gaze.DwellController.FillStyle = disque ? "disque" : "arc";
+                var trait = new SolidColorBrush(c);
+                var fond = new SolidColorBrush(Color.FromArgb(0x44, c.R, c.G, c.B));
+                var effet = contraste
+                    ? new System.Windows.Media.Effects.DropShadowEffect { Color = Colors.White, BlurRadius = 10, ShadowDepth = 0, Opacity = 1 }
+                    : c.R + c.G + c.B > 600 ? new System.Windows.Media.Effects.DropShadowEffect { Color = Colors.Black, BlurRadius = 6, ShadowDepth = 0, Opacity = 0.7 } : null;
+                // L'image à la place du cercle.
+                ImageSource img = null;
+                var nomImage = _settings.PointerImage ?? "";
+                if (nomImage.Length > 0) { img = Art.Find(nomImage); if (img == null && nomImage != "curseur") img = Emoji.Find(EmojiDuCurseur(nomImage)); }
+                bool image = img != null;
+
+                void Habiller(System.Windows.Shapes.Path arc, System.Windows.Shapes.Ellipse anneau, System.Windows.Shapes.Ellipse centre, Image im)
+                {
+                    arc.Stroke = trait; arc.StrokeThickness = disque ? Math.Max(3, e * 0.4) : e; arc.Fill = disque ? fond : null; arc.Effect = effet;
+                    anneau.Stroke = contraste ? new SolidColorBrush(Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF)) : fond; anneau.StrokeThickness = e;
+                    anneau.Opacity = image ? 0 : 1;
+                    centre.Opacity = image ? 0 : simple ? 0.5 : 1;
+                    im.Source = img; im.Visibility = image ? Visibility.Visible : Visibility.Collapsed;
+                }
+                Habiller(GazeProgress, GazeRing, GazeCenter, GazeImage);
+                if (PreviewArc != null)
+                {
+                    Habiller(PreviewArc, PreviewRing, PreviewCenter, PreviewImage);
+                    double cx = 85, cy = 75, r = 37; double frac = 0.7, ang = frac * 2 * Math.PI;
+                    var start = new Point(cx, cy - r); var end = new Point(cx + r * Math.Sin(ang), cy - r * Math.Cos(ang));
+                    PreviewArc.Data = disque ? Gaze.DwellController.Camembert(cx, cy, r, start, end, frac) : Gaze.DwellController.Arc(start, end, r, frac);
+                    PreviewDot.Opacity = simple ? 0 : 1;
+                    PreviewHalo.Opacity = simple ? 0 : 1;
+                    if (image) { PreviewImage.RenderTransform = new ScaleTransform(0.9, 0.9) { CenterX = 39, CenterY = 39 }; }
+                }
+                if (!_settings.PointerHideIdle) GazeIndicator.Opacity = 1;
             }
-            catch { }
+            catch (Exception ex) { Lib.Log.Write("regard", "Curseur : " + ex.Message); }
             // Le halo doré est le premier enfant de la couche du regard (posé là par le moteur).
             if (GazeLayer.Children.Count > 0 && GazeLayer.Children[0] is Border halo && !ReferenceEquals(halo, GazeIndicator)) halo.Opacity = simple ? 0 : 1;
         }
 
+        private static string EmojiDuCurseur(string nom)
+        {
+            switch (nom) { case "etoile": return "⭐"; case "coeur": return "❤️"; case "ballon": return "🎈"; case "soleil": return "☀️"; case "fleur": return "🌸"; case "papillon": return "🦋"; case "lune": return "🌙"; default: return "⭐"; }
+        }
+
+        /// <summary>L'avancement de la fixation (0 → 1) : l'image grandit, et le curseur caché au repos apparaît.</summary>
+        private void SurAvancement(double frac)
+        {
+            if (_settings == null) return;
+            if (_settings.PointerHideIdle) GazeIndicator.Opacity = frac > 0.03 ? 1 : 0;
+            if (GazeImage.Visibility == Visibility.Visible)
+            {
+                double k = 0.55 + 0.45 * frac;
+                if (!(GazeImage.RenderTransform is ScaleTransform sc)) { sc = new ScaleTransform(k, k); GazeImage.RenderTransform = sc; }
+                sc.ScaleX = sc.ScaleY = k;
+            }
+        }
+
         private void PointerStyle_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            if (_settings == null || PointerColorCombo == null || PointerThickCombo == null || _remplissage) return;
+            if (_settings == null || PointerColorCombo == null || PointerThickCombo == null || PointerFillCombo == null || PointerImageCombo == null || _remplissage) return;
             if (PointerColorCombo.SelectedItem is ComboBoxItem c) _settings.PointerColor = (string)c.Tag;
             if (PointerThickCombo.SelectedItem is ComboBoxItem t) _settings.PointerThickness = (string)t.Tag;
+            if (PointerFillCombo.SelectedItem is ComboBoxItem f) _settings.PointerFill = (string)f.Tag;
+            if (PointerImageCombo.SelectedItem is ComboBoxItem i) _settings.PointerImage = (string)i.Tag;
             _settings.Save();
             ApplyPointerStyle();
         }
 
         private void PointerSimple_Changed(object sender, RoutedEventArgs e)
         {
-            if (_settings == null || PointerSimpleCheck == null) return;
+            if (_settings == null || PointerSimpleCheck == null || PointerHideIdleCheck == null) return;
             _settings.PointerSimple = PointerSimpleCheck.IsChecked == true;
+            _settings.PointerHideIdle = PointerHideIdleCheck.IsChecked == true;
+            _settings.PointerSound = PointerSoundCheck.IsChecked == true;
+            _settings.PointerContrast = PointerContrastCheck.IsChecked == true;
+            _settings.PointerWorldColors = PointerWorldColorsCheck.IsChecked == true;
             _settings.Save();
             ApplyPointerStyle();
+            if (_settings.PointerSound) SoundFx.GazeClick();
         }
 
         private void CircleSlider_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -2274,6 +2345,7 @@ namespace MesPremiersJeux
                 || !(id == "games" || id == "edu" || id == "parcours" || id == "stories" || id == "coloring" || id == "music");
             HighlightWorld(WorldOf(id));
             ApplyTiles();
+            if (_monde != WorldOf(id)) { _monde = WorldOf(id); if (_settings != null && _settings.PointerWorldColors) ApplyPointerStyle(); }
             Usage.Screen(id);
         }
 
