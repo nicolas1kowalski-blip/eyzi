@@ -61,6 +61,8 @@ Pendant que l'application parle, un bouton regardé est quand même pris en comp
 
 Ce qui est en train d'être lu reste **surligné en doré** jusqu'à la fin de la phrase.
 
+Si le capteur envoie bien ses échantillons mais **ne voit aucun œil** pendant douze secondes (diodes allumées, enfant hors de la zone, trop haut, trop près, lunettes qui reflètent), un bandeau le dit en bas de l'écran : « Le capteur ne voit pas les yeux ». Ce n'est pas une panne de l'application : il faut placer l'enfant bien en face, à 50 cm environ. Le message revient au plus toutes les deux minutes.
+
 ### Les pilotes
 Dans l'administration (appui long sur **⚙**, page « Regard »), « Source du regard » propose :
 

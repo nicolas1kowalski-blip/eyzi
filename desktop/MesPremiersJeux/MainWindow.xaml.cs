@@ -432,6 +432,7 @@ namespace MesPremiersJeux
                 // signale une tête loin de la position de calibration.
                 string headHint = _dwell.HeadFarFromRef ? " · 🧭 tête décalée" : "";
                 GazeStatus.Text = $"👁  {_dwell.ActiveSource}{headHint} · Clics : {_clicks}";
+                SurveillerYeux();
             };
             statusTimer.Start();
 
@@ -932,6 +933,35 @@ namespace MesPremiersJeux
         }
 
         private Border _notice;
+
+        // 👁 LE CAPTEUR TOURNE MAIS NE VOIT PERSONNE : le flux Tobii arrive (des échantillons chaque seconde)
+        // mais aucun n'est valide depuis 12 s. On le dit à l'écran, une fois par deux minutes : une famille comprend
+        // tout de suite que c'est la position de l'enfant, pas l'application.
+        private readonly Queue<(DateTime T, long Events, long Valid)> _yeuxHisto = new Queue<(DateTime, long, long)>();
+        private DateTime _yeuxAvis = DateTime.MinValue;
+        private void SurveillerYeux()
+        {
+            try
+            {
+                if (_stream == null || !_stream.IsAvailable) { _yeuxHisto.Clear(); return; }
+                long events = _stream.Events;
+                long valid = long.TryParse((_stream.Stats ?? "0/0").Split('/')[0], out var v) ? v : 0;
+                var now = DateTime.Now;
+                _yeuxHisto.Enqueue((now, events, valid));
+                while (_yeuxHisto.Count > 0 && (now - _yeuxHisto.Peek().T).TotalSeconds > 13) _yeuxHisto.Dequeue();
+                var ancien = _yeuxHisto.Peek();
+                if ((now - ancien.T).TotalSeconds < 12) return;               // pas encore 12 s d'historique
+                bool fluxVivant = events - ancien.Events > 100;                 // le capteur envoie bien ses échantillons
+                bool aucunOeil = valid == ancien.Valid;                         // … mais aucun valide depuis 12 s
+                if (!fluxVivant || !aucunOeil) return;
+                if ((now - _yeuxAvis).TotalMinutes < 2) return;
+                if (AdminHost.Visibility == Visibility.Visible || GazeGate.IsPaused) return;
+                _yeuxAvis = now;
+                Lib.Log.Write("regard", "Capteur actif, aucun œil vu depuis 12 s : avis affiché");
+                ShowParentNotice("👁 Le capteur ne voit pas les yeux : placez l'enfant bien en face de la tablette, à 50 cm environ, sans lunettes qui reflètent.");
+            }
+            catch { }
+        }
 
         private void ShowParentNotice(string text)
         {
