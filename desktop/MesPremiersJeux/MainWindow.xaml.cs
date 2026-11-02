@@ -398,6 +398,7 @@ namespace MesPremiersJeux
             };
 
             _dwell = new DwellController(RootGrid, GazeIndicator, GazeProgress, GazeDot);
+            ApplyPointerStyle();
 
             // Sources du regard : démarrées selon le PILOTE choisi (réglages).
             Views.Splash.Status("Démarrage du regard…");
@@ -620,6 +621,7 @@ namespace MesPremiersJeux
             DwellSlider.Value = _settings.DwellTime;
             SmoothSlider.Value = _settings.Smoothing * 100;
             CircleSlider.Value = _settings.CircleSize;
+            PointerSimpleCheck.IsChecked = _settings.PointerSimple;
 
             // Le pilotage au regard est actif par défaut. Sans SDK (TD I-13), on
             // suit le curseur déplacé par le regard, ce qui rend l'appli utilisable
@@ -1772,6 +1774,25 @@ namespace MesPremiersJeux
             double s = e.NewValue / 100.0;
             ApplySmoothing(s);
             if (_settings != null) { _settings.Smoothing = s; _settings.Save(); }
+        }
+
+        /// <summary>Le style du pointeur : complet (point rose, halo doré, cercle) ou seulement le cercle qui se remplit.
+        /// Le moteur du regard pose et retire ces repères lui-même ; on joue sur leur opacité, qu'il ne touche pas.</summary>
+        private void ApplyPointerStyle()
+        {
+            if (_settings == null || GazeDot == null) return;
+            bool simple = _settings.PointerSimple;
+            GazeDot.Opacity = simple ? 0 : 1;
+            // Le halo doré est le premier enfant de la couche du regard (posé là par le moteur).
+            if (GazeLayer.Children.Count > 0 && GazeLayer.Children[0] is Border halo && !ReferenceEquals(halo, GazeIndicator)) halo.Opacity = simple ? 0 : 1;
+        }
+
+        private void PointerSimple_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null || PointerSimpleCheck == null) return;
+            _settings.PointerSimple = PointerSimpleCheck.IsChecked == true;
+            _settings.Save();
+            ApplyPointerStyle();
         }
 
         private void CircleSlider_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)

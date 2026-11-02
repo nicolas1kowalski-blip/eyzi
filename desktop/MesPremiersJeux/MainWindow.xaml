@@ -305,6 +305,9 @@
                                     </DockPanel>
                                     <TextBlock Text="Taille du cercle de fixation" Style="{StaticResource Label}" />
                                     <Slider x:Name="CircleSlider" Minimum="60" Maximum="170" ValueChanged="CircleSlider_Changed" />
+                                    <CheckBox x:Name="PointerSimpleCheck" FontSize="14" Margin="0,8,0,0" Click="PointerSimple_Changed">
+                                        <TextBlock TextWrapping="Wrap" Text="Montrer seulement le cercle qui se remplit : ni le point rose qui suit le regard, ni le halo doré autour de la cible visée (pour un enfant que ces repères distraient)" />
+                                    </CheckBox>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource Card}">

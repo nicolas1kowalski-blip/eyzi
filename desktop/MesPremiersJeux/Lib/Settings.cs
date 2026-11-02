@@ -15,6 +15,7 @@ namespace MesPremiersJeux.Lib
         public int DwellTime = 900;      // ms
         public double Smoothing = 0.8;   // 0 = réactif … 1 = très lissé/stable
         public double CircleSize = 90;   // diamètre du cercle de progression (px)
+        public bool PointerSimple = false; // seulement le cercle qui se remplit : ni le point rose du regard, ni le halo doré sur la cible
         public string VoiceName = "";    // voix Windows choisie (vide = par défaut)
         public string VoiceEngine = "auto"; // auto | azure | piper | windows (le moteur de la voix)
         public string PiperVoice = "siwis"; // voix naturelle hors ligne choisie (siwis | jessica)
@@ -103,6 +104,7 @@ namespace MesPremiersJeux.Lib
                         case "DwellTime": if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var d)) s.DwellTime = d; break;
                         case "Smoothing": if (double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out var sm)) s.Smoothing = sm; break;
                         case "CircleSize": if (double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out var c)) s.CircleSize = c; break;
+                        case "PointerSimple": s.PointerSimple = val == "1"; break;
                         case "VoiceName": s.VoiceName = val; break;
                         case "VoiceEngine": s.VoiceEngine = string.IsNullOrWhiteSpace(val) ? "auto" : val; break;
                         case "PiperVoice": s.PiperVoice = string.IsNullOrWhiteSpace(val) ? "siwis" : val; break;
@@ -184,6 +186,7 @@ namespace MesPremiersJeux.Lib
                     "DwellTime=" + DwellTime.ToString(CultureInfo.InvariantCulture),
                     "Smoothing=" + Smoothing.ToString(CultureInfo.InvariantCulture),
                     "CircleSize=" + CircleSize.ToString(CultureInfo.InvariantCulture),
+                    "PointerSimple=" + (PointerSimple ? "1" : "0"),
                     "VoiceName=" + (VoiceName ?? ""),
                     "VoicePitch=" + VoicePitch.ToString(CultureInfo.InvariantCulture),
                     "VoiceEngine=" + (VoiceEngine ?? "auto"),
