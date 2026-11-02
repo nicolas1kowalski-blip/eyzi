@@ -622,6 +622,12 @@ namespace MesPremiersJeux
             SmoothSlider.Value = _settings.Smoothing * 100;
             CircleSlider.Value = _settings.CircleSize;
             PointerSimpleCheck.IsChecked = _settings.PointerSimple;
+            _remplissage = true;
+            foreach (ComboBoxItem it in PointerColorCombo.Items) if (string.Equals((string)it.Tag, _settings.PointerColor, StringComparison.OrdinalIgnoreCase)) { PointerColorCombo.SelectedItem = it; break; }
+            if (PointerColorCombo.SelectedItem == null) PointerColorCombo.SelectedIndex = 0;
+            foreach (ComboBoxItem it in PointerThickCombo.Items) if ((string)it.Tag == (_settings.PointerThickness ?? "normal")) { PointerThickCombo.SelectedItem = it; break; }
+            if (PointerThickCombo.SelectedItem == null) PointerThickCombo.SelectedIndex = 1;
+            _remplissage = false;
 
             // Le pilotage au regard est actif par défaut. Sans SDK (TD I-13), on
             // suit le curseur déplacé par le regard, ce qui rend l'appli utilisable
@@ -1783,8 +1789,31 @@ namespace MesPremiersJeux
             if (_settings == null || GazeDot == null) return;
             bool simple = _settings.PointerSimple;
             GazeDot.Opacity = simple ? 0 : 1;
+            // La couleur et l'épaisseur du cercle.
+            try
+            {
+                var c = (Color)ColorConverter.ConvertFromString(_settings.PointerColor ?? "#7E3FF2");
+                GazeProgress.Stroke = new SolidColorBrush(c);
+                GazeRing.Stroke = new SolidColorBrush(Color.FromArgb(0x44, c.R, c.G, c.B));
+                // Sur du blanc, un liseré sombre pour rester visible sur un fond clair.
+                GazeProgress.Effect = c.R + c.G + c.B > 600 ? new System.Windows.Media.Effects.DropShadowEffect { Color = Colors.Black, BlurRadius = 6, ShadowDepth = 0, Opacity = 0.7 } : null;
+                double e = _settings.PointerThickness == "fin" ? 5 : _settings.PointerThickness == "epais" ? 14 : 9;
+                GazeProgress.StrokeThickness = e;
+                GazeRing.StrokeThickness = e;
+                GazeCenter.Opacity = simple ? 0.5 : 1;
+            }
+            catch { }
             // Le halo doré est le premier enfant de la couche du regard (posé là par le moteur).
             if (GazeLayer.Children.Count > 0 && GazeLayer.Children[0] is Border halo && !ReferenceEquals(halo, GazeIndicator)) halo.Opacity = simple ? 0 : 1;
+        }
+
+        private void PointerStyle_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (_settings == null || PointerColorCombo == null || PointerThickCombo == null || _remplissage) return;
+            if (PointerColorCombo.SelectedItem is ComboBoxItem c) _settings.PointerColor = (string)c.Tag;
+            if (PointerThickCombo.SelectedItem is ComboBoxItem t) _settings.PointerThickness = (string)t.Tag;
+            _settings.Save();
+            ApplyPointerStyle();
         }
 
         private void PointerSimple_Changed(object sender, RoutedEventArgs e)

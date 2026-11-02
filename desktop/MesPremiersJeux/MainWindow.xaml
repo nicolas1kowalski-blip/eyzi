@@ -305,6 +305,25 @@
                                     </DockPanel>
                                     <TextBlock Text="Taille du cercle de fixation" Style="{StaticResource Label}" />
                                     <Slider x:Name="CircleSlider" Minimum="60" Maximum="170" ValueChanged="CircleSlider_Changed" />
+                                    <TextBlock Text="Couleur et épaisseur du cercle" Style="{StaticResource Label}" />
+                                    <DockPanel LastChildFill="False">
+                                        <ComboBox x:Name="PointerColorCombo" Style="{StaticResource Pick}" Width="220" SelectionChanged="PointerStyle_Changed">
+                                            <ComboBoxItem Content="Violet (d'origine)" Tag="#7E3FF2" />
+                                            <ComboBoxItem Content="Bleu" Tag="#1E88E5" />
+                                            <ComboBoxItem Content="Vert" Tag="#2E9E4F" />
+                                            <ComboBoxItem Content="Orange" Tag="#F57C00" />
+                                            <ComboBoxItem Content="Rouge" Tag="#E53935" />
+                                            <ComboBoxItem Content="Rose" Tag="#FF3D7F" />
+                                            <ComboBoxItem Content="Jaune" Tag="#FFC107" />
+                                            <ComboBoxItem Content="Noir" Tag="#222222" />
+                                            <ComboBoxItem Content="Blanc" Tag="#FFFFFF" />
+                                        </ComboBox>
+                                        <ComboBox x:Name="PointerThickCombo" Style="{StaticResource Pick}" Width="160" Margin="8,0,0,0" SelectionChanged="PointerStyle_Changed">
+                                            <ComboBoxItem Content="Trait fin" Tag="fin" />
+                                            <ComboBoxItem Content="Trait normal" Tag="normal" />
+                                            <ComboBoxItem Content="Trait épais" Tag="epais" />
+                                        </ComboBox>
+                                    </DockPanel>
                                     <CheckBox x:Name="PointerSimpleCheck" FontSize="14" Margin="0,8,0,0" Click="PointerSimple_Changed">
                                         <TextBlock TextWrapping="Wrap" Text="Montrer seulement le cercle qui se remplit : ni le point rose qui suit le regard, ni le halo doré autour de la cible visée (pour un enfant que ces repères distraient)" />
                                     </CheckBox>
@@ -609,11 +628,11 @@
             <Ellipse x:Name="GazeDot" Width="38" Height="38" Visibility="Collapsed"
                      Fill="#88FF3D7F" Stroke="White" StrokeThickness="3" />
             <Grid x:Name="GazeIndicator" Width="90" Height="90" Visibility="Collapsed">
-                <Ellipse Width="74" Height="74" Stroke="#33512DA8" StrokeThickness="9"
+                <Ellipse x:Name="GazeRing" Width="74" Height="74" Stroke="#33512DA8" StrokeThickness="9"
                          HorizontalAlignment="Center" VerticalAlignment="Center" />
                 <Path x:Name="GazeProgress" Stroke="#FF7E3FF2" StrokeThickness="9"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                <Ellipse Width="56" Height="56" Fill="#33FFFFFF"
+                <Ellipse x:Name="GazeCenter" Width="56" Height="56" Fill="#33FFFFFF"
                          HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Grid>
         </Canvas>

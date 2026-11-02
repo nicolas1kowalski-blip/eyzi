@@ -75,7 +75,7 @@ Le pilote change à chaud, sans redémarrer.
 - **👁 Vérifier la position des yeux** ouvre une fenêtre qui montre les deux yeux : l'enfant doit être bien dans le cadre, ni trop près ni trop loin.
 - **🎯 Calibrer la tablette** lance le calibrage du logiciel Tobii installé (sans passer par TD Control).
 - **🎯 Régler la précision (étoile)** : un mini-jeu où l'enfant suit une étoile ; l'application corrige un décalage éventuel.
-- **Lissage** rend le regard plus stable (plus lent) ou plus réactif ; **Taille du cercle** change la taille de la cible. La case **Montrer seulement le cercle qui se remplit** enlève le point rose qui suit le regard et le halo doré autour de la cible visée, pour un enfant que ces repères distraient : il ne reste que le cercle qui se remplit sur la cible.
+- **Lissage** rend le regard plus stable (plus lent) ou plus réactif ; **Taille du cercle** change la taille de la cible. **Couleur et épaisseur du cercle** : neuf couleurs (violet d'origine, bleu, vert, orange, rouge, rose, jaune, noir, blanc) et trois épaisseurs de trait, pour que le cercle se voie bien sur les écrans que l'enfant utilise le plus, ou simplement pour lui plaire. La case **Montrer seulement le cercle qui se remplit** enlève le point rose qui suit le regard et le halo doré autour de la cible visée, pour un enfant que ces repères distraient : il ne reste que le cercle qui se remplit sur la cible.
 
 ## 4. Ce que voit l'enfant
 
