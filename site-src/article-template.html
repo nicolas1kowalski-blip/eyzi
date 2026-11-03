@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}} — Eyzi</title>
+<meta name="description" content="{{DESC}}">
+<link rel="canonical" href="https://eyzi.fr/{{PATH}}">
+<link rel="icon" type="image/png" href="../img/favicon-32.png"><link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Eyzi">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://eyzi.fr/{{PATH}}">
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:description" content="{{DESC}}">
+<meta property="og:image" content="https://eyzi.fr/img/{{IMAGE}}">
+<meta property="og:image:width" content="1024">
+<meta property="og:image:height" content="683">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{TITLE}}">
+<meta name="twitter:description" content="{{DESC}}">
+<meta name="twitter:image" content="https://eyzi.fr/img/{{IMAGE}}">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "{{TITLE}}",
+      "description": "{{DESC}}",
+      "inLanguage": "fr",
+      "datePublished": "{{DATE}}",
+      "dateModified": "{{DATE}}",
+      "image": "https://eyzi.fr/img/{{IMAGE}}",
+      "author": { "@type": "Person", "name": "Nicolas Kowalski", "description": "Papa de Laura et auteur d'Eyzi" },
+      "publisher": { "@type": "Organization", "name": "Eyzi", "url": "https://eyzi.fr/", "logo": { "@type": "ImageObject", "url": "https://eyzi.fr/img/eyzi-logo-dark.png" } },
+      "mainEntityOfPage": "https://eyzi.fr/{{PATH}}"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Eyzi", "item": "https://eyzi.fr/" },
+        { "@type": "ListItem", "position": 2, "name": "Conseils", "item": "https://eyzi.fr/conseils/" },
+        { "@type": "ListItem", "position": 3, "name": "{{TITLE}}", "item": "https://eyzi.fr/{{PATH}}" }
+      ]
+    }{{EXTRA_LD}}
+  ]
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../site.css">
+<style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+.wrap.guide{max-width:1100px;margin:0 auto;padding:24px 16px 64px;display:grid;grid-template-columns:240px 1fr;gap:28px}
+@media (max-width:860px){.wrap.guide{grid-template-columns:1fr}}
+nav.toc{position:sticky;top:16px;align-self:start;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+nav.toc a{color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:8px}nav.toc a:hover{background:var(--code);color:var(--ink)}
+nav.toc .more{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:14px}
+@media (max-width:860px){nav.toc{position:static}}
+main{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 32px;min-width:0}
+@media (max-width:600px){main{padding:20px 16px}}
+h1{font-family:"Baloo 2",Fredoka,sans-serif;font-size:34px;margin:0 0 8px;line-height:1.15}
+.meta{color:var(--muted);font-size:14px;margin:0 0 18px}
+main h2{font-family:"Baloo 2",Fredoka,sans-serif;font-size:26px;margin:40px 0 10px;padding-top:14px;border-top:2px solid var(--line);color:var(--violet)}
+h3{font-size:20px;margin:24px 0 6px}
+p{margin:10px 0}em{color:var(--muted)}
+ul,ol{padding-left:26px;margin:8px 0}li{margin:5px 0}
+code{background:var(--code);padding:2px 6px;border-radius:6px;font-size:.92em;font-family:Consolas,Menlo,monospace;word-break:break-all}
+hr{border:0;border-top:2px dashed var(--line);margin:32px 0}
+a{color:var(--violet)}
+.note{background:var(--code);border-left:5px solid var(--yellow);border-radius:12px;padding:12px 16px;margin:16px 0}
+.cta{background:var(--violet);color:#fff;border-radius:18px;padding:18px 22px;margin:28px 0 8px}
+.cta a{color:#fff;font-weight:700}
+</style>
+</head>
+<body>
+<div class="top"><div class="in"><a class="brand" href="../"><img src="../img/eyzi-logo-dark.png" alt="Eyzi"></a><nav><a href="./">Conseils</a><a href="../guide.html">Guide</a><a href="questions.html">Questions</a><a href="../retours.html">Vos retours</a><a class="hl" href="../licence.html">🔑 Licence</a></nav></div></div>
+<div class="wrap guide">
+<nav class="toc">{{TOC}}<div class="more"><a href="./">← Tous les conseils</a></div></nav>
+<main>
+{{BODY}}
+<div class="cta">Eyzi est une application gratuite à commande oculaire pour les enfants qui ne parlent pas : jouer, apprendre, parler, avec les yeux. <a href="../">Découvrir Eyzi</a> · <a href="../licence.html">Demander une licence</a></div>
+<p class="note">Ce texte est écrit par un parent, pas par un professionnel de santé. Il raconte ce qui a marché pour notre fille et ce que nous avons compris en chemin. Pour votre enfant, l'ergothérapeute et l'orthophoniste restent les bons interlocuteurs.</p>
+</main>
+</div>
+<footer><img src="../img/eyzi-logo-dark.png" alt="Eyzi">Eyzi · version bêta · <a href="mailto:contact@eyzi.fr">contact@eyzi.fr</a> · <a href="../">accueil</a> · <a href="./">conseils</a> · <a href="../guide.html">guide</a> · <a href="../licence.html">demander une licence</a></footer>
+</body>
+</html>

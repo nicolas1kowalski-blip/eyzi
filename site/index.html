@@ -56,7 +56,7 @@
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
-<div class="top"><div class="in"><a class="brand" href="./"><img src="img/eyzi-logo-dark.png" alt="Eyzi"></a><nav><a href="./#parler">L'écoute</a><a href="./#mondes">Trois mondes</a><a href="./#apprendre">Apprendre</a><a href="./#pros">Professionnels</a><a href="guide.html">Guide</a><a class="hl" href="licence.html">🔑 Licence</a></nav></div></div>
+<div class="top"><div class="in"><a class="brand" href="./"><img src="img/eyzi-logo-dark.png" alt="Eyzi"></a><nav><a href="./#parler">L'écoute</a><a href="./#mondes">Trois mondes</a><a href="./#apprendre">Apprendre</a><a href="./#pros">Professionnels</a><a href="conseils/">Conseils</a><a href="guide.html">Guide</a><a class="hl" href="licence.html">🔑 Licence</a></nav></div></div>
 
 <!-- ============ HÉROS : la scène de l'écoute, jouée en boucle ============ -->
 <div class="hero"><div class="bg-blob a"></div><div class="bg-blob b"></div><div class="in">
@@ -301,7 +301,7 @@
 
   <p class="sub" style="text-align:center;margin-top:30px">Chaque version sort d'abord en test, puis passe en prod une fois essayée. <a href="https://github.com/nicolas1kowalski-blip/eyzi/releases">Toutes les versions</a> · <a href="guide.html">le guide, monde par monde</a>.</p>
 </div>
-<footer><img src="img/eyzi-logo-dark.png" alt="Eyzi">Eyzi · version bêta · jouer, apprendre, parler, avec les yeux<br><a href="guide.html">guide utilisateur</a> · <a href="licence.html">demander une licence</a> · <a href="retours.html">vos retours</a> · <a href="https://github.com/nicolas1kowalski-blip/eyzi/releases">toutes les versions</a> · <a href="mailto:contact@eyzi.fr">contact@eyzi.fr</a><br><span style="opacity:.7">pictogrammes ARASAAC (auteur Sergio Palao, Gouvernement d'Aragon, CC BY-NC-SA) et Mulberry Symbols (CC BY-SA) · emojis Twemoji (CC BY) · fait avec amour pour Laura</span></footer>
+<footer><img src="img/eyzi-logo-dark.png" alt="Eyzi">Eyzi · version bêta · jouer, apprendre, parler, avec les yeux<br><a href="conseils/">conseils aux familles</a> · <a href="conseils/questions.html">questions fréquentes</a> · <a href="guide.html">guide utilisateur</a> · <a href="licence.html">demander une licence</a> · <a href="retours.html">vos retours</a> · <a href="https://github.com/nicolas1kowalski-blip/eyzi/releases">toutes les versions</a> · <a href="mailto:contact@eyzi.fr">contact@eyzi.fr</a><br><span style="opacity:.7">pictogrammes ARASAAC (auteur Sergio Palao, Gouvernement d'Aragon, CC BY-NC-SA) et Mulberry Symbols (CC BY-SA) · emojis Twemoji (CC BY) · fait avec amour pour Laura</span></footer>
 <script>
 // apparition douce des cartes au défilement
 (function(){ try{ var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }); },{threshold:.12}); document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); }); }catch(e){ document.querySelectorAll('.rv').forEach(function(el){ el.classList.add('in'); }); } })();
