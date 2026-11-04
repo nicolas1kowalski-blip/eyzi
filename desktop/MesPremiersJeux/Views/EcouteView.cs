@@ -438,6 +438,7 @@ namespace MesPremiersJeux.Views
             tick.Stop();
             _wait.Visibility = Visibility.Collapsed;
             if (_enCours != monEchange) return;
+            try { Usage.Count(res.EnLigne ? "ecoute:ia" : "ecoute:devine"); } catch { }
             if (res.EnLigne)
             {
                 Ia("IA · " + (res.Chrono ?? ""), ok: true);
@@ -505,7 +506,7 @@ namespace MesPremiersJeux.Views
             if (mot == null || !VoiceBank.Play("comm-" + mot.Cle)) Speech.SayAlways(dit);
             if (_enCours != null) _enCours.Reponse = r.Texte;
             ReponsesPref.Choisie(r.Texte);
-            try { Habitudes.Choisie(_enCours?.Question, r.Texte); } catch { }
+            try { Habitudes.Choisie(_enCours?.Question, r.Texte); Usage.Count("ecoute:reponse"); } catch { }
             GazeStats.RecordComm("ecoute-" + type);
             _confirmVisual.Child = new Viewbox { Stretch = Stretch.Uniform, Child = Visuel(r, mot, _enCours?.Question) };
             _confirmText.Text = (r.Texte ?? "").TrimEnd('!', '.') + " !";

@@ -512,6 +512,7 @@ namespace MesPremiersJeux
             Listening.Heard += text => Dispatcher.BeginInvoke(new Action(() =>
             {
                 if (!Licence.HasModule(_settings, "parler")) return;
+                Usage.Count("ecoute:question");
                 OuvrirEcoute();
                 if (EcouteHost.Visibility == Visibility.Visible) _ecoute.ShowHeard(text);
             }));

@@ -73,7 +73,7 @@ export default async function handler(req, res) {
       // vues SQL de supabase.sql, plus le catalogue des activités de l'app
       // pour repérer ce qui n'est jamais ouvert.
       const TRIAL = 'EYZ-ESSAI-0000-0000-0000'; // pseudo-licence des essais de 10 jours (usage anonyme)
-      const [resume, total, trente, lic, act, trialUse, iaUse] = await Promise.all([
+      const [resume, total, trente, lic, act, trialUse, iaUse, ecUse] = await Promise.all([
         supabase.from('usage_resume').select('*'),
         supabase.from('usage_par_famille').select('*'),
         supabase.from('usage_30_jours').select('*'),
@@ -81,8 +81,9 @@ export default async function handler(req, res) {
         supabase.from('activations').select('licence_key, machine, app_version, first_seen, last_seen, enabled'),
         supabase.from('usage').select('machine, activity, label, launches, seconds, day').eq('licence_key', TRIAL).order('day', { ascending: false }).limit(5000),
         supabase.from('usage').select('licence_key, machine, day, activity, launches, seconds').like('activity', 'ia:%').order('day', { ascending: false }).limit(5000),
+        supabase.from('usage').select('licence_key, machine, day, activity, launches').like('activity', 'ecoute:%').order('day', { ascending: false }).limit(10000),
       ]);
-      const err = resume.error || total.error || trente.error || lic.error || act.error || trialUse.error || iaUse.error;
+      const err = resume.error || total.error || trente.error || lic.error || act.error || trialUse.error || iaUse.error || ecUse.error;
       if (err) throw err;
       // L'IA (Parler) : par licence, 30 jours et total — questions, photos, « je veux dire », refus.
       const j30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
@@ -95,9 +96,20 @@ export default async function handler(req, res) {
         e.secondes += u.seconds || 0; e.tablettes.add(u.machine);
         if (!e.dernier || u.day > e.dernier) e.dernier = u.day;
       });
-      // Les lignes « ia:… » ne sont pas des activités de l'enfant : hors des classements.
-      total.data = (total.data || []).filter(r => !String(r.activite || '').startsWith('ia:'));
-      trente.data = (trente.data || []).filter(r => !String(r.activite || '').startsWith('ia:'));
+      // L'écoute, comptée sur la tablette : la clé Azure réglée (jours), les questions entendues, les réponses
+      // choisies, celles venues de l'IA et celles devinées sans elle — par licence, 30 jours et total.
+      const ecoute = {};
+      (ecUse.data || []).forEach(u => {
+        const e = ecoute[u.licence_key] = ecoute[u.licence_key] || { total: {}, trente: {}, azure_jours: new Set(), azure_30: new Set(), dernier: null, tablettes: new Set() };
+        const k = u.activity.slice(7);
+        if (k === 'azure') { e.azure_jours.add(u.day); if (u.day >= j30) e.azure_30.add(u.day); }
+        else { e.total[k] = (e.total[k] || 0) + (u.launches || 0); if (u.day >= j30) e.trente[k] = (e.trente[k] || 0) + (u.launches || 0); }
+        e.tablettes.add(u.machine);
+        if (k !== 'azure' && (u.launches || 0) > 0 && (!e.dernier || u.day > e.dernier)) e.dernier = u.day;
+      });
+      // Les lignes « ia:… » et « ecoute:… » ne sont pas des activités de l'enfant : hors des classements.
+      total.data = (total.data || []).filter(r => !/^(ia|ecoute):/.test(String(r.activite || '')));
+      trente.data = (trente.data || []).filter(r => !/^(ia|ecoute):/.test(String(r.activite || '')));
       // Essais sans licence : une ligne par tablette (identifiant haché), avec ses activités.
       const trialName = ((lic.data || []).find(l => l.key === TRIAL) || {}).family || 'Essais sans licence';
       const perMachine = {};
@@ -132,6 +144,7 @@ export default async function handler(req, res) {
           version: t.length ? t[0].app_version : null,
           tablettes: t.map(x => ({ machine: x.machine, version: x.app_version, depuis: x.first_seen, vue: x.last_seen, active: x.enabled })),
           ia: ia[l.key] ? { total: ia[l.key].total, trente: ia[l.key].trente, secondes: ia[l.key].secondes, dernier: ia[l.key].dernier, tablettes: ia[l.key].tablettes.size } : null,
+          ecoute: ecoute[l.key] ? { total: ecoute[l.key].total, trente: ecoute[l.key].trente, azure_jours: ecoute[l.key].azure_jours.size, azure_30: ecoute[l.key].azure_30.size, dernier: ecoute[l.key].dernier, tablettes: ecoute[l.key].tablettes.size } : null,
         };
       });
       const iaListe = String(process.env.PARLER_LICENCES || '').toUpperCase().split(',').map(k => k.trim()).filter(Boolean);

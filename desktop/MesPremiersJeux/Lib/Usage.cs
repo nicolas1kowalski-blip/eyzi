@@ -43,6 +43,12 @@ namespace MesPremiersJeux.Lib
 
         public static void Success(string activity) { lock (Rows) { Get(activity).Successes++; _dirty = true; } }
 
+        /// <summary>Un événement compté (une question entendue, une réponse choisie…) : +1 ouverture pour cette activité aujourd'hui.</summary>
+        public static void Count(string activity) { lock (Rows) { Get(activity).Launches++; _dirty = true; } Save(); }
+
+        /// <summary>Un état constaté une fois par jour au plus (la clé Azure est réglée…) : l'ouverture du jour passe à 1.</summary>
+        public static void Once(string activity) { lock (Rows) { var r = Get(activity); if (r.Launches > 0) return; r.Launches = 1; _dirty = true; } Save(); }
+
         private static void Switch(string next, bool launch)
         {
             lock (Rows)
@@ -210,6 +216,8 @@ namespace MesPremiersJeux.Lib
             ["onglet:accueil"] = "Accueil", ["onglet:stories"] = "Histoires", ["onglet:games"] = "Jeux (menu)",
             ["onglet:edu"] = "Éducatif (menu)", ["onglet:coloring"] = "Coloriage", ["onglet:music"] = "Musique",
             ["onglet:parcours"] = "Parcours", ["parler"] = "Parler (messages dits)",
+            ["ecoute:azure"] = "Écoute · clé Azure réglée", ["ecoute:question"] = "Écoute · questions entendues", ["ecoute:reponse"] = "Écoute · réponses choisies",
+            ["ecoute:ia"] = "Écoute · réponses de l'IA", ["ecoute:devine"] = "Écoute · réponses devinées",
         };
 
         public static string Of(string key) => key != null && Games.TryGetValue(key, out var fr) ? fr : key ?? "";

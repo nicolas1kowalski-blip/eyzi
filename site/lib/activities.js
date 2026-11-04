@@ -56,5 +56,10 @@ export default {
  "onglet:coloring": "Coloriage",
  "onglet:music": "Musique",
  "onglet:parcours": "Parcours",
- "parler": "Parler (messages dits)"
+ "parler": "Parler (messages dits)",
+ "ecoute:azure": "Écoute · clé Azure réglée",
+ "ecoute:question": "Écoute · questions entendues",
+ "ecoute:reponse": "Écoute · réponses choisies",
+ "ecoute:ia": "Écoute · réponses de l'IA",
+ "ecoute:devine": "Écoute · réponses devinées"
 };

@@ -53,6 +53,7 @@ namespace MesPremiersJeux.Lib
             var mode = (s.ListenMode ?? "off").ToLowerInvariant();
             if (mode == "off" || string.IsNullOrWhiteSpace(s.AzureKey)) { SetStatus("off"); return; }
             _key = s.AzureKey.Trim(); _region = string.IsNullOrWhiteSpace(s.AzureRegion) ? "francecentral" : s.AzureRegion.Trim();
+            try { Usage.Once("ecoute:azure"); } catch { } // l'éditeur voit, par famille, qui a réglé l'écoute (jamais la clé)
             try
             {
                 var config = SpeechConfig.FromSubscription(_key, _region);

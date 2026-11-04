@@ -207,6 +207,7 @@
     var vues7 = fam.filter(function(f){ return f.derniere_ouverture && (Date.now()-new Date(f.derniere_ouverture).getTime()) < 7*86400000; }).length;
     var min30 = 0; j.trente.forEach(function(r){ min30 += +r.minutes||0; });
     var famActives30 = {}; j.trente.forEach(function(r){ famActives30[r.famille] = true; });
+    var q30 = 0; fam.forEach(function(f){ if (f.ecoute) q30 += (f.ecoute.trente||{}).question||0; });
     var ia30 = 0, iaRefus30 = 0, iaTotal = 0; fam.forEach(function(f){ if (!f.ia) return; var t = f.ia.trente||{}; ia30 += (t.question||0)+(t.photo||0)+(t.spontane||0); iaRefus30 += t.refus||0; var a = f.ia.total||{}; iaTotal += (a.question||0)+(a.photo||0)+(a.spontane||0); });
     $('places').textContent = fam.length + ' licence' + (fam.length>1?'s':'') + ' · ' + inst.length + ' installée' + (inst.length>1?'s':'');
     var list = $('list'); list.innerHTML = '';
@@ -220,6 +221,7 @@
       ['<b>'+tablettes+'</b><span>tablettes activées</span>',''],
       ['<b>'+vues7+'</b><span>familles vues cette semaine</span>',''],
       ['<b>'+Object.keys(famActives30).length+'</b><span>familles actives sur 30 jours · '+mins(min30)+'</span>',''],
+      ['<b>'+fam.filter(function(f){ return f.ecoute && f.ecoute.azure_30; }).length+'</b><span>familles avec l\'écoute réglée (clé Azure, 30 j) · '+q30+' question'+(q30>1?'s':'')+' entendue'+(q30>1?'s':'')+'</span>',''],
       ['<b>'+ia30+'</b><span>appels à l\'IA sur 30 jours · '+iaTotal+' au total'+(iaRefus30?' · '+iaRefus30+' refus':'')+'</span>','ia'],
       ['<b>'+es.length+'</b><span>tablettes en essai 10 jours</span>',''],
     ].map(function(t){ return '<div class="tile '+t[1]+'">'+t[0]+'</div>'; }).join('');
@@ -232,6 +234,11 @@
       var d = f.derniere_ouverture ? (Date.now()-new Date(f.derniere_ouverture).getTime())/86400000 : 999;
       return d < 7 ? '<span class="badge b-ok">active</span>' : d < 30 ? '<span class="badge b-wait">vue il y a '+Math.round(d)+' j</span>' : '<span class="badge b-off">silencieuse '+Math.round(d)+' j</span>';
     }
+    function ecouteCell(f){
+      if (!f.ecoute) return '—';
+      var t = f.ecoute.trente||{};
+      return (f.ecoute.azure_30 ? '<span class="badge b-ok">clé Azure</span> ' : '<span class="badge b-wait">sans clé</span> ') + (t.question||0) + ' question'+((t.question||0)>1?'s':'');
+    }
     function iaCell(f){
       if (!f.ia) return f.ia_ouverte ? '<span class="badge b-ia">ouverte</span> 0' : '—';
       var t = f.ia.trente||{}, n = (t.question||0)+(t.photo||0)+(t.spontane||0);
@@ -239,7 +246,7 @@
     }
     var sec = document.createElement('details'); sec.className = 'sec'; sec.open = true;
     sec.innerHTML = '<summary>🔑 Licences ('+fam.length+')</summary><div><p class="sub2">Classées par dernière ouverture. « IA 30 j » : appels à l\'IA de Parler ces 30 jours ; « ouverte » = licence de test ou dans la liste PARLER_LICENCES ; un refus = une famille prod qui a demandé l\'IA et ne l\'a pas eue (sa tablette a deviné seule).</p>'
-      + '<table class="grid"><tr><th>Famille</th><th>État</th><th>Installée</th><th>Dernière ouverture</th><th>Tablettes</th><th>Version</th><th>IA 30 j</th><th>Mondes</th></tr>'
+      + '<table class="grid"><tr><th>Famille</th><th>État</th><th>Installée</th><th>Dernière ouverture</th><th>Tablettes</th><th>Version</th><th>Écoute 30 j</th><th>IA 30 j</th><th>Mondes</th></tr>'
       + fam.slice().sort(function(a,b){ return (b.derniere_ouverture||'').localeCompare(a.derniere_ouverture||''); }).map(function(f){
           return '<tr><td><b>'+esc(f.famille)+'</b>'+(f.canal==='test'?' <span class="badge b-test">test</span>':'')+'<br><small style="color:var(--muted)">'+esc(f.licence)+'</small></td>'
             + '<td>'+etat(f)+'</td>'
@@ -247,12 +254,27 @@
             + '<td>'+(f.derniere_ouverture ? esc(daysAgo(f.derniere_ouverture)) : '—')+'</td>'
             + '<td>'+f.tablettes.filter(function(t){return t.active;}).length+' / '+f.max_tablettes+'</td>'
             + '<td>'+esc(f.version||'—')+'</td>'
+            + '<td>'+ecouteCell(f)+'</td>'
             + '<td>'+iaCell(f)+'</td>'
             + '<td><small>'+esc((f.mondes||'').replace(/,/g,', ')||'tous')+'</small></td></tr>';
         }).join('') + '</table></div>';
     list.appendChild(sec);
 
-    // 3. L'IA de Parler, dans le détail.
+    // 3. L'écoute des familles : qui a réglé Azure, combien de questions, et d'où viennent les réponses.
+    var avecEc = fam.filter(function(f){ return f.ecoute; });
+    var se = document.createElement('details'); se.className = 'sec'; se.open = true;
+    se.innerHTML = '<summary>👂 L\'écoute des familles ('+avecEc.filter(function(f){ return f.ecoute.azure_30; }).length+' avec une clé Azure sur 30 jours)</summary><div><p class="sub2">Compté sur la tablette et envoyé avec l\'usage : la clé Azure réglée (en jours), les questions entendues, les réponses choisies par l\'enfant, celles venues de l\'IA et celles devinées sans elle. Une famille « sans clé » n\'entend rien ; une famille avec des réponses devinées utilise l\'écoute sans coûter d\'IA.</p>'
+      + (avecEc.length ? '<table class="grid"><tr><th>Famille</th><th>Clé Azure</th><th>Questions</th><th>Réponses choisies</th><th>De l\'IA</th><th>Devinées</th><th>Tablettes</th><th>Dernière question</th></tr>'
+        + avecEc.sort(function(a,b){ return (b.ecoute.dernier||'').localeCompare(a.ecoute.dernier||''); }).map(function(f){
+            var t = f.ecoute.trente||{}, a = f.ecoute.total||{};
+            function c(k){ return (t[k]||0)+' <small style="color:var(--muted)">/ '+(a[k]||0)+'</small>'; }
+            return '<tr><td><b>'+esc(f.famille)+'</b></td><td>'+(f.ecoute.azure_30 ? '<span class="badge b-ok">oui</span> '+f.ecoute.azure_30+' j / 30' : f.ecoute.azure_jours ? '<span class="badge b-wait">plus maintenant</span>' : '<span class="badge b-off">non</span>')+'</td>'
+              + '<td>'+c('question')+'</td><td>'+c('reponse')+'</td><td>'+c('ia')+'</td><td>'+c('devine')+'</td><td>'+f.ecoute.tablettes+'</td><td>'+esc(daysAgo(f.ecoute.dernier))+'</td></tr>';
+          }).join('') + '</table><p class="sub2" style="margin-top:8px">Lecture : 30 derniers jours / depuis le début. Le compteur démarre avec la version 230 de l\'application sur la tablette.</p>'
+        : '<p class="sub2">Rien pour le moment : il faut la version 230 ou plus sur les tablettes.</p>') + '</div>';
+    list.appendChild(se);
+
+    // 3 bis. L'IA de Parler, dans le détail.
     var avecIa = fam.filter(function(f){ return f.ia; });
     var si = document.createElement('details'); si.className = 'sec';
     si.innerHTML = '<summary>🤖 L\'IA de Parler ('+ia30+' appels sur 30 jours)</summary><div><p class="sub2">Chaque appel coûte de la reconnaissance vocale Azure côté famille et de l\'IA côté éditeur. Seules les licences de test et celles de la liste PARLER_LICENCES ('+(j.ia_liste||0)+' numéro'+(j.ia_liste>1?'s':'')+') y ont droit.</p>'
