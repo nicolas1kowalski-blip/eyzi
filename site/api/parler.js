@@ -30,6 +30,7 @@ export const config = { supportsResponseStreaming: true };
 const MAX_PER_DAY = 300;
 const counters = new Map(); // machine → { day, n }
 const checked = new Map();  // key|machine → instant de la dernière vérification réussie (10 min)
+const canal = new Map();    // key|machine → canal de la licence (pour le journal : qui consomme l'IA)
 
 function clean(v, max) {
   return String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
@@ -129,7 +130,11 @@ export default async function handler(req, res) {
       if (!lic || !lic.enabled || (lic.expires_at && new Date(lic.expires_at) < new Date())) { res.status(403).json({ ok: false, message: 'Licence inconnue ou terminée.' }); return; }
       if (lic.modules && !String(lic.modules).split(',').map((m) => m.trim()).includes('parler')) { res.status(403).json({ ok: false, message: 'Le monde Parler ne fait pas partie de cette licence.' }); return; }
       const allowed = String(process.env.PARLER_LICENCES || '').toUpperCase().split(',').map((k) => k.trim()).filter(Boolean);
-      if (lic.channel !== 'test' && !allowed.includes(key)) { res.status(403).json({ ok: false, message: "Les réponses proposées sont réservées à l'éditeur pendant la bêta." }); return; }
+      if (lic.channel !== 'test' && !allowed.includes(key)) {
+        console.log('parler refus', 'canal', lic.channel, 'licence …' + key.slice(-6), 'tablette', machine);
+        res.status(403).json({ ok: false, message: "Les réponses proposées sont réservées à l'éditeur pendant la bêta." }); return;
+      }
+      canal.set(ck, lic.channel + (allowed.includes(key) ? '+liste' : ''));
       const { data: act } = await supabase.from('activations').select('machine, enabled').eq('licence_key', key).eq('machine', machine).maybeSingle();
       if (!act || act.enabled === false) { res.status(403).json({ ok: false, message: 'Tablette inconnue pour cette licence.' }); return; }
       checked.set(ck, Date.now());
@@ -200,7 +205,7 @@ export default async function handler(req, res) {
     const final = await stream.finalMessage();
     flush();
     const msIa = Date.now() - t0;
-    console.log('parler', spontane ? 'spontane' : photo ? 'photo-' + vue : 'question', msIa, 'ms', final.stop_reason, text.length, nb, 'réponses');
+    console.log('parler', spontane ? 'spontane' : photo ? 'photo-' + vue : 'question', msIa, 'ms', final.stop_reason, text.length, nb, 'réponses', 'canal', canal.get(ck) || '?', 'licence …' + key.slice(-6));
     if (!headerSent) emit({ type: spontane ? 'spontane' : vue === 'enfant' ? 'humeur' : 'autre', simple: spontane ? 'Je veux dire…' : question });
     emit({ fin: true, ms: { ia: msIa, total: Date.now() - tStart }, stop: final.stop_reason, n: nb });
     res.end();
