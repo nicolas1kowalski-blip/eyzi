@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Eyzi · demandes</title>
+<title>Eyzi · administration</title>
 <link rel="icon" href="img/favicon.png">
 <link rel="stylesheet" href="site.css">
 <style>
@@ -37,6 +37,27 @@
   .msg{padding:12px 14px;border-radius:12px;margin:10px 0;font-size:15px}
   .msg.err{background:#FDE8E6;color:#7F1D1D}.msg.ok{background:#E3F6E8;color:#14532D}
   .empty{color:var(--muted);padding:30px 0;text-align:center}
+  /* Tableau de bord */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
+  .tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .tile b{display:block;font-size:26px;line-height:1.1}.tile span{font-size:13px;color:var(--muted)}
+  .tile.warn b{color:#B45309}.tile.ok b{color:#15803D}
+  table.grid{width:100%;border-collapse:collapse;font-size:14px}
+  table.grid th{text-align:left;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.grid td{padding:7px 8px;border-bottom:1px solid #EEF1F7;vertical-align:top}
+  table.grid tr:last-child td{border-bottom:0}
+  .badge{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+  .b-ok{background:#E3F6E8;color:#14532D}.b-wait{background:#FFF4D6;color:#7C4A03}.b-off{background:#FDE8E6;color:#7F1D1D}.b-test{background:#EDE4FF;color:#4C1D95}.b-ia{background:#E0F2FE;color:#0C4A6E}
+  details.sec{background:#fff;border:1px solid var(--line);border-radius:16px;padding:0;margin:0 0 12px}
+  details.sec>summary{cursor:pointer;font-weight:800;font-size:17px;padding:14px 16px;list-style:none}
+  details.sec>summary::-webkit-details-marker{display:none}
+  details.sec>summary::before{content:'▸ ';color:var(--muted)}details.sec[open]>summary::before{content:'▾ '}
+  details.sec>div{padding:0 16px 14px}
+  details.fam{border:1px solid #EEF1F7;border-radius:12px;padding:0;margin:6px 0}
+  details.fam>summary{cursor:pointer;padding:9px 12px;font-weight:600;list-style:none}
+  details.fam>summary::-webkit-details-marker{display:none}
+  details.fam>div{padding:0 12px 10px;font-size:14px}
+  .sub2{color:var(--muted);font-size:13px;margin:0 0 8px}
 </style>
 </head>
 <body>
@@ -59,7 +80,7 @@
       <button data-s="new" class="on">⏳ En attente</button>
       <button data-s="done">✅ Validées</button>
       <button data-s="refused">✕ Refusées</button>
-      <button data-s="stats">📊 Statistiques</button>
+      <button data-s="stats">📊 Tableau de bord</button>
       <span class="places" id="places">…</span>
       <button id="logout" style="margin-left:6px">Quitter</button>
     </div>
@@ -177,33 +198,75 @@
   }
   function mins(m){ m = Math.round(m||0); return m >= 90 ? (Math.round(m/6)/10)+' h' : m+' min'; }
   function daysAgo(d){ if(!d) return ''; var n = Math.round((Date.now() - new Date(d).getTime())/86400000); return n <= 0 ? "aujourd'hui" : n === 1 ? 'hier' : 'il y a '+n+' jours'; }
+  function pct(a,b){ return b ? Math.round(100*a/b)+' %' : '—'; }
   function renderStats(j){
-    var fam = j.familles || [];
-    var inst = fam.filter(function(f){ return f.installee; }).length;
-    $('places').textContent = fam.length + ' licence' + (fam.length>1?'s':'') + ' · ' + inst + ' installée' + (inst>1?'s':'') + ' · ' + (fam.length - inst) + ' pas encore';
+    var fam = j.familles || [], es = j.essais || [];
+    var actives = fam.filter(function(f){ return f.active; });
+    var inst = fam.filter(function(f){ return f.installee; });
+    var tablettes = 0; fam.forEach(function(f){ tablettes += f.tablettes.filter(function(t){ return t.active; }).length; });
+    var vues7 = fam.filter(function(f){ return f.derniere_ouverture && (Date.now()-new Date(f.derniere_ouverture).getTime()) < 7*86400000; }).length;
+    var min30 = 0; j.trente.forEach(function(r){ min30 += +r.minutes||0; });
+    var famActives30 = {}; j.trente.forEach(function(r){ famActives30[r.famille] = true; });
+    var ia30 = 0, iaRefus30 = 0, iaTotal = 0; fam.forEach(function(f){ if (!f.ia) return; var t = f.ia.trente||{}; ia30 += (t.question||0)+(t.photo||0)+(t.spontane||0); iaRefus30 += t.refus||0; var a = f.ia.total||{}; iaTotal += (a.question||0)+(a.photo||0)+(a.spontane||0); });
+    $('places').textContent = fam.length + ' licence' + (fam.length>1?'s':'') + ' · ' + inst.length + ' installée' + (inst.length>1?'s':'');
     var list = $('list'); list.innerHTML = '';
-    // Installation : qui a installé, qui n'a pas encore commencé.
-    var tbl = document.createElement('div'); tbl.className = 'card req';
-    tbl.innerHTML = '<h3>📥 Installation par famille</h3><div class="meta">Une famille est « installée » dès que l\'application a été ouverte avec son numéro de licence.</div>'
-      + '<dl>' + fam.sort(function(a,b){ return (b.derniere_ouverture||'').localeCompare(a.derniere_ouverture||''); }).map(function(f){
-          var s = f.installee
-            ? '✅ installée '+daysAgo(f.premiere_installation)+' · dernière ouverture '+daysAgo(f.derniere_ouverture)+' · version '+esc(f.version||'?')+' · '+f.tablettes.filter(function(t){return t.active;}).length+' / '+f.max_tablettes+' tablette'+(f.max_tablettes>1?'s':'')
-            : '⏳ pas encore installée (licence créée '+daysAgo(f.creee)+')';
-          if (!f.active) s += ' · 🚫 licence désactivée';
-          return '<dt>'+esc(f.famille)+(f.canal==='test'?' <small>(test)</small>':'')+'</dt><dd>'+s+'</dd>';
-        }).join('') + '</dl>';
-    list.appendChild(tbl);
-    // Essais sans licence (10 jours) : tablettes anonymes, identifiant haché.
-    var es = j.essais || [];
-    var te = document.createElement('div'); te.className = 'card req';
-    te.innerHTML = '<h3>🧪 Essais sans licence</h3><div class="meta">Tablettes qui utilisent l\'essai de 10 jours. Identifiant haché : on ne sait pas qui, seulement quoi et combien.</div>'
-      + (es.length ? '<dl>' + es.map(function(m){
-          return '<dt>'+esc(m.machine)+'</dt><dd>'+(m.depuis ? 'installé '+daysAgo(m.depuis)+' · ' : '')+'vu '+daysAgo(m.vue)+' · version '+esc(m.version||'?')+' · '+mins(m.minutes)+' sur '+m.jours+' jour'+(m.jours>1?'s':'')
-            + (m.top.length ? '<br><small>'+m.top.map(function(a){ return esc(a.nom)+' ('+mins(a.minutes)+')'; }).join(', ')+'</small>' : '')+'</dd>';
-        }).join('') + '</dl>' : '<div class="meta">Aucun essai remonté pour le moment (nécessite une version 2026.10.24.141 ou plus sur la tablette).</div>');
-    list.appendChild(te);
-    if (!j.resume.length) { list.innerHTML += '<div class="empty">Aucune donnée d\'usage pour le moment.</div>'; return; }
-    // Vue d'ensemble, toutes familles : 30 derniers jours par activité.
+
+    // 1. Les chiffres clés.
+    var tiles = document.createElement('div'); tiles.className = 'tiles';
+    tiles.innerHTML = [
+      ['<b>'+fam.length+'</b><span>licences créées</span>',''],
+      ['<b>'+actives.length+'</b><span>actives · '+(fam.length-actives.length)+' désactivée'+(fam.length-actives.length>1?'s':'')+'</span>','ok'],
+      ['<b>'+inst.length+'</b><span>installées · '+(fam.length-inst.length)+' pas encore</span>', fam.length-inst.length ? 'warn' : 'ok'],
+      ['<b>'+tablettes+'</b><span>tablettes activées</span>',''],
+      ['<b>'+vues7+'</b><span>familles vues cette semaine</span>',''],
+      ['<b>'+Object.keys(famActives30).length+'</b><span>familles actives sur 30 jours · '+mins(min30)+'</span>',''],
+      ['<b>'+ia30+'</b><span>appels à l\'IA sur 30 jours · '+iaTotal+' au total'+(iaRefus30?' · '+iaRefus30+' refus':'')+'</span>','ia'],
+      ['<b>'+es.length+'</b><span>tablettes en essai 10 jours</span>',''],
+    ].map(function(t){ return '<div class="tile '+t[1]+'">'+t[0]+'</div>'; }).join('');
+    list.appendChild(tiles);
+
+    // 2. Les licences, en tableau.
+    function etat(f){
+      if (!f.active) return '<span class="badge b-off">désactivée</span>';
+      if (!f.installee) return '<span class="badge b-wait">pas installée</span>';
+      var d = f.derniere_ouverture ? (Date.now()-new Date(f.derniere_ouverture).getTime())/86400000 : 999;
+      return d < 7 ? '<span class="badge b-ok">active</span>' : d < 30 ? '<span class="badge b-wait">vue il y a '+Math.round(d)+' j</span>' : '<span class="badge b-off">silencieuse '+Math.round(d)+' j</span>';
+    }
+    function iaCell(f){
+      if (!f.ia) return f.ia_ouverte ? '<span class="badge b-ia">ouverte</span> 0' : '—';
+      var t = f.ia.trente||{}, n = (t.question||0)+(t.photo||0)+(t.spontane||0);
+      return (f.ia_ouverte ? '<span class="badge b-ia">ouverte</span> ' : '') + n + (t.refus ? ' · <span class="badge b-off">'+t.refus+' refus</span>' : '');
+    }
+    var sec = document.createElement('details'); sec.className = 'sec'; sec.open = true;
+    sec.innerHTML = '<summary>🔑 Licences ('+fam.length+')</summary><div><p class="sub2">Classées par dernière ouverture. « IA 30 j » : appels à l\'IA de Parler ces 30 jours ; « ouverte » = licence de test ou dans la liste PARLER_LICENCES ; un refus = une famille prod qui a demandé l\'IA et ne l\'a pas eue (sa tablette a deviné seule).</p>'
+      + '<table class="grid"><tr><th>Famille</th><th>État</th><th>Installée</th><th>Dernière ouverture</th><th>Tablettes</th><th>Version</th><th>IA 30 j</th><th>Mondes</th></tr>'
+      + fam.slice().sort(function(a,b){ return (b.derniere_ouverture||'').localeCompare(a.derniere_ouverture||''); }).map(function(f){
+          return '<tr><td><b>'+esc(f.famille)+'</b>'+(f.canal==='test'?' <span class="badge b-test">test</span>':'')+'<br><small style="color:var(--muted)">'+esc(f.licence)+'</small></td>'
+            + '<td>'+etat(f)+'</td>'
+            + '<td>'+(f.installee ? esc(daysAgo(f.premiere_installation)) : '<small>créée '+esc(daysAgo(f.creee))+'</small>')+'</td>'
+            + '<td>'+(f.derniere_ouverture ? esc(daysAgo(f.derniere_ouverture)) : '—')+'</td>'
+            + '<td>'+f.tablettes.filter(function(t){return t.active;}).length+' / '+f.max_tablettes+'</td>'
+            + '<td>'+esc(f.version||'—')+'</td>'
+            + '<td>'+iaCell(f)+'</td>'
+            + '<td><small>'+esc((f.mondes||'').replace(/,/g,', ')||'tous')+'</small></td></tr>';
+        }).join('') + '</table></div>';
+    list.appendChild(sec);
+
+    // 3. L'IA de Parler, dans le détail.
+    var avecIa = fam.filter(function(f){ return f.ia; });
+    var si = document.createElement('details'); si.className = 'sec';
+    si.innerHTML = '<summary>🤖 L\'IA de Parler ('+ia30+' appels sur 30 jours)</summary><div><p class="sub2">Chaque appel coûte de la reconnaissance vocale Azure côté famille et de l\'IA côté éditeur. Seules les licences de test et celles de la liste PARLER_LICENCES ('+(j.ia_liste||0)+' numéro'+(j.ia_liste>1?'s':'')+') y ont droit.</p>'
+      + (avecIa.length ? '<table class="grid"><tr><th>Famille</th><th>Questions</th><th>Photos</th><th>Je veux dire</th><th>Refus</th><th>Total</th><th>Temps IA</th><th>Tablettes</th><th>Dernier appel</th></tr>'
+        + avecIa.sort(function(a,b){ return (b.ia.dernier||'').localeCompare(a.ia.dernier||''); }).map(function(f){
+            var t = f.ia.trente||{}, a = f.ia.total||{};
+            function c(k){ return (t[k]||0)+' <small style="color:var(--muted)">/ '+(a[k]||0)+'</small>'; }
+            return '<tr><td><b>'+esc(f.famille)+'</b>'+(f.ia_ouverte?' <span class="badge b-ia">ouverte</span>':'')+'</td><td>'+c('question')+'</td><td>'+c('photo')+'</td><td>'+c('spontane')+'</td><td>'+(t.refus?'<span class="badge b-off">'+t.refus+'</span>':'0')+' <small style="color:var(--muted)">/ '+(a.refus||0)+'</small></td>'
+              + '<td>'+((t.question||0)+(t.photo||0)+(t.spontane||0))+' <small style="color:var(--muted)">/ '+((a.question||0)+(a.photo||0)+(a.spontane||0))+'</small></td><td>'+mins(f.ia.secondes/60)+'</td><td>'+f.ia.tablettes+'</td><td>'+esc(daysAgo(f.ia.dernier))+'</td></tr>';
+          }).join('') + '</table><p class="sub2" style="margin-top:8px">Lecture : 30 derniers jours / depuis le début.</p>'
+        : '<p class="sub2">Aucun appel à l\'IA enregistré pour le moment (le compteur démarre avec la version du serveur du 4 novembre).</p>') + '</div>';
+    list.appendChild(si);
+
+    // 4. Les activités, toutes familles.
     var agg = {}, aggAll = {};
     j.trente.forEach(function(r){ var a = agg[r.activite] = agg[r.activite] || {nom:r.nom||r.activite, minutes:0, ouvertures:0, familles:0}; a.minutes += +r.minutes||0; a.ouvertures += +r.ouvertures||0; a.familles++; });
     j.total.forEach(function(r){ var a = aggAll[r.activite] = aggAll[r.activite] || {nom:r.nom||r.activite, minutes:0, ouvertures:0, familles:0}; a.minutes += +r.minutes||0; a.ouvertures += +r.ouvertures||0; a.familles++; });
@@ -211,25 +274,36 @@
     var used = {}; j.total.forEach(function(r){ used[r.activite] = true; });
     var never = Object.keys(j.catalogue).filter(function(k){ return !used[k] && k.indexOf('onglet:') !== 0; }).map(function(k){ return j.catalogue[k]; }).sort();
     var rare = Object.keys(aggAll).map(function(k){ return aggAll[k]; }).filter(function(a){ return a.minutes < 10; }).sort(function(a,b){ return a.minutes-b.minutes; });
-    var g = document.createElement('div'); g.className = 'card req';
-    g.innerHTML = '<h3>🌍 Toutes les familles</h3><div class="meta">30 derniers jours · minutes cumulées, nombre d\'ouvertures, nombre de familles</div>'
-      + '<dl>' + top.slice(0, 15).map(function(a){ return '<dt>'+esc(a.nom)+'</dt><dd>'+mins(a.minutes)+' · '+a.ouvertures+' ouverture'+(a.ouvertures>1?'s':'')+' · '+a.familles+' famille'+(a.familles>1?'s':'')+'</dd>'; }).join('') + '</dl>'
-      + '<div class="meta" style="margin-top:10px"><b>Peu utilisées</b> (moins de 10 min au total, toutes familles) : ' + (rare.length ? rare.map(function(a){ return esc(a.nom)+' ('+mins(a.minutes)+')'; }).join(', ') : 'aucune') + '</div>'
-      + '<div class="meta"><b>Jamais ouvertes</b> par aucune famille : ' + (never.length ? never.map(esc).join(', ') : 'aucune') + '</div>';
+    var g = document.createElement('details'); g.className = 'sec';
+    g.innerHTML = '<summary>🌍 Les activités, toutes familles (30 jours)</summary><div>'
+      + (top.length ? '<table class="grid"><tr><th>Activité</th><th>Temps</th><th>Ouvertures</th><th>Familles</th></tr>' + top.slice(0, 20).map(function(a){ return '<tr><td>'+esc(a.nom)+'</td><td>'+mins(a.minutes)+'</td><td>'+a.ouvertures+'</td><td>'+a.familles+'</td></tr>'; }).join('') + '</table>' : '<p class="sub2">Rien ces 30 derniers jours.</p>')
+      + '<p class="sub2" style="margin-top:10px"><b>Peu utilisées</b> (moins de 10 min au total) : ' + (rare.length ? rare.map(function(a){ return esc(a.nom)+' ('+mins(a.minutes)+')'; }).join(', ') : 'aucune') + '</p>'
+      + '<p class="sub2"><b>Jamais ouvertes</b> par aucune famille : ' + (never.length ? never.map(esc).join(', ') : 'aucune') + '</p></div>';
     list.appendChild(g);
-    // Par famille.
-    j.resume.forEach(function(f){
+
+    // 5. Les essais sans licence.
+    var te = document.createElement('details'); te.className = 'sec';
+    te.innerHTML = '<summary>🧪 Essais sans licence ('+es.length+')</summary><div><p class="sub2">Tablettes qui utilisent l\'essai de 10 jours. Identifiant haché : on ne sait pas qui, seulement quoi et combien.</p>'
+      + (es.length ? '<table class="grid"><tr><th>Tablette</th><th>Installé</th><th>Vu</th><th>Version</th><th>Temps</th><th>Jours</th><th>Activités</th></tr>' + es.map(function(m){
+          return '<tr><td><small>'+esc(m.machine)+'</small></td><td>'+esc(daysAgo(m.depuis))+'</td><td>'+esc(daysAgo(m.vue))+'</td><td>'+esc(m.version||'?')+'</td><td>'+mins(m.minutes)+'</td><td>'+m.jours+'</td><td><small>'+m.top.map(function(a){ return esc(a.nom)+' ('+mins(a.minutes)+')'; }).join(', ')+'</small></td></tr>';
+        }).join('') + '</table>' : '<p class="sub2">Aucun essai remonté pour le moment.</p>') + '</div>';
+    list.appendChild(te);
+
+    // 6. Le détail par famille, replié.
+    var pf = document.createElement('details'); pf.className = 'sec';
+    var inner = '';
+    (j.resume||[]).forEach(function(f){
       var mine30 = j.trente.filter(function(r){ return r.famille === f.famille; }).sort(function(a,b){ return b.minutes-a.minutes; });
       var mineAll = j.total.filter(function(r){ return r.famille === f.famille; });
       var usedMine = {}; mineAll.forEach(function(r){ usedMine[r.activite] = true; });
+      var nCat = Object.keys(j.catalogue).filter(function(k){ return k.indexOf('onglet:') !== 0; }).length;
       var neverMine = Object.keys(j.catalogue).filter(function(k){ return !usedMine[k] && k.indexOf('onglet:') !== 0; }).length;
-      var el = document.createElement('div'); el.className = 'card req';
-      el.innerHTML = '<h3>👨‍👩‍👧 '+esc(f.famille)+'</h3>'
-        + '<div class="meta">'+mins(f.minutes_total)+' au total · '+f.jours_utilises+' jour'+(f.jours_utilises>1?'s':'')+' d\'utilisation · dernière fois : '+(f.dernier_jour ? esc(fmt(f.dernier_jour).split(' ')[0]) : 'jamais')+' · tablettes : '+f.tablettes_actives+' / '+f.max_tablettes+'</div>'
-        + (mine30.length ? '<dl>' + mine30.slice(0, 10).map(function(r){ return '<dt>'+esc(r.nom||r.activite)+'</dt><dd>'+mins(r.minutes)+' · '+r.ouvertures+' ouverture'+(r.ouvertures>1?'s':'')+(r.reussites ? ' · '+r.reussites+' réussite'+(r.reussites>1?'s':'') : '')+' · '+r.jours+' jour'+(r.jours>1?'s':'')+'</dd>'; }).join('') + '</dl>' : '<div class="meta">Rien ces 30 derniers jours.</div>')
-        + '<div class="meta">Activités jamais ouvertes par cette famille : '+neverMine+' sur '+Object.keys(j.catalogue).filter(function(k){ return k.indexOf('onglet:') !== 0; }).length+'</div>';
-      list.appendChild(el);
+      inner += '<details class="fam"><summary>👨‍👩‍👧 '+esc(f.famille)+' <small style="color:var(--muted);font-weight:400">· '+mins(f.minutes_total)+' au total · '+f.jours_utilises+' jour'+(f.jours_utilises>1?'s':'')+' · dernière fois '+(f.dernier_jour ? esc(daysAgo(f.dernier_jour)) : 'jamais')+'</small></summary><div>'
+        + (mine30.length ? '<table class="grid"><tr><th>Activité (30 j)</th><th>Temps</th><th>Ouvertures</th><th>Réussites</th><th>Jours</th></tr>' + mine30.slice(0, 12).map(function(r){ return '<tr><td>'+esc(r.nom||r.activite)+'</td><td>'+mins(r.minutes)+'</td><td>'+r.ouvertures+'</td><td>'+(r.reussites||0)+'</td><td>'+r.jours+'</td></tr>'; }).join('') + '</table>' : '<p class="sub2">Rien ces 30 derniers jours.</p>')
+        + '<p class="sub2" style="margin-top:8px">Activités jamais ouvertes par cette famille : '+neverMine+' sur '+nCat+'.</p></div></details>';
     });
+    pf.innerHTML = '<summary>👨‍👩‍👧 Le détail par famille ('+(j.resume||[]).length+')</summary><div>' + (inner || '<p class="sub2">Aucune donnée d\'usage pour le moment.</p>') + '</div>';
+    list.appendChild(pf);
   }
   async function load(){
     show($('gmsg'),'',''); $('list').innerHTML = '<div class="empty">Chargement…</div>';

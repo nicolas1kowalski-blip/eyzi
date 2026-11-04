@@ -73,16 +73,31 @@ export default async function handler(req, res) {
       // vues SQL de supabase.sql, plus le catalogue des activités de l'app
       // pour repérer ce qui n'est jamais ouvert.
       const TRIAL = 'EYZ-ESSAI-0000-0000-0000'; // pseudo-licence des essais de 10 jours (usage anonyme)
-      const [resume, total, trente, lic, act, trialUse] = await Promise.all([
+      const [resume, total, trente, lic, act, trialUse, iaUse] = await Promise.all([
         supabase.from('usage_resume').select('*'),
         supabase.from('usage_par_famille').select('*'),
         supabase.from('usage_30_jours').select('*'),
         supabase.from('licences').select('key, family, channel, max_tablets, enabled, expires_at, created_at, modules'),
         supabase.from('activations').select('licence_key, machine, app_version, first_seen, last_seen, enabled'),
         supabase.from('usage').select('machine, activity, label, launches, seconds, day').eq('licence_key', TRIAL).order('day', { ascending: false }).limit(5000),
+        supabase.from('usage').select('licence_key, machine, day, activity, launches, seconds').like('activity', 'ia:%').order('day', { ascending: false }).limit(5000),
       ]);
-      const err = resume.error || total.error || trente.error || lic.error || act.error || trialUse.error;
+      const err = resume.error || total.error || trente.error || lic.error || act.error || trialUse.error || iaUse.error;
       if (err) throw err;
+      // L'IA (Parler) : par licence, 30 jours et total — questions, photos, « je veux dire », refus.
+      const j30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+      const ia = {};
+      (iaUse.data || []).forEach(u => {
+        const e = ia[u.licence_key] = ia[u.licence_key] || { total: {}, trente: {}, secondes: 0, dernier: null, tablettes: new Set() };
+        const k = u.activity.slice(3);
+        e.total[k] = (e.total[k] || 0) + (u.launches || 0);
+        if (u.day >= j30) e.trente[k] = (e.trente[k] || 0) + (u.launches || 0);
+        e.secondes += u.seconds || 0; e.tablettes.add(u.machine);
+        if (!e.dernier || u.day > e.dernier) e.dernier = u.day;
+      });
+      // Les lignes « ia:… » ne sont pas des activités de l'enfant : hors des classements.
+      total.data = (total.data || []).filter(r => !String(r.activite || '').startsWith('ia:'));
+      trente.data = (trente.data || []).filter(r => !String(r.activite || '').startsWith('ia:'));
       // Essais sans licence : une ligne par tablette (identifiant haché), avec ses activités.
       const trialName = ((lic.data || []).find(l => l.key === TRIAL) || {}).family || 'Essais sans licence';
       const perMachine = {};
@@ -109,16 +124,19 @@ export default async function handler(req, res) {
       const familles = (lic.data || []).map(l => {
         const t = (tablets[l.key] || []).sort((a, b) => String(b.last_seen).localeCompare(String(a.last_seen)));
         return {
-          famille: l.family, licence: l.key, canal: l.channel, max_tablettes: l.max_tablets, active: l.enabled,
+          famille: l.family, licence: l.key, canal: l.channel, max_tablettes: l.max_tablets, active: l.enabled, mondes: l.modules || '',
           expire: l.expires_at, creee: l.created_at,
           installee: t.length > 0,
           premiere_installation: t.length ? t.map(x => x.first_seen).sort()[0] : null,
           derniere_ouverture: t.length ? t[0].last_seen : null,
           version: t.length ? t[0].app_version : null,
           tablettes: t.map(x => ({ machine: x.machine, version: x.app_version, depuis: x.first_seen, vue: x.last_seen, active: x.enabled })),
+          ia: ia[l.key] ? { total: ia[l.key].total, trente: ia[l.key].trente, secondes: ia[l.key].secondes, dernier: ia[l.key].dernier, tablettes: ia[l.key].tablettes.size } : null,
         };
       });
-      res.status(200).json({ ok: true, resume: resume.data || [], total: total.data || [], trente: trente.data || [], familles, essais, catalogue });
+      const iaListe = String(process.env.PARLER_LICENCES || '').toUpperCase().split(',').map(k => k.trim()).filter(Boolean);
+      familles.forEach(f => { f.ia_ouverte = f.canal === 'test' || iaListe.includes(String(f.licence).toUpperCase()); });
+      res.status(200).json({ ok: true, resume: resume.data || [], total: total.data || [], trente: trente.data || [], familles, essais, catalogue, ia_liste: iaListe.length });
       return;
     }
     if (req.method === 'GET') {

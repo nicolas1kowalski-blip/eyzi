@@ -36,6 +36,20 @@ function clean(v, max) {
   return String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
 }
 
+// Le compteur d'IA par licence et par tablette, dans la table usage (activités « ia:… »), pour le tableau
+// de bord de l'administration : qui consomme l'IA, combien, et qui a été refusé. Jamais le contenu.
+const IA_LABELS = { 'ia:question': 'IA · questions', 'ia:photo': 'IA · photos', 'ia:spontane': 'IA · je veux dire', 'ia:refus': 'IA · refus (licence prod)' };
+async function compterIa(supabase, key, machine, activity, ms) {
+  try {
+    const day = new Date().toISOString().slice(0, 10);
+    const { data: cur } = await supabase.from('usage').select('launches, seconds').eq('licence_key', key).eq('machine', machine).eq('day', day).eq('activity', activity).maybeSingle();
+    await supabase.from('usage').upsert({
+      licence_key: key, machine, day, activity, label: IA_LABELS[activity] || activity,
+      launches: (cur?.launches || 0) + 1, seconds: (cur?.seconds || 0) + Math.round((ms || 0) / 1000), successes: 0, updated_at: new Date().toISOString(),
+    }, { onConflict: 'licence_key,machine,day,activity' });
+  } catch (e) { console.warn('parler compteur', String(e?.message || e).slice(0, 120)); }
+}
+
 function tooMany(machine) {
   const day = new Date().toISOString().slice(0, 10);
   const c = counters.get(machine) || { day, n: 0 };
@@ -132,6 +146,7 @@ export default async function handler(req, res) {
       const allowed = String(process.env.PARLER_LICENCES || '').toUpperCase().split(',').map((k) => k.trim()).filter(Boolean);
       if (lic.channel !== 'test' && !allowed.includes(key)) {
         console.log('parler refus', 'canal', lic.channel, 'licence …' + key.slice(-6), 'tablette', machine);
+        await compterIa(supabase, key, machine, 'ia:refus', 0);
         res.status(403).json({ ok: false, message: "Les réponses proposées sont réservées à l'éditeur pendant la bêta." }); return;
       }
       canal.set(ck, lic.channel + (allowed.includes(key) ? '+liste' : ''));
@@ -207,6 +222,7 @@ export default async function handler(req, res) {
     const msIa = Date.now() - t0;
     console.log('parler', spontane ? 'spontane' : photo ? 'photo-' + vue : 'question', msIa, 'ms', final.stop_reason, text.length, nb, 'réponses', 'canal', canal.get(ck) || '?', 'licence …' + key.slice(-6));
     if (!headerSent) emit({ type: spontane ? 'spontane' : vue === 'enfant' ? 'humeur' : 'autre', simple: spontane ? 'Je veux dire…' : question });
+    await compterIa(supabase, key, machine, spontane ? 'ia:spontane' : photo ? 'ia:photo' : 'ia:question', msIa);
     emit({ fin: true, ms: { ia: msIa, total: Date.now() - tStart }, stop: final.stop_reason, n: nb });
     res.end();
     return;
