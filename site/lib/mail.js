@@ -103,7 +103,7 @@ Pour l'installer :
 2. Au premier démarrage, entrez ce numéro, puis choisissez un mot de passe famille : il protège vos photos et vos voix, et il doit être le même sur chaque tablette (${r.tablets > 1 ? r.tablets + ' tablettes' : '1 tablette'} avec cette licence).
 3. Le guide pas à pas : https://eyzi.fr/guide.html
 
-La licence est gratuite pendant toute la bêta (jusqu'au 30 juin 2027). Ce qui se passera ensuite n'est pas encore décidé ; nous vous le dirons bien avant, et vos retours comptent dans ce choix.
+La licence est gratuite pendant toute la bêta (jusqu'au 30 juin 2027).
 
 Un mot sur l'écoute, la fonction où la tablette entend la question et propose des réponses à regarder : elle n'est pas encore ouverte aux familles. Capter la voix et faire interpréter la question par une intelligence artificielle a aujourd'hui un coût non négligeable, que nous ne pouvons pas encore assumer pour tout le monde. Nous étudions son ouverture dans les prochains jours, et nous vous préviendrons. Tout le reste est là dès maintenant : les jeux, les leçons, les histoires, et le tableau de communication avec les photos et les voix de la famille.
 
