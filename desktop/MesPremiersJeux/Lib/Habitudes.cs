@@ -17,7 +17,12 @@ namespace MesPremiersJeux.Lib
     /// </summary>
     public static class Habitudes
     {
-        public sealed class Entree { public string Question, Reponse; public int N; public DateTime Derniere; }
+        public sealed class Entree
+        {
+            public string Question, Reponse; public int N; public DateTime Derniere;
+            /// <summary>Le poids du choix : le nombre de fois, divisé par deux tous les 60 jours depuis la dernière fois (un goût récent compte plus qu'un ancien).</summary>
+            public double Poids => N * Math.Pow(0.5, Math.Max(0, (DateTime.Today - (Derniere == DateTime.MinValue ? DateTime.Today : Derniere)).TotalDays) / 60.0);
+        }
 
         private static readonly object _lock = new object();
         private static List<Entree> _toutes;            // tous les fichiers de la famille
@@ -102,7 +107,7 @@ namespace MesPremiersJeux.Lib
             }
         }
 
-        private static readonly HashSet<string> Ignorees = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Autre chose", "Je ne sais pas", "Les deux", "Attends", "D'accord", "Plus tard" };
+        private static readonly HashSet<string> Ignorees = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Autre chose", "Je ne sais pas", "Les deux", "Attends", "D'accord", "Plus tard", "Pas ça", "Je réfléchis", "Fini", "Encore", "Et toi ?", "Pourquoi ?" };
 
         /// <summary>Les réponses déjà choisies pour des questions proches de celle-ci (mots en commun), les plus fréquentes d'abord.</summary>
         public static List<Entree> Pour(string question, int max = 8)
@@ -120,10 +125,10 @@ namespace MesPremiersJeux.Lib
                     // Au moins un mot fort en commun, et la majorité des mots de la plus courte des deux questions.
                     int min = Math.Min(mots.Count, em.Length);
                     if (commun == 0 || commun * 2 < min) continue;
-                    if (res.TryGetValue(e.Reponse, out var x)) x.N += e.N;
+                    if (res.TryGetValue(e.Reponse, out var x)) { x.N += e.N; if (e.Derniere > x.Derniere) x.Derniere = e.Derniere; }
                     else res[e.Reponse] = new Entree { Question = e.Question, Reponse = e.Reponse, N = e.N, Derniere = e.Derniere };
                 }
-                return res.Values.OrderByDescending(x => x.N).ThenByDescending(x => x.Derniere).Take(max).ToList();
+                return res.Values.OrderByDescending(x => x.Poids).ThenByDescending(x => x.Derniere).Take(max).ToList();
             }
         }
 

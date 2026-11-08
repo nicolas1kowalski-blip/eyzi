@@ -15,6 +15,10 @@
 //  - « habitudes » : ce que l'enfant a déjà choisi pour des questions proches.
 //  - « spontane » : « Je veux dire… », ce que l'enfant pourrait vouloir dire
 //    maintenant, sans question de l'adulte.
+//  - « rebond » + « reponse » : l'enfant vient de répondre ; que pourrait-il dire
+//    ENSUITE (préciser, demander, poser une question à l'adulte) ? La
+//    conversation se poursuit : le fil de la journée (dix échanges au moins,
+//    avec qui parlait) est joint à chaque demande.
 //
 // RÉSERVÉ À L'ÉDITEUR pour l'instant : seules les licences du canal « test »
 // (celles de l'éditeur) et les numéros listés dans PARLER_LICENCES (séparés par
@@ -38,7 +42,7 @@ function clean(v, max) {
 
 // Le compteur d'IA par licence et par tablette, dans la table usage (activités « ia:… »), pour le tableau
 // de bord de l'administration : qui consomme l'IA, combien, et qui a été refusé. Jamais le contenu.
-const IA_LABELS = { 'ia:question': 'IA · questions', 'ia:photo': 'IA · photos', 'ia:spontane': 'IA · je veux dire', 'ia:refus': 'IA · refus (licence prod)' };
+const IA_LABELS = { 'ia:question': 'IA · questions', 'ia:photo': 'IA · photos', 'ia:spontane': 'IA · je veux dire', 'ia:rebond': 'IA · rebonds', 'ia:refus': 'IA · refus (licence prod)' };
 async function compterIa(supabase, key, machine, activity, ms) {
   try {
     const day = new Date().toISOString().slice(0, 10);
@@ -78,8 +82,9 @@ Les règles par type :
 - choix : chaque option proposée (dans l'ordre où l'adulte les a dites), puis "Les deux" si ça a un sens, puis "Autre chose". 6 au plus.
 - ouverte : 6 à 8 réponses concrètes et probables pour cet enfant, en PRIORITÉ prises dans son vocabulaire (ci-dessous) et dans ce que la famille dit de lui, puis "Autre chose". Quand la question porte sur une chose précise (un parfum, une couleur, un plat, un jeu, un vêtement), les réponses sont les options les plus courantes et les plus évidentes pour un enfant, les plus probables d'abord : « quel parfum de yaourt ? » → chocolat, vanille, fraise, nature, abricot… ; « quelle couleur ? » → rouge, bleu, jaune, vert, rose…
 - Un fragment qui prolonge la question d'avant (« ou du chocolat », « et de la vanille ? », « sinon dehors ») n'est JAMAIS une question fermée : c'est la question précédente complétée. Même type qu'elle, la nouvelle option en premier, puis les options précédentes utiles, puis "Autre chose".
-- consigne : 3 réponses : "D'accord", "Non", "Attends".
-- autre : 3 réponses : "D'accord", "Encore", "Je t'aime".
+- consigne : "D'accord", "Non", "Attends", puis 1 ou 2 réactions qui collent à ce qui est annoncé (« Pourquoi ? », « Après on joue ? », « Avec toi », « Pas tout de suite »). 5 au plus.
+- autre (une remarque, un récit, une phrase adressée à l'enfant sans question) : 4 à 6 RÉACTIONS qu'un enfant pourrait avoir : « Super ! », « Encore », « Pourquoi ? », « Moi aussi », « Je t'aime », « Raconte encore », « Et après ? ». Si ce n'était vraiment pas pour l'enfant : 3 réponses, "D'accord", "Encore", "Je t'aime".
+- UNE CASE INATTENDUE : pour ouverte, choix et spontane, l'avant-dernière réponse (juste avant "Autre chose") est une chose UTILE que la question n'appelle pas mais que l'enfant pourrait avoir besoin de dire maintenant : un besoin (« Je veux aller aux toilettes », « J'ai mal », « J'ai soif »), un ressenti (« Je suis fatiguée »), ou une question à l'adulte (« Et toi ? », « On y va quand ? »). Elle change selon le moment et le fil. Les cases proposées sont un point de départ, jamais un périmètre : l'enfant doit toujours pouvoir dire autre chose.
 Jamais de réponse blessante ni dangereuse.
 
 "mot" : le mot FRANÇAIS complet et sans ambiguïté de la chose à DESSINER, pour retrouver un pictogramme dans une banque française (ARASAAC) : souvent plus précis que "texte", parce que le texte est court et dépend de la question. « Nature » (parfum de yaourt) → "yaourt nature" ; « Chocolat » → "yaourt au chocolat" ou "chocolat" selon la question ; « Dehors » → "jardin" ou "parc" ; « Papa » → "papa" ; « Oui » → "oui". Un nom commun, au singulier, 1 à 3 mots, sans article.
@@ -87,7 +92,7 @@ Jamais de réponse blessante ni dangereuse.
 "emoji" : un seul emoji courant qui illustre la réponse (secours si le picto manque).
 "cle" : si la réponse correspond à un mot du vocabulaire de l'enfant (liste "cle: mot"), sa clé ; sinon "".
 
-Le vocabulaire de l'enfant, le contexte (lieu, jour, ce qu'elle a fait, ce qu'elle choisit souvent) et, s'il y en a, les derniers échanges, sont donnés dans le message. Le lieu change tout : à l'école, les réponses parlent des copains, de la maîtresse, de la récré, de la cantine ; à la maison, de la famille, des jouets, des repas ; dehors ou en voiture, de ce qu'on voit et où l'on va. Les réponses qu'elle choisit souvent passent en premier quand elles conviennent à la question. Si le message donne ce qu'elle a DÉJÀ CHOISI pour des questions proches (« habitudes »), ces réponses viennent en PREMIER dès qu'elles conviennent à la question : ce sont ses goûts à elle.`;
+Le vocabulaire de l'enfant, le contexte (lieu, jour, ce qu'elle a fait, ce qu'elle choisit souvent) et, s'il y en a, les derniers échanges de la journée (qui a parlé : l'adulte, ou l'enfant de lui-même ; il y a combien de minutes ; et quand l'enfant est sorti des cases avec « Autre chose » ou « Pas ça », signe que les propositions ne lui convenaient pas), sont donnés dans le message. Suis le FIL : une question qui revient sur ce qui vient d'être dit (« Et après ? », « Lequel ? ») se comprend avec l'échange d'avant ; ce que l'enfant a dit il y a cinq minutes (« J'ai soif ») compte encore ; ce qui date de ce matin compte moins. Le lieu change tout : à l'école, les réponses parlent des copains, de la maîtresse, de la récré, de la cantine ; à la maison, de la famille, des jouets, des repas ; dehors ou en voiture, de ce qu'on voit et où l'on va. Les réponses qu'elle choisit souvent passent en premier quand elles conviennent à la question. Si le message donne ce qu'elle a DÉJÀ CHOISI pour des questions proches (« habitudes »), ces réponses viennent en PREMIER dès qu'elles conviennent à la question : ce sont ses goûts à elle.`;
 
 const PHOTO_SCENE = `
 UNE PHOTO EST JOINTE : ce que l'adulte montre, ou ce qui entoure l'enfant (caméra arrière de la tablette). Les réponses s'appuient D'ABORD sur ce qu'on y voit : les objets, les aliments, les jouets, les vêtements, la page du livre, le lieu. Si l'adulte tient ou montre plusieurs choses, CHAQUE chose est une réponse, nommée simplement (« Le yaourt », « La compote »), les plus visibles d'abord, puis « Les deux » si ça a un sens, puis « Autre chose ». Si la question est ouverte (« qu'est-ce que tu vois ? »), 6 à 8 réponses sur ce que l'enfant peut vouloir dire de la photo (« Un chien ! », « Il est gros », « J'ai peur », « Encore »). "simple" peut nommer ce qu'on voit (« Tu veux le yaourt ou la compote ? »). Ne nomme JAMAIS une personne, ne décris ni visage ni apparence ni âge : dis « maman », « papa », « quelqu'un », « la dame ». Si la photo ne montre rien d'utile, réponds comme sans photo.`;
@@ -98,8 +103,21 @@ UNE PHOTO EST JOINTE : c'est L'ENFANT lui-même (caméra avant de la tablette). 
 const SYSTEM_SPONTANE = `Tu aides un enfant qui ne parle pas et qui s'exprime avec ses yeux sur une tablette, en regardant une case parmi quelques-unes. Personne ne lui a posé de question : c'est LUI qui veut dire quelque chose, maintenant. Tu renvoies UNIQUEMENT un objet JSON, sans texte autour, de la forme :
 {"type": "spontane", "simple": "Je veux dire…", "reponses": [{"texte": "...", "mot": "...", "picto": "...", "emoji": "...", "cle": "..."}]}
 
-"reponses" : 8 phrases courtes (2 à 6 mots) à la première personne, ce que cet enfant a le plus de chances de vouloir dire À CE MOMENT : d'après le lieu, l'heure et le moment de la journée, le jour, ce que la famille dit de lui, ce qu'il choisit souvent et ce qu'il a fait aujourd'hui. Mélange : des besoins (« Je veux aller aux toilettes », « J'ai soif », « J'ai mal », « Je suis fatiguée »), des envies (« Je veux jouer dehors », « Je veux une histoire », « Encore de la musique »), du lien (« Je veux jouer avec Inès », « Je veux ma maman », « Je t'aime »), et une ou deux propositions qui collent précisément au moment (à 16 h : « Je veux mon goûter » ; le soir : « Je veux mon doudou » ; à l'école : « Je veux jouer avec un copain »). Les plus probables d'abord. La dernière est "Autre chose". Jamais de phrase blessante ni dangereuse.
+"reponses" : 8 phrases courtes (2 à 6 mots) à la première personne, ce que cet enfant a le plus de chances de vouloir dire À CE MOMENT : d'après le lieu, l'heure et le moment de la journée, le jour, ce que la famille dit de lui, ce qu'il choisit souvent, ce qu'il a fait aujourd'hui et le fil des derniers échanges. Mélange : des besoins (« Je veux aller aux toilettes », « J'ai soif », « J'ai mal », « Je suis fatiguée »), des envies (« Je veux jouer dehors », « Je veux une histoire », « Encore de la musique »), du lien (« Je veux jouer avec Inès », « Je veux ma maman », « Je t'aime »), UNE OU DEUX QUESTIONS que l'enfant pose à l'adulte (« On fait quoi après ? », « Maman arrive quand ? », « Tu restes avec moi ? », « Et toi ? »), et une ou deux propositions qui collent précisément au moment (à 16 h : « Je veux mon goûter » ; le soir : « Je veux mon doudou » ; à l'école : « Je veux jouer avec un copain »). Les plus probables d'abord. La dernière est "Autre chose". Jamais de phrase blessante ni dangereuse.
 "mot" : le mot FRANÇAIS complet de la chose à dessiner (« toilettes », « goûter », « câlin », « peluche »), 1 à 3 mots, sans article. "picto" : le mot ANGLAIS simple correspondant (« toilet », « snack », « hug »). "emoji" : un seul emoji. "cle" : la clé du vocabulaire de l'enfant si la phrase y correspond, sinon "".`;
+
+const SYSTEM_REBOND = `Tu aides un enfant qui ne parle pas et qui s'exprime avec ses yeux sur une tablette, en regardant une case parmi quelques-unes. Un adulte lui a parlé, l'enfant VIENT DE RÉPONDRE en regardant une case. Tu proposes maintenant ce que l'enfant pourrait vouloir dire ENSUITE, pour que l'échange continue comme une vraie conversation. Tu renvoies UNIQUEMENT un objet JSON, sans texte autour, de la forme :
+{"type": "rebond", "simple": "...", "reponses": [{"texte": "...", "mot": "...", "picto": "...", "emoji": "...", "cle": "..."}]}
+
+"simple" : ce que l'enfant vient de dire, en une phrase courte à la première personne.
+"reponses" : 5 ou 6 phrases courtes (1 à 6 mots) à la première personne, variées, dans l'ordre le plus utile :
+- une ou deux PRÉCISIONS de sa réponse (« Du jus » → « Avec une paille », « Dans mon verre rose » ; « Dehors » → « Au parc », « Avec mon vélo ») ;
+- une ENVIE ou un besoin qui va avec (« Et un gâteau », « Vite, j'ai soif ») ;
+- une ou deux QUESTIONS À L'ADULTE (« Et toi ? », « On y va quand ? », « Tu viens avec moi ? », « Pourquoi ? ») ;
+- un mot de LIEN ou de ressenti (« Merci », « Je suis contente », « Je t'aime »), quand ça a un sens ;
+- une case INATTENDUE mais utile maintenant (un besoin, un ressenti, une question sur la suite), différente de ce que la question appelait.
+Pas de "Oui" ni "Non", pas de "Autre chose" ni "Fini" (la tablette les ajoute). Jamais de phrase blessante ni dangereuse. Les réponses doivent être réalistes pour un enfant de cet âge, cohérentes avec le lieu, le moment et le fil de la journée, et tenir compte de ce que la famille dit de lui et de ce qu'il choisit souvent. Si l'enfant a déjà dit cette chose dans le fil, ne la repropose pas.
+"mot" : le mot FRANÇAIS complet de la chose à dessiner (1 à 3 mots, sans article). "picto" : le mot ANGLAIS simple correspondant. "emoji" : un seul emoji. "cle" : la clé du vocabulaire de l'enfant si la phrase y correspond, sinon "".`;
 
 export default async function handler(req, res) {
   const tStart = Date.now();
@@ -121,9 +139,14 @@ export default async function handler(req, res) {
   const activites = Array.isArray(body.activites) ? body.activites.slice(0, 8).map((a) => clean(a, 40)).filter(Boolean) : [];
   const preferees = Array.isArray(body.preferees) ? body.preferees.slice(0, 15).map((a) => clean(a, 40)).filter(Boolean) : [];
   const vocab = Array.isArray(body.vocab) ? body.vocab.slice(0, 120).map((v) => ({ cle: clean(v?.cle, 40), mot: clean(v?.mot, 40) })).filter((v) => v.cle && v.mot) : [];
-  const historique = Array.isArray(body.historique) ? body.historique.slice(-3).map((h) => ({ q: clean(h?.q, 200), r: clean(h?.r, 60), t: clean(h?.t, 12), p: Array.isArray(h?.p) ? h.p.slice(0, 8).map((x) => clean(x, 40)).filter(Boolean) : [] })).filter((h) => h.q) : [];
+  const historique = Array.isArray(body.historique) ? body.historique.slice(-12).map((h) => ({
+    q: clean(h?.q, 200), r: clean(h?.r, 60), t: clean(h?.t, 12), qui: h?.qui === 'enfant' ? 'enfant' : 'adulte', ecart: h?.ecart === 'autre' ? 'autre' : h?.ecart === 'pasca' ? 'pasca' : '',
+    il: Math.max(0, Math.min(1440, parseInt(h?.il, 10) || 0)), p: Array.isArray(h?.p) ? h.p.slice(0, 8).map((x) => clean(x, 40)).filter(Boolean) : [],
+  })).filter((h) => h.q) : [];
   const suite = body.suite === true && historique.length > 0;
   const spontane = body.spontane === true;
+  const rebond = body.rebond === true && !spontane;
+  const reponse = clean(body.reponse, 80);
   const habitudes = Array.isArray(body.habitudes) ? body.habitudes.slice(0, 10).map((h) => ({ q: clean(h?.q, 80), r: clean(h?.r, 60), n: Math.max(1, Math.min(999, parseInt(h?.n, 10) || 1)) })).filter((h) => h.q && h.r) : [];
   const vue = body.vue === 'enfant' ? 'enfant' : body.vue === 'scene' ? 'scene' : '';
   // La photo : JPEG en base64, 700 000 caractères au plus (≈ 500 Ko), jamais journalisée.
@@ -171,15 +194,22 @@ export default async function handler(req, res) {
     const userText =
       (vocab.length ? `Vocabulaire de l'enfant :\n${vocab.map((v) => `${v.cle}: ${v.mot}`).join('\n')}\n\n` : '') +
       (contexte.length ? `Contexte :\n${contexte.join('\n')}\n\n` : '') +
-      (historique.length ? `Derniers échanges :\n${historique.map((h) => `Adulte : « ${h.q} »${h.p.length ? ` → cases proposées : ${h.p.join(', ')}` : ''} → l'enfant a répondu : « ${h.r || '(rien)'} »`).join('\n')}\n\n` : '') +
+      (historique.length ? `Le fil de la journée (du plus ancien au plus récent) :\n${historique.map((h) => {
+        const quand = h.il < 2 ? "à l'instant" : h.il < 60 ? `il y a ${h.il} min` : `il y a ${Math.round(h.il / 60)} h`;
+        const ecart = h.ecart === 'autre' ? " (l'enfant a demandé « Autre chose » : aucune case ne convenait)" : h.ecart === 'pasca' ? " (l'enfant a dit « Pas ça » : aucune case ne convenait)" : '';
+        if (h.qui === 'enfant' && h.t === 'rebond') return `[${quand}] L'enfant a ajouté de lui-même : « ${h.r || '(rien)'} »${ecart}`;
+        if (h.qui === 'enfant') return `[${quand}] L'enfant a voulu dire (« Je veux dire… ») : « ${h.r || '(rien)'} »${h.p.length ? ` (cases proposées : ${h.p.join(', ')})` : ''}${ecart}`;
+        return `[${quand}] Adulte : « ${h.q} »${h.p.length ? ` → cases proposées : ${h.p.join(', ')}` : ''} → l'enfant a répondu : « ${h.r || '(rien)'} »${ecart}`;
+      }).join('\n')}\n\n` : '') +
       (suite ? `ATTENTION : ce que l'adulte vient de dire est la SUITE de sa question précédente « ${historique[historique.length - 1].q} » (il ajoute ou précise une option). Ce n'est PAS une question fermée. Garde le type de la question précédente (${historique[historique.length - 1].t || 'choix'}), mets d'abord la nouvelle option, puis les cases précédentes encore utiles, puis "Autre chose".\n\n` : '') +
       (spontane ? `L'enfant veut dire quelque chose maintenant. Propose ce qu'il a le plus de chances de vouloir dire.`
+        : rebond ? `L'adulte avait dit : « ${question} ». L'enfant vient de répondre : « ${reponse} ». Que pourrait-il vouloir dire ensuite ?`
         : photo ? `L'adulte vient de dire : « ${question} » (la photo jointe montre ${vue === 'enfant' ? "l'enfant" : "ce qu'il montre ou ce qui entoure l'enfant"}).`
         : `L'adulte vient de dire : « ${question} »`);
     const userContent = photo
       ? [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photo } }, { type: 'text', text: userText }]
       : userText;
-    const systemText = (spontane ? SYSTEM_SPONTANE : SYSTEM + (photo ? (vue === 'enfant' ? PHOTO_ENFANT : PHOTO_SCENE) : ''))
+    const systemText = (spontane ? SYSTEM_SPONTANE : rebond ? SYSTEM_REBOND : SYSTEM + (photo ? (vue === 'enfant' ? PHOTO_ENFANT : PHOTO_SCENE) : ''))
       + `\nL'enfant s'appelle ${child} et a ${age} ans. Il est ${heure} h : c'est ${moment || 'la journée'}.` + (profil ? `\nCe que la famille dit de ${child} : ${profil}` : '');
     const request = {
       model: 'claude-haiku-5-5',
@@ -220,9 +250,9 @@ export default async function handler(req, res) {
     const final = await stream.finalMessage();
     flush();
     const msIa = Date.now() - t0;
-    console.log('parler', spontane ? 'spontane' : photo ? 'photo-' + vue : 'question', msIa, 'ms', final.stop_reason, text.length, nb, 'réponses', 'canal', canal.get(ck) || '?', 'licence …' + key.slice(-6));
-    if (!headerSent) emit({ type: spontane ? 'spontane' : vue === 'enfant' ? 'humeur' : 'autre', simple: spontane ? 'Je veux dire…' : question });
-    await compterIa(supabase, key, machine, spontane ? 'ia:spontane' : photo ? 'ia:photo' : 'ia:question', msIa);
+    console.log('parler', spontane ? 'spontane' : rebond ? 'rebond' : photo ? 'photo-' + vue : 'question', msIa, 'ms', final.stop_reason, text.length, nb, 'réponses', 'canal', canal.get(ck) || '?', 'licence …' + key.slice(-6));
+    if (!headerSent) emit({ type: spontane ? 'spontane' : rebond ? 'rebond' : vue === 'enfant' ? 'humeur' : 'autre', simple: spontane ? 'Je veux dire…' : rebond ? reponse : question });
+    await compterIa(supabase, key, machine, spontane ? 'ia:spontane' : rebond ? 'ia:rebond' : photo ? 'ia:photo' : 'ia:question', msIa);
     emit({ fin: true, ms: { ia: msIa, total: Date.now() - tStart }, stop: final.stop_reason, n: nb });
     res.end();
     return;

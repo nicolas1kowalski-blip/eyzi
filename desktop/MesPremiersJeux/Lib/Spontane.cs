@@ -11,7 +11,8 @@ namespace MesPremiersJeux.Lib
     /// 💬 « JE VEUX DIRE… » : ce que l'enfant pourrait vouloir dire MAINTENANT,
     /// sans qu'on lui ait posé de question. Les propositions dépendent du lieu,
     /// du moment de la journée, du jour, de la fiche de l'enfant et de ses
-    /// habitudes. Elles sont demandées à l'IA au plus huit fois par jour et
+    /// habitudes, et comprennent des questions que l'enfant pose à l'adulte
+    /// (« On fait quoi après ? »). Elles sont demandées à l'IA au plus huit fois par jour et
     /// gardées trois heures pour un même contexte ; sans réseau, une liste
     /// toute faite selon le lieu et l'heure.
     /// </summary>
@@ -62,7 +63,7 @@ namespace MesPremiersJeux.Lib
             if (s != null && s.ListenAnswers && !string.IsNullOrWhiteSpace(s.LicenceKey) && !quota)
             {
                 Compter();
-                var res = await Suggest.PourFlux(s, "Je veux dire", Views.CommBoard.Vocabulaire().Select(m => new Suggest.Mot { Cle = m.Cle, Label = m.Label }).ToList(), null,
+                var res = await Suggest.PourFlux(s, "Je veux dire", Views.CommBoard.Vocabulaire().Select(m => new Suggest.Mot { Cle = m.Cle, Label = m.Label }).ToList(), Conversation.Recents(),
                     Suggest.ContexteActuel(s), null, surReponse, false, new Suggest.Options { Spontane = true });
                 if (res.EnLigne && res.Reponses.Count > 0)
                 {
@@ -89,17 +90,17 @@ namespace MesPremiersJeux.Lib
             if (lieu == "ecole")
             {
                 Add("Je veux aller aux toilettes", "toilettes", "🚽"); Add("J'ai mal", "douleur", "🤕"); Add("Je veux jouer avec un copain", "ami", "🧒"); Add("J'ai soif", "boire", "💧");
-                Add("Je suis fatiguée", "fatigue", "😴"); Add("Je veux une histoire", "livre", "📖"); Add("Je veux ma maman", "maman", "👩"); Add("Autre chose", "", "💭");
+                Add("Je suis fatiguée", "fatigue", "😴"); Add("Maman arrive quand ?", "maman", "👩"); Add("On fait quoi après ?", "après", "⏭️"); Add("Autre chose", "", "💭");
             }
             else if (lieu == "voiture")
             {
                 Add("On arrive quand ?", "voiture", "🚗"); Add("Je veux de la musique", "musique", "🎵"); Add("J'ai soif", "boire", "💧"); Add("J'ai mal au ventre", "ventre", "🤢");
-                Add("Je veux mon doudou", "peluche", "🧸"); Add("Je veux regarder dehors", "fenêtre", "🪟"); Add("Autre chose", "", "💭");
+                Add("Je veux mon doudou", "peluche", "🧸"); Add("On va où ?", "où", "🗺️"); Add("Autre chose", "", "💭");
             }
             else if (lieu == "dehors")
             {
                 Add("Je veux aller au parc", "parc", "🛝"); Add("Je veux un câlin", "câlin", "🤗"); Add("J'ai froid", "froid", "🥶"); Add("J'ai soif", "boire", "💧");
-                Add("Je veux rentrer", "maison", "🏠"); Add("Regarde !", "regarder", "👀"); Add("Autre chose", "", "💭");
+                Add("Je veux rentrer", "maison", "🏠"); Add("Regarde !", "regarder", "👀"); Add("On fait quoi après ?", "après", "⏭️"); Add("Autre chose", "", "💭");
             }
             else
             {
@@ -107,7 +108,7 @@ namespace MesPremiersJeux.Lib
                 else if (m == "gouter") { Add("Je veux mon goûter", "goûter", "🍪"); Add("J'ai soif", "boire", "💧"); Add("Je veux jouer dehors", "jardin", "🌳"); Add("Je veux une histoire", "livre", "📖"); }
                 else if (m == "soir" || m == "coucher") { Add("Je suis fatiguée", "fatigue", "😴"); Add("Je veux mon doudou", "peluche", "🧸"); Add("Je veux une histoire", "livre", "📖"); Add("Je veux un câlin", "câlin", "🤗"); }
                 else { Add("Je veux jouer", "jouer", "🎮"); Add("J'ai soif", "boire", "💧"); Add("Je veux un câlin", "câlin", "🤗"); Add("Je veux de la musique", "musique", "🎵"); }
-                Add("J'ai mal", "douleur", "🤕"); Add("Je veux aller aux toilettes", "toilettes", "🚽"); Add("Je t'aime", "amour", "❤️"); Add("Autre chose", "", "💭");
+                Add("J'ai mal", "douleur", "🤕"); Add("Je veux aller aux toilettes", "toilettes", "🚽"); Add("Tu viens jouer avec moi ?", "jouer", "🤝"); Add("Autre chose", "", "💭");
             }
             return l.Take(8).ToList();
         }

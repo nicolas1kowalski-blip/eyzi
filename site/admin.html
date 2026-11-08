@@ -263,13 +263,16 @@
     // 3. L'écoute des familles : qui a réglé Azure, combien de questions, et d'où viennent les réponses.
     var avecEc = fam.filter(function(f){ return f.ecoute; });
     var se = document.createElement('details'); se.className = 'sec'; se.open = true;
-    se.innerHTML = '<summary>👂 L\'écoute des familles ('+avecEc.filter(function(f){ return f.ecoute.azure_30; }).length+' avec une clé Azure sur 30 jours)</summary><div><p class="sub2">Compté sur la tablette et envoyé avec l\'usage : la clé Azure réglée (en jours), les questions entendues, les réponses choisies par l\'enfant, celles venues de l\'IA et celles devinées sans elle. Une famille « sans clé » n\'entend rien ; une famille avec des réponses devinées utilise l\'écoute sans coûter d\'IA.</p>'
-      + (avecEc.length ? '<table class="grid"><tr><th>Famille</th><th>Clé Azure</th><th>Questions</th><th>Réponses choisies</th><th>De l\'IA</th><th>Devinées</th><th>Tablettes</th><th>Dernière question</th></tr>'
+    se.innerHTML = '<summary>👂 L\'écoute des familles ('+avecEc.filter(function(f){ return f.ecoute.azure_30; }).length+' avec une clé Azure sur 30 jours)</summary><div><p class="sub2">Compté sur la tablette et envoyé avec l\'usage : la clé Azure réglée (en jours), les questions entendues, les réponses choisies par l\'enfant, celles venues de l\'IA et celles devinées sans elle. Une famille « sans clé » n\'entend rien ; une famille avec des réponses devinées utilise l\'écoute sans coûter d\'IA. « Rebonds » : ce que l\'enfant a ajouté de lui-même après sa réponse. « À côté » : les fois où aucune case ne convenait (« Autre chose », « Pas ça »), en part des questions ; un taux élevé veut dire que les propositions enferment l\'enfant.</p>'
+      + (avecEc.length ? '<table class="grid"><tr><th>Famille</th><th>Clé Azure</th><th>Questions</th><th>Réponses choisies</th><th>De l\'IA</th><th>Devinées</th><th>Rebonds</th><th>À côté</th><th>Tablettes</th><th>Dernière question</th></tr>'
         + avecEc.sort(function(a,b){ return (b.ecoute.dernier||'').localeCompare(a.ecoute.dernier||''); }).map(function(f){
             var t = f.ecoute.trente||{}, a = f.ecoute.total||{};
             function c(k){ return (t[k]||0)+' <small style="color:var(--muted)">/ '+(a[k]||0)+'</small>'; }
+            var aCote = (t.autre||0)+(t.pasca||0), q = t.question||0;
+            var taux = q ? Math.round(100*aCote/q) : 0;
+            var cote = aCote ? aCote+' <small style="color:var(--muted)">('+taux+' % · '+(t.autre||0)+' autre chose, '+(t.pasca||0)+' pas ça'+((t.theme||0)?', '+(t.theme||0)+' mot'+((t.theme||0)>1?'s':'')+' de thème':'')+')</small>' : '0';
             return '<tr><td><b>'+esc(f.famille)+'</b></td><td>'+(f.ecoute.azure_30 ? '<span class="badge b-ok">oui</span> '+f.ecoute.azure_30+' j / 30' : f.ecoute.azure_jours ? '<span class="badge b-wait">plus maintenant</span>' : '<span class="badge b-off">non</span>')+'</td>'
-              + '<td>'+c('question')+'</td><td>'+c('reponse')+'</td><td>'+c('ia')+'</td><td>'+c('devine')+'</td><td>'+f.ecoute.tablettes+'</td><td>'+esc(daysAgo(f.ecoute.dernier))+'</td></tr>';
+              + '<td>'+c('question')+'</td><td>'+c('reponse')+'</td><td>'+c('ia')+'</td><td>'+c('devine')+'</td><td>'+c('rebond')+'</td><td>'+cote+'</td><td>'+f.ecoute.tablettes+'</td><td>'+esc(daysAgo(f.ecoute.dernier))+'</td></tr>';
           }).join('') + '</table><p class="sub2" style="margin-top:8px">Lecture : 30 derniers jours / depuis le début. Le compteur démarre avec la version 230 de l\'application sur la tablette.</p>'
         : '<p class="sub2">Rien pour le moment : il faut la version 230 ou plus sur les tablettes.</p>') + '</div>';
     list.appendChild(se);

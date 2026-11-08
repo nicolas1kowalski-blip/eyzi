@@ -17,9 +17,13 @@ namespace MesPremiersJeux.Views
     /// quelqu'un dit « Dis Eyzi » (ou appuie sur le micro), et l'activité du
     /// dessous reprend quand elle se referme. Quatre états, pensés pour
     /// l'enfant seul : Attente (« Parle-moi »), Écoute (l'oreille rouge),
-    /// Grille (la question en grand, les cases), Confirmation (ce qui a été
-    /// dit, puis Encore · Autre chose · Fini). Tout ce qui sert à l'adulte
-    /// tient sur la ligne grise du bas.
+    /// Grille (la question en grand, les cases), Rebond (ce qui a été dit, puis
+    /// ce que l'enfant pourrait dire ensuite : préciser, demander, poser une
+    /// question à l'adulte ; le micro réécoute l'adulte sans « Dis Eyzi »), et
+    /// Thèmes (« Autre chose » ou « Pas ça » : des grilles très complètes par
+    /// thème, pour aller tout à fait ailleurs). Les cases proposées sont un point
+    /// de départ, jamais un périmètre. Tout ce qui sert à l'adulte tient sur la
+    /// ligne grise du bas.
     /// </summary>
     public sealed class EcouteView : UserControl
     {
@@ -32,23 +36,26 @@ namespace MesPremiersJeux.Views
         public event Action MotsRequested;    // « Mes mots » : le tableau de communication (monde Parler)
 
         private Settings _settings;
-        private readonly Grid _root, _attente, _ecoute, _grilleP, _confirm;
-        private readonly TextBlock _parleMoi, _sousTitre, _partielText, _question, _wait, _confirmText, _status, _ia;
+        private readonly Grid _root, _attente, _ecoute, _grilleP;
+        private readonly TextBlock _parleMoi, _sousTitre, _partielText, _question, _fil, _wait, _status, _ia;
         private readonly UniformGrid _answers;
-        private readonly Border _confirmVisual;
         private readonly Ellipse _anneau1, _anneau2;
-        private readonly Border _bas, _photoBox, _flash;
+        private readonly Border _bas, _photoBox, _ditBox, _flash;
         private readonly Button _btnScene, _btnEnfant;
         private string _photoB64, _photoVue;
-        private readonly List<Suggest.Echange> _historique = new List<Suggest.Echange>();
-        private Suggest.Echange _enCours;
+        private Suggest.Echange _enCours, _speculatifEchange;
         private string _speculatif, _partiel, _etat = "attente";
         private readonly DispatcherTimer _partielTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
-        private readonly DispatcherTimer _autoClose = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
-        private int _grilleRows = 1, _grilleCols = 3;
+        private readonly DispatcherTimer _autoClose = new DispatcherTimer { Interval = TimeSpan.FromSeconds(25) };
+        private readonly DispatcherTimer _ecouteAuto = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        private int _grilleRows = 1, _grilleCols = 3, _maxCases = 8, _chaine;
         private string _grilleType = "autre", _statusEcoute = "", _statusIa = "";
+        private readonly List<Suggest.Reponse> _derniereGrille = new List<Suggest.Reponse>(); // les cases de la dernière grille IA, pour « Revoir les cases »
+        private string _derniereType = "autre";
 
         public string Etat => _etat;
+        /// <summary>La grille est à l'écran (cases, rebonds ou thèmes) : une phrase partielle ne doit pas la chasser.</summary>
+        private bool EnGrille => _etat == "grille" || _etat == "rebond" || _etat == "themes";
 
         public EcouteView()
         {
@@ -102,10 +109,17 @@ namespace MesPremiersJeux.Views
             _question = new TextBlock { FontSize = 46, FontWeight = FontWeights.ExtraBold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(60, 22, 60, 8), MaxWidth = 1500 };
             // 📷 La photo qui vient d'être prise, à gauche de la question (l'enfant voit ce que l'IA a vu).
             _photoBox = new Border { Width = 250, Height = 188, CornerRadius = new CornerRadius(18), Margin = new Thickness(30, 14, 0, 8), Background = Brushes.White, Padding = new Thickness(6), Visibility = Visibility.Collapsed, Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 20, ShadowDepth = 4, Opacity = 0.18 } };
+            // ✅ Ce que l'enfant vient de dire (état Rebond), à gauche, à la place de la photo.
+            _ditBox = new Border { Width = 200, Height = 200, CornerRadius = new CornerRadius(30), Margin = new Thickness(30, 10, 0, 8), Background = Brushes.White, Padding = new Thickness(18), Visibility = Visibility.Collapsed, Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 20, ShadowDepth = 4, Opacity = 0.18 } };
             var tete = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(_photoBox, Dock.Left);
+            DockPanel.SetDock(_ditBox, Dock.Left);
             tete.Children.Add(_photoBox);
-            tete.Children.Add(_question);
+            tete.Children.Add(_ditBox);
+            // Le fil : les deux derniers échanges, en petit sous la question (et la phrase que le micro entend, en direct).
+            _fil = new TextBlock { FontSize = 20, Foreground = Gris, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(60, 0, 60, 6), MaxWidth = 1500, Visibility = Visibility.Collapsed };
+            var qf = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _question, _fil } };
+            tete.Children.Add(qf);
             _grilleP.Children.Add(tete);
             _answers = new UniformGrid { Margin = new Thickness(40, 0, 40, 10) };
             _wait = new TextBlock { FontSize = 34, Foreground = Dark, Opacity = 0.7, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
@@ -113,24 +127,6 @@ namespace MesPremiersJeux.Views
             Grid.SetRow(gh, 1);
             _grilleP.Children.Add(gh);
             _root.Children.Add(_grilleP);
-
-            // ---------- Confirmation : ce qui a été dit, puis la suite
-            _confirm = new Grid { Visibility = Visibility.Collapsed, Background = new SolidColorBrush(Color.FromRgb(0xDF, 0xF5, 0xE7)) };
-            _confirm.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            _confirm.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            var cp = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            _confirmVisual = new Border { Width = 300, Height = 300, CornerRadius = new CornerRadius(40), Background = Brushes.White, Padding = new Thickness(40) };
-            cp.Children.Add(_confirmVisual);
-            _confirmText = new TextBlock { FontSize = 72, FontWeight = FontWeights.ExtraBold, Foreground = Vert, HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 1100, Margin = new Thickness(0, 16, 0, 0) };
-            cp.Children.Add(_confirmText);
-            _confirm.Children.Add(cp);
-            var row = new UniformGrid { Columns = 3, Rows = 1, Height = 190, Margin = new Thickness(40, 0, 40, 20) };
-            row.Children.Add(Suite("encore", "🔁", "Encore", () => { Speech.SayAlways("Encore !"); GazeStats.RecordComm("ecoute-encore"); Fermer(); }));
-            row.Children.Add(Suite("", "💭", "Autre chose", () => { _autoClose.Stop(); Montrer("grille"); }));
-            row.Children.Add(Suite("comm-fini", "🏁", "Fini", () => { GazeStats.RecordComm("ecoute-fini"); Fermer(); }));
-            Grid.SetRow(row, 1);
-            _confirm.Children.Add(row);
-            _root.Children.Add(_confirm);
 
             // ---------- La ligne du bas, pour l'adulte : maison · état · micro
             var basGrid = new DockPanel { LastChildFill = true };
@@ -173,19 +169,21 @@ namespace MesPremiersJeux.Views
             {
                 if (!IsVisible) return;
                 _partiel = t;
-                if (_etat == "ecoute" || _etat == "attente" || _etat == "confirm") { if (_etat != "ecoute") Montrer("ecoute"); _partielText.Text = t; }
+                // Pendant un rebond ou un thème, la phrase de l'adulte s'écrit dans le fil, sans chasser les cases : la grille viendra avec la phrase entière.
+                if (_etat == "rebond" || _etat == "themes") { _fil.Text = "👂 " + t; _fil.Visibility = Visibility.Visible; Emoji.Fix(_fil); return; }
+                if (_etat == "ecoute" || _etat == "attente") { if (_etat != "ecoute") Montrer("ecoute"); _partielText.Text = t; }
                 _partielTimer.Stop(); _partielTimer.Start();
             }));
             _partielTimer.Tick += (s, e) =>
             {
                 _partielTimer.Stop();
                 var t = (_partiel ?? "").Trim();
-                if (t.Length < 8 || !IsVisible || _settings == null || !_settings.ListenAnswers) return;
+                if (t.Length < 8 || !IsVisible || _settings == null || !_settings.ListenAnswers || _etat == "rebond" || _etat == "themes") return;
                 if (_speculatif != null && Pictos.Norm(_speculatif) == Pictos.Norm(t)) return;
                 _speculatif = t;
                 ShowHeard(t, speculatif: true);
             };
-            _autoClose.Tick += (s, e) => { _autoClose.Stop(); if (_etat == "confirm") Fermer(); };
+            _autoClose.Tick += (s, e) => { _autoClose.Stop(); if (_etat == "rebond") Fermer(); };
         }
 
         // ------------------------------------------------------------------
@@ -199,7 +197,8 @@ namespace MesPremiersJeux.Views
             _statusIa = "";
             _ia.Visibility = Visibility.Collapsed;
             _partielText.Text = "";
-            _photoB64 = null; _photoBox.Visibility = Visibility.Collapsed;
+            _photoB64 = null; _photoBox.Visibility = Visibility.Collapsed; _ditBox.Visibility = Visibility.Collapsed;
+            _chaine = 0;
             _btnScene.Visibility = _btnEnfant.Visibility = _settings.CameraParler ? Visibility.Visible : Visibility.Collapsed;
             Montrer(ecoute ? "ecoute" : "attente");
             SurEtatEcoute(Listening.Status);
@@ -207,19 +206,19 @@ namespace MesPremiersJeux.Views
         }
 
         /// <summary>Le mot-clé a été entendu, ou le micro pressé : l'oreille rouge.</summary>
-        public void Ecouter() { if (_etat != "grille") Montrer("ecoute"); }
+        public void Ecouter() { if (!EnGrille) Montrer("ecoute"); }
 
         public void Fermer() { Arreter(); CloseRequested?.Invoke(); }
 
-        private void Arreter() { _autoClose.Stop(); _partielTimer.Stop(); _speculatif = null; }
+        private void Arreter() { _autoClose.Stop(); _partielTimer.Stop(); _ecouteAuto.Stop(); _speculatif = null; _speculatifEchange = null; }
 
         private void Montrer(string etat)
         {
             _etat = etat;
             _attente.Visibility = etat == "attente" ? Visibility.Visible : Visibility.Collapsed;
             _ecoute.Visibility = etat == "ecoute" ? Visibility.Visible : Visibility.Collapsed;
-            _grilleP.Visibility = etat == "grille" ? Visibility.Visible : Visibility.Collapsed;
-            _confirm.Visibility = etat == "confirm" ? Visibility.Visible : Visibility.Collapsed;
+            _grilleP.Visibility = EnGrille ? Visibility.Visible : Visibility.Collapsed;
+            if (etat != "rebond") { _autoClose.Stop(); _ecouteAuto.Stop(); }
             if (etat == "ecoute") Pulser(); else { _anneau1.BeginAnimation(OpacityProperty, null); _anneau2.BeginAnimation(OpacityProperty, null); }
         }
 
@@ -236,7 +235,11 @@ namespace MesPremiersJeux.Views
             switch (st)
             {
                 case "veille": _statusEcoute = "je veille sur « Dis Eyzi »"; break;
-                case "ecoute": _statusEcoute = "j'écoute"; if (IsVisible && _etat != "grille") Montrer("ecoute"); break;
+                case "ecoute":
+                    _statusEcoute = "j'écoute";
+                    if (IsVisible && !EnGrille) Montrer("ecoute");
+                    else if (_etat == "rebond" || _etat == "themes") { _fil.Text = "👂 J'écoute la réponse…"; _fil.Visibility = Visibility.Visible; Emoji.Fix(_fil); }
+                    break;
                 case "pret": _statusEcoute = "écoute prête (micro en bas à droite)"; break;
                 case "erreur": _statusEcoute = "écoute en panne : " + Listening.LastError; break;
                 default: _statusEcoute = "écoute éteinte"; break;
@@ -285,7 +288,7 @@ namespace MesPremiersJeux.Views
             question = question ?? (avant ? "Comment tu te sens ?" : "Qu'est-ce que tu vois ? Qu'est-ce que tu veux ?");
             Montrer("grille");
             _answers.Children.Clear();
-            _photoBox.Visibility = Visibility.Collapsed;
+            _photoBox.Visibility = Visibility.Collapsed; _ditBox.Visibility = Visibility.Collapsed; _question.Foreground = Dark;
             _question.Text = avant ? "🙂 Je regarde " + (_settings.ChildName ?? "l'enfant") + "…" : "📷 Je regarde…";
             Emoji.Fix(_question);
             _wait.Visibility = Visibility.Visible; _wait.Text = "Clic !";
@@ -328,17 +331,19 @@ namespace MesPremiersJeux.Views
         private void ShowProposition(string question, List<Suggest.Reponse> reponses, string type)
         {
             if (_settings == null) _settings = Settings.Load();
-            _partielTimer.Stop(); _speculatif = null; _autoClose.Stop();
-            _photoBox.Visibility = Visibility.Collapsed;
+            _partielTimer.Stop(); _speculatif = null; _autoClose.Stop(); _chaine = 0;
+            _photoBox.Visibility = Visibility.Collapsed; _ditBox.Visibility = Visibility.Collapsed; _question.Foreground = Dark;
             _enCours = new Suggest.Echange { Question = question, Type = type };
-            _historique.Add(_enCours);
-            while (_historique.Count > 3) _historique.RemoveAt(0);
+            Conversation.Ajouter(_enCours);
             Montrer("grille");
             _question.Text = Titre(question, null);
+            MettreFil();
             Ia(null);
             _wait.Visibility = Visibility.Collapsed;
-            PreparerGrille(type, reponses.Count);
+            PreparerGrille(type, reponses.Count + 1);
             foreach (var r in reponses) AjouterCase(r, type);
+            AjouterPasCa();
+            Conversation.Sauver();
             Speech.SayAlways(question);
         }
 
@@ -346,13 +351,15 @@ namespace MesPremiersJeux.Views
         public async void ShowSpontane()
         {
             if (_settings == null) _settings = Settings.Load();
-            _partielTimer.Stop(); _speculatif = null; _autoClose.Stop();
-            _photoBox.Visibility = Visibility.Collapsed;
-            _enCours = new Suggest.Echange { Question = "Je veux dire", Type = "spontane" };
+            _partielTimer.Stop(); _speculatif = null; _autoClose.Stop(); _chaine = 0;
+            _photoBox.Visibility = Visibility.Collapsed; _ditBox.Visibility = Visibility.Collapsed; _question.Foreground = Dark;
+            _enCours = new Suggest.Echange { Question = "Je veux dire", Type = "spontane", Qui = "enfant" };
+            Conversation.Ajouter(_enCours);
             var monEchange = _enCours;
             Montrer("grille");
             _question.Text = "💬 Je veux dire…";
             Emoji.Fix(_question);
+            MettreFil();
             Ia(null);
             PreparerGrille("ouverte", 8);
             _wait.Visibility = Visibility.Visible; _wait.Text = "Je réfléchis…";
@@ -367,6 +374,8 @@ namespace MesPremiersJeux.Views
             _wait.Visibility = Visibility.Collapsed;
             if (res.EnLigne) Ia("IA · " + res.Info, ok: true); else Ia("⚠️ " + res.Info);
             if (_answers.Children.Count == 0) foreach (var r in Spontane.Defaults(_settings)) AjouterCase(r, "spontane");
+            AjouterPasCa();
+            Conversation.Sauver();
         }
 
         private async void Lancer(string text, bool speculatif, Suggest.Options opt)
@@ -376,33 +385,42 @@ namespace MesPremiersJeux.Views
                 _partielTimer.Stop();
                 if (_speculatif != null && _enCours != null && Pictos.Norm(_speculatif) == Pictos.Norm(text))
                 {
-                    _speculatif = null;
+                    // La phrase entière confirme la spéculation : la grille reste, l'échange devient définitif.
+                    _speculatif = null; _speculatifEchange = null;
                     _enCours.Question = text;
+                    Conversation.Sauver();
                     if (_etat == "grille" && !_question.Text.StartsWith("+")) _question.Text = Titre(text, _enCours);
                     return;
                 }
                 _speculatif = null;
             }
-            _autoClose.Stop();
-            _enCours = new Suggest.Echange { Question = text };
-            _historique.Add(_enCours);
-            while (_historique.Count > 3) _historique.RemoveAt(0);
-            var histo = _historique.Take(_historique.Count - 1).ToList();
+            _autoClose.Stop(); _ecouteAuto.Stop(); _chaine = 0;
+            // Une spéculation qui n'a pas abouti (la phrase entière était autre) sort du fil.
+            if (_speculatifEchange != null) { Conversation.Retirer(_speculatifEchange); _speculatifEchange = null; }
+            _enCours = new Suggest.Echange { Question = text, Qui = "adulte" };
+            if (speculatif) _speculatifEchange = _enCours;
+            var histo = Conversation.Recents(_enCours);
+            Conversation.Ajouter(_enCours);
             var monEchange = _enCours;
 
-            var precedent = histo.LastOrDefault();
-            bool suite = precedent != null && (DateTime.Now - precedent.At).TotalSeconds < 120 && Suggest.EstSuite(text);
+            // « ou du chocolat » : la suite de la dernière question de l'adulte, si elle date de moins de deux minutes.
+            var precedent = histo.LastOrDefault(h => h.Qui != "enfant");
+            bool suite = precedent != null && precedent == histo.LastOrDefault(h => h.Type != "rebond") && (DateTime.Now - precedent.At).TotalSeconds < 120 && Suggest.EstSuite(text);
             monEchange.Suite = suite;
             var secours = opt != null && opt.Vue == "enfant" ? Suggest.DefaultsHumeur(text) : suite ? Suggest.DefaultsSuite(text, precedent) : Suggest.Defaults(text);
             monEchange.Type = secours.Type;
             if (opt == null || string.IsNullOrEmpty(opt.PhotoB64)) _photoBox.Visibility = Visibility.Collapsed;
+            _ditBox.Visibility = Visibility.Collapsed; _question.Foreground = Dark;
             Montrer("grille");
             _question.Text = suite ? Titre(precedent.Question, precedent) + "\n+ « " + text + " »" : Titre(text, null);
+            MettreFil();
             bool enLigne = _settings.ListenAnswers && !string.IsNullOrWhiteSpace(_settings.LicenceKey);
             if (!enLigne)
             {
-                PreparerGrille(secours.Type, secours.Reponses.Count);
+                PreparerGrille(secours.Type, secours.Reponses.Count + 1);
                 foreach (var r in secours.Reponses) AjouterCase(r, secours.Type);
+                AjouterPasCa();
+                Conversation.Sauver();
                 Ia("⚠️ Réponses devinées, sans IA : " + (!_settings.ListenAnswers ? "la case « Proposer des réponses » est décochée (⚙ → Parler & IA → Écoute)." : "pas de licence en ligne."));
                 if (!speculatif) Speech.SayAlways(text);
                 return;
@@ -446,11 +464,29 @@ namespace MesPremiersJeux.Views
             }
             else
             {
-                PreparerGrille(secours.Type, secours.Reponses.Count);
+                PreparerGrille(secours.Type, secours.Reponses.Count + 1);
                 foreach (var r in secours.Reponses) AjouterCase(r, secours.Type);
                 Ia("⚠️ Réponses devinées : l'IA n'a pas répondu" + (string.IsNullOrEmpty(res.Erreur) ? "." : " (" + res.Erreur + ")."));
             }
+            if (_etat == "grille") AjouterPasCa();
+            Conversation.Sauver();
         }
+
+        /// <summary>Le fil sous la question : les deux derniers échanges finis (« Tu veux du jus ? → Du jus de pomme »).</summary>
+        private void MettreFil()
+        {
+            try
+            {
+                var l = Conversation.Recents(_enCours, 2).Where(h => !string.IsNullOrEmpty(h.Reponse)).ToList();
+                if (l.Count == 0) { _fil.Visibility = Visibility.Collapsed; return; }
+                _fil.Text = string.Join("   ·   ", l.Select(h => (h.Qui == "enfant" && h.Type != "spontane" ? "" : Court(h.Question) + " → ") + "« " + Court(h.Reponse) + " »"));
+                _fil.Visibility = Visibility.Visible;
+                Emoji.Fix(_fil);
+            }
+            catch { _fil.Visibility = Visibility.Collapsed; }
+        }
+
+        private static string Court(string t) { t = (t ?? "").Trim(); return t.Length > 60 ? t.Substring(0, 58) + "…" : t; }
 
         private static string Titre(string text, Suggest.Echange e)
         {
@@ -463,6 +499,8 @@ namespace MesPremiersJeux.Views
         {
             _answers.Children.Clear();
             _grilleType = type ?? "autre";
+            _maxCases = _grilleType == "rebond" ? 6 : 8;
+            if (_etat == "grille") { _derniereGrille.Clear(); _derniereType = _grilleType; }
             int attendu = nConnu > 0 ? nConnu : _grilleType == "ouverte" ? 8 : _grilleType == "choix" ? 4 : 3;
             _grilleRows = attendu <= 3 ? 1 : 2;
             _grilleCols = (int)Math.Ceiling(attendu / (double)_grilleRows);
@@ -470,10 +508,9 @@ namespace MesPremiersJeux.Views
             _answers.Columns = _grilleCols;
         }
 
-        private void AjouterCase(Suggest.Reponse r, string type)
+        /// <summary>La grille grandit d'une case : une ligne jusqu'à trois, deux ensuite.</summary>
+        private void Agrandir()
         {
-            if (_answers.Children.Count >= 8) return;
-            if (_enCours != null && !string.IsNullOrEmpty(r.Texte)) _enCours.Propositions.Add(r.Texte);
             int n = _answers.Children.Count + 1;
             if (n > _grilleRows * _grilleCols)
             {
@@ -481,38 +518,259 @@ namespace MesPremiersJeux.Views
                 else _grilleCols = (int)Math.Ceiling(n / (double)_grilleRows);
                 _answers.Rows = _grilleRows; _answers.Columns = _grilleCols;
             }
-            var cap = r;
-            var mot = CommBoard.Trouver(r.Cle);
+        }
+
+        private Button Tuile(FrameworkElement visuel, string texte, Action action)
+        {
             bool grand = _grilleRows == 1;
             var st = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            st.Children.Add(new Viewbox { Child = Visuel(r, mot, _enCours?.Question), Height = grand ? 260 : 170, Stretch = Stretch.Uniform });
-            st.Children.Add(new TextBlock { Text = r.Texte, FontSize = grand ? 40 : 30, FontWeight = FontWeights.Bold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = 380, Margin = new Thickness(0, 8, 0, 0) });
+            st.Children.Add(new Viewbox { Child = visuel, Height = grand ? 260 : 170, Stretch = Stretch.Uniform });
+            st.Children.Add(new TextBlock { Text = texte, FontSize = grand ? 40 : 30, FontWeight = FontWeights.Bold, Foreground = Dark, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = 380, Margin = new Thickness(0, 8, 0, 0) });
             var b = new Button
             {
                 Style = (Style)Application.Current.Resources["MenuTile"],
                 Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new Thickness(10, 8, 10, 8), Child = st },
                 Width = double.NaN, Height = double.NaN, Margin = new Thickness(8), Opacity = 0,
             };
-            b.Click += (s, e) => Choisir(cap, mot, type);
+            b.Click += (s, e) => action();
             Emoji.FixTree(st);
             _answers.Children.Add(b);
             b.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
+            return b;
         }
 
-        /// <summary>L'enfant a regardé une case : la tablette le dit, l'écran le montre en grand, puis Encore · Autre chose · Fini.</summary>
+        /// <summary>Une case proposée (IA ou secours). <paramref name="noter"/> : elle compte parmi les propositions de l'échange.</summary>
+        private void AjouterCase(Suggest.Reponse r, string type, bool noter = true)
+        {
+            if (_answers.Children.Count >= _maxCases) return;
+            if (noter && _enCours != null && !string.IsNullOrEmpty(r.Texte)) _enCours.Propositions.Add(r.Texte);
+            if (noter && _etat == "grille") _derniereGrille.Add(r);
+            Agrandir();
+            var cap = r;
+            var mot = CommBoard.Trouver(r.Cle);
+            Tuile(Visuel(r, mot, _enCours?.Question), r.Texte, () => Choisir(cap, mot, type));
+        }
+
+        /// <summary>Une case fixe (Pas ça, Autre chose, Fini, un thème, une page) : pas une proposition de l'IA.</summary>
+        private void AjouterFixe(string emoji, string texte, Action action, string mot = null)
+        {
+            Agrandir();
+            FrameworkElement vis = null;
+            if (!string.IsNullOrEmpty(mot)) { try { vis = Arasaac.Picture(mot, 200, Art.Visual("", emoji, 200)); } catch { } }
+            Tuile(vis ?? Art.Visual("", emoji, 200), texte, action);
+        }
+
+        /// <summary>🤔 « Pas ça » : aucune case ne convient, ou l'enfant veut réfléchir. Toujours là, sur toutes les grilles.</summary>
+        private void AjouterPasCa()
+        {
+            if (_answers.Children.Count == 0) return;
+            AjouterFixe("🤔", "Pas ça", () =>
+            {
+                Speech.SayAlways("Ce n'est pas ça… je réfléchis.");
+                if (_enCours != null) { _enCours.Ecart = "pasca"; Conversation.Sauver(); }
+                try { Usage.Count("ecoute:pasca"); } catch { }
+                GazeStats.RecordComm("ecoute-pasca");
+                MontrerThemes(0);
+            });
+        }
+
+        private static bool EstAutre(string t)
+        {
+            var n = Pictos.Norm(t ?? "");
+            return n == "autre chose" || n == "je veux autre chose" || n == "autre";
+        }
+
+        /// <summary>L'enfant a regardé une case : la tablette le dit, puis les rebonds (ou les thèmes pour « Autre chose »).</summary>
         private void Choisir(Suggest.Reponse r, CommBoard.Mot mot, string type)
         {
+            if (EstAutre(r.Texte))
+            {
+                Speech.SayAlways("Autre chose !");
+                if (_enCours != null) { _enCours.Ecart = "autre"; Conversation.Sauver(); }
+                try { Usage.Count("ecoute:autre"); } catch { }
+                GazeStats.RecordComm("ecoute-autre");
+                MontrerThemes(0);
+                return;
+            }
             var dit = mot != null && !string.IsNullOrEmpty(mot.Dit) ? mot.Dit : r.Texte;
             if (mot == null || !VoiceBank.Play("comm-" + mot.Cle)) Speech.SayAlways(dit);
-            if (_enCours != null) _enCours.Reponse = r.Texte;
             ReponsesPref.Choisie(r.Texte);
-            try { Habitudes.Choisie(_enCours?.Question, r.Texte); Usage.Count("ecoute:reponse"); } catch { }
+            if (_etat == "rebond")
+            {
+                // Un rebond : c'est l'enfant qui parle, de lui-même, dans la suite de la question.
+                var e = new Suggest.Echange { Question = _enCours?.Question, Type = "rebond", Qui = "enfant", Reponse = r.Texte };
+                Conversation.Ajouter(e);
+                _enCours = e;
+                _chaine++;
+                try { Usage.Count("ecoute:rebond"); } catch { }
+            }
+            else
+            {
+                if (_enCours != null) { _enCours.Reponse = r.Texte; Conversation.Sauver(); }
+                try { Habitudes.Choisie(_enCours?.Question, r.Texte); Usage.Count("ecoute:reponse"); if (type == "theme") Usage.Count("ecoute:theme"); } catch { }
+            }
             GazeStats.RecordComm("ecoute-" + type);
-            _confirmVisual.Child = new Viewbox { Stretch = Stretch.Uniform, Child = Visuel(r, mot, _enCours?.Question) };
-            _confirmText.Text = (r.Texte ?? "").TrimEnd('!', '.') + " !";
-            Emoji.FixTree(_confirm);
-            Montrer("confirm");
+            MontrerRebonds(r, mot);
+        }
+
+        // ------------------------------------------------------------------
+        //  Les rebonds : ce que l'enfant pourrait dire ensuite, et l'adulte réécouté
+        // ------------------------------------------------------------------
+        private async void MontrerRebonds(Suggest.Reponse r, CommBoard.Mot mot)
+        {
+            if (_settings == null) _settings = Settings.Load();
+            _partielTimer.Stop(); _speculatif = null; _speculatifEchange = null;
+            Montrer("rebond");
+            _photoBox.Visibility = Visibility.Collapsed;
+            _ditBox.Child = new Viewbox { Stretch = Stretch.Uniform, Child = Visuel(r, mot, _enCours?.Question) };
+            _ditBox.Visibility = Visibility.Visible;
+            _question.Foreground = Vert;
+            _question.Text = (r.Texte ?? "").TrimEnd('!', '.') + " !";
+            MettreFil();
+            PreparerGrille("rebond", 8);
+            var monEchange = _enCours;
+            EcouterLaReponse(monEchange);
             _autoClose.Stop(); _autoClose.Start();
+
+            var question = _enCours?.Question ?? "";
+            bool enLigne = _settings.ListenAnswers && !string.IsNullOrWhiteSpace(_settings.LicenceKey) && _chaine < 4;
+            if (!enLigne)
+            {
+                foreach (var x in Suggest.DefaultsRebond(question, r.Texte).Reponses) AjouterCase(x, "rebond");
+                FinRebonds();
+                return;
+            }
+            Ia(null);
+            _wait.Visibility = Visibility.Visible; _wait.Text = "Je réfléchis…";
+            Suggest.Resultat res;
+            try
+            {
+                var vocab = CommBoard.Vocabulaire().Select(m => new Suggest.Mot { Cle = m.Cle, Label = m.Label }).ToList();
+                res = await Suggest.PourFlux(_settings, question.Length > 0 ? question : r.Texte, vocab, Conversation.Recents(monEchange), Suggest.ContexteActuel(_settings),
+                    tete => Dispatcher.BeginInvoke(new Action(() => { if (_enCours == monEchange && _etat == "rebond") _wait.Visibility = Visibility.Collapsed; })),
+                    rep => Dispatcher.BeginInvoke(new Action(() => { if (_enCours == monEchange && _etat == "rebond") AjouterCase(rep, "rebond"); })),
+                    false, new Suggest.Options { Rebond = true, Reponse = r.Texte });
+            }
+            catch (Exception ex) { res = Suggest.DefaultsRebond(question, r.Texte); res.Erreur = ex.Message; }
+            if (_enCours != monEchange || _etat != "rebond") return;
+            _wait.Visibility = Visibility.Collapsed;
+            try { Usage.Count(res.EnLigne ? "ecoute:ia" : "ecoute:devine"); } catch { }
+            if (res.EnLigne) Ia("IA · " + (res.Chrono ?? ""), ok: true);
+            else { foreach (var x in Suggest.DefaultsRebond(question, r.Texte).Reponses) AjouterCase(x, "rebond"); Ia("⚠️ Rebonds devinés : l'IA n'a pas répondu" + (string.IsNullOrEmpty(res.Erreur) ? "." : " (" + res.Erreur + ").")); }
+            FinRebonds();
+        }
+
+        /// <summary>Après les rebonds : « Autre chose » (les thèmes) et « Fini ». Le délai de fermeture repart.</summary>
+        private void FinRebonds()
+        {
+            AjouterFixe("💭", "Autre chose", () =>
+            {
+                try { Usage.Count("ecoute:autre"); } catch { }
+                if (_enCours != null) { _enCours.Ecart = "autre"; Conversation.Sauver(); }
+                MontrerThemes(0);
+            });
+            FrameworkElement fini = null;
+            try { var src = Art.Find("comm-fini"); if (src != null) fini = new Image { Source = src, Stretch = Stretch.Uniform }; } catch { }
+            Agrandir();
+            Tuile(fini ?? Art.Visual("", "🏁", 200), "Fini", () => { GazeStats.RecordComm("ecoute-fini"); Fermer(); });
+            Conversation.Sauver();
+            _autoClose.Stop(); _autoClose.Start();
+        }
+
+        /// <summary>
+        /// Le micro réécoute l'adulte dès que la tablette a fini de dire la réponse de l'enfant (sans « Dis Eyzi »),
+        /// si la conversation est activée. Une seule phrase, puis la veille reprend d'elle-même.
+        /// </summary>
+        private EventHandler _tickAuto;
+        private void EcouterLaReponse(Suggest.Echange monEchange)
+        {
+            _ecouteAuto.Stop();
+            if (_tickAuto != null) { _ecouteAuto.Tick -= _tickAuto; _tickAuto = null; }
+            if (_settings == null || !_settings.EcouteConversation || !Listening.Enabled) return;
+            var t0 = DateTime.Now; DateTime? fin = null;
+            _tickAuto = (s, e) =>
+            {
+                if (_etat != "rebond" || _enCours != monEchange || !IsVisible) { _ecouteAuto.Stop(); return; }
+                var depuis = (DateTime.Now - t0).TotalSeconds;
+                if (depuis < 1.2) return;                               // la voix enregistrée de papa ou maman (VoiceBank) n'est pas vue par Speech.IsBusy
+                if (Speech.IsBusy && depuis < 8) { fin = null; return; }
+                if (fin == null) { fin = DateTime.Now; return; }
+                if ((DateTime.Now - fin.Value).TotalMilliseconds < 700) return;
+                _ecouteAuto.Stop();
+                Log.Write("ecoute", "Conversation : le micro réécoute l'adulte");
+                _ = Listening.ListenOnce();
+            };
+            _ecouteAuto.Tick += _tickAuto;
+            _ecouteAuto.Start();
+        }
+
+        // ------------------------------------------------------------------
+        //  « Autre chose » : les thèmes, puis les mots d'un thème, puis « Mes mots »
+        // ------------------------------------------------------------------
+        private const int ParPage = 8;
+
+        private void TitreThemes(string sous)
+        {
+            _ditBox.Visibility = Visibility.Collapsed; _photoBox.Visibility = Visibility.Collapsed;
+            _question.Foreground = Dark;
+            var q = _enCours?.Question;
+            bool spont = _enCours != null && (_enCours.Type == "spontane" || string.IsNullOrEmpty(q));
+            _question.Text = (spont ? "💬 Je veux dire…" : Titre(q, null)) + (string.IsNullOrEmpty(sous) ? "" : "\n" + sous);
+            Emoji.Fix(_question);
+            _fil.Visibility = Visibility.Collapsed;
+            _wait.Visibility = Visibility.Collapsed;
+            Ia(null);
+            _answers.Children.Clear();
+            _grilleType = "theme"; _maxCases = 10;
+            _grilleRows = 2; _grilleCols = 5; _answers.Rows = 2; _answers.Columns = 5;
+        }
+
+        /// <summary>Les thèmes, huit par page, puis « D'autres thèmes » / « Mes mots » et « Revoir les cases » / « Retour ».</summary>
+        private void MontrerThemes(int page)
+        {
+            Montrer("themes");
+            var l = Themes.Liste;
+            int pages = (int)Math.Ceiling(l.Count / (double)ParPage);
+            page = Math.Max(0, Math.Min(pages - 1, page));
+            TitreThemes("💭 Autre chose : de quoi tu veux parler ?");
+            foreach (var t in l.Skip(page * ParPage).Take(ParPage)) { var cap = t; AjouterFixe(t.Emoji, t.Nom, () => MontrerTheme(cap, 0), t.Mot); }
+            if (page + 1 < pages) AjouterFixe("➡️", "D'autres thèmes", () => MontrerThemes(page + 1));
+            else AjouterFixe("🧩", "Mes mots", () => { Arreter(); MotsRequested?.Invoke(); });
+            if (page == 0) AjouterFixe("↩️", "Revoir les cases", RevoirCases);
+            else AjouterFixe("⬅️", "Retour", () => MontrerThemes(page - 1));
+            if (page == 0) Speech.SayAlways("De quoi tu veux parler ?");
+        }
+
+        /// <summary>Les mots d'un thème, huit par page ; la question reste en haut, le mot choisi y répond.</summary>
+        private void MontrerTheme(Themes.Theme t, int page)
+        {
+            Montrer("themes");
+            var mots = Themes.MotsDe(t);
+            int pages = Math.Max(1, (int)Math.Ceiling(mots.Count / (double)ParPage));
+            page = Math.Max(0, Math.Min(pages - 1, page));
+            TitreThemes(t.Emoji + " " + t.Nom + (pages > 1 ? "  ·  " + (page + 1) + "/" + pages : ""));
+            foreach (var r in mots.Skip(page * ParPage).Take(ParPage)) AjouterCase(r, "theme", noter: false);
+            if (page + 1 < pages) AjouterFixe("➡️", "Plus de mots", () => MontrerTheme(t, page + 1));
+            else if (page > 0) AjouterFixe("⬅️", "Début", () => MontrerTheme(t, 0));
+            else AjouterFixe("🧩", "Mes mots", () => { Arreter(); MotsRequested?.Invoke(); });
+            AjouterFixe("↩️", "Les thèmes", () => MontrerThemes(0));
+            if (page == 0) Speech.SayAlways(t.Nom);
+        }
+
+        /// <summary>Retour à la dernière grille proposée (les mêmes cases), avec « Pas ça ».</summary>
+        private void RevoirCases()
+        {
+            Montrer("grille");
+            _ditBox.Visibility = Visibility.Collapsed; _question.Foreground = Dark;
+            var q = _enCours?.Question;
+            _question.Text = _enCours != null && _enCours.Type == "spontane" ? "💬 Je veux dire…" : Titre(q, null);
+            Emoji.Fix(_question);
+            MettreFil();
+            var cases = _derniereGrille.ToList();
+            PreparerGrille(_derniereType, cases.Count + 1);
+            foreach (var r in cases) AjouterCase(r, _derniereType, noter: false);
+            _derniereGrille.AddRange(cases); // pour pouvoir revenir encore
+            if (cases.Count == 0) MontrerThemes(0); else AjouterPasCa();
         }
 
         // ------------------------------------------------------------------
@@ -523,6 +781,7 @@ namespace MesPremiersJeux.Views
             ["oui"] = ("comm-oui", "✅"), ["non"] = ("comm-non", "❌"), ["je ne sais pas"] = ("", "🤷"), ["les deux"] = ("", "🤲"), ["autre chose"] = ("", "💭"),
             ["d'accord"] = ("comm-oui", "👍"), ["ok"] = ("comm-oui", "👍"), ["attends"] = ("", "✋"), ["encore"] = ("comm-encore", "🔁"), ["plus tard"] = ("", "⏰"), ["un peu"] = ("", "🤏"),
             ["je t'aime"] = ("comm-jetaime", "❤️"), ["fini"] = ("comm-fini", "🏁"), ["aide-moi"] = ("comm-aide", "🙋"), ["stop"] = ("", "🛑"),
+            ["pas ça"] = ("", "🤔"), ["et toi ?"] = ("", "👉"), ["pourquoi ?"] = ("", "❓"),
         };
 
         /// <summary>Le visuel d'une réponse : la photo d'un proche d'abord, puis le picto ARASAAC du mot français, puis le secours (image du tableau, Mulberry, emoji).</summary>
@@ -537,7 +796,7 @@ namespace MesPremiersJeux.Views
                 {
                     var src = string.IsNullOrEmpty(fx.Img) ? null : Art.Find(fx.Img);
                     secours = src != null ? new Image { Source = src, Stretch = Stretch.Uniform } : Art.Visual("", fx.Emoji, 200);
-                    if (cle == "autre chose" || cle == "les deux" || cle == "je ne sais pas") return secours; // ceux-là restent des symboles, pas des dessins
+                    if (cle == "autre chose" || cle == "les deux" || cle == "je ne sais pas" || cle == "pas ça") return secours; // ceux-là restent des symboles, pas des dessins
                 }
                 if (secours == null && mot != null) { var src = Art.Find(mot.Img); if (src != null) secours = new Image { Source = src, Stretch = Stretch.Uniform }; }
                 if (secours == null) secours = Pictos.Picture(r.Picto, 200) ?? Pictos.Picture(r.Texte, 200);
@@ -561,19 +820,6 @@ namespace MesPremiersJeux.Views
 
         private static FrameworkElement Rond(FrameworkElement inner, double size, Brush fond)
             => new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size / 2), Background = fond, Child = inner, HorizontalAlignment = HorizontalAlignment.Center, Padding = new Thickness(size * 0.17), Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 30, ShadowDepth = 8, Opacity = 0.14 } };
-
-        private Button Suite(string img, string emoji, string label, Action action)
-        {
-            FrameworkElement vis = null;
-            try { var src = string.IsNullOrEmpty(img) ? null : Art.Find(img); if (src != null) vis = new Image { Source = src, Stretch = Stretch.Uniform }; } catch { }
-            var b = new Button
-            {
-                Style = (Style)Application.Current.Resources["AnswerButton"], Margin = new Thickness(10), Background = Brushes.White,
-                Content = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Children = { new Viewbox { Height = 90, Child = vis ?? Art.Visual("", emoji, 90) }, new TextBlock { Text = label, FontSize = 32, FontWeight = FontWeights.Bold, Foreground = Dark, Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center } } },
-            };
-            b.Click += (s, e) => action();
-            return b;
-        }
 
         private static Button PetitBouton(string emoji, string tooltip)
         {

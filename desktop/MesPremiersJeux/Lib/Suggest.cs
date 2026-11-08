@@ -36,6 +36,8 @@ namespace MesPremiersJeux.Lib
             public List<string> Propositions = new List<string>(); // les cases proposées pour cette question
             public DateTime At = DateTime.Now;
             public bool Suite;                                      // « ou du chocolat » : la phrase complète la question d'avant
+            public string Qui = "adulte";                           // adulte : une phrase entendue · enfant : ce que l'enfant a voulu dire (rebond, « Je veux dire »)
+            public string Ecart;                                    // « autre » ou « pasca » : l'enfant est sorti des cases proposées
         }
 
         /// <summary>« ou du chocolat », « et de la vanille ? », « sinon dehors » : un fragment qui prolonge la question précédente.</summary>
@@ -69,7 +71,12 @@ namespace MesPremiersJeux.Lib
         public sealed class Contexte { public string Lieu, Jour; public List<string> Activites = new List<string>(); public List<string> Preferees = new List<string>(); }
 
         /// <summary>Les options d'une demande : une photo (JPEG en base64) et ce qu'elle montre (« scene » ou « enfant »), ou « Je veux dire… ».</summary>
-        public sealed class Options { public string PhotoB64, Vue; public bool Spontane; }
+        public sealed class Options
+        {
+            public string PhotoB64, Vue; public bool Spontane;
+            public bool Rebond;      // l'enfant vient de répondre : que pourrait-il dire ensuite (préciser, demander, rebondir) ?
+            public string Reponse;   // ce qu'il vient de dire, pour le rebond
+        }
 
         /// <summary>« Regarde », « Dis Eyzi, regarde Laura » : la phrase demande une photo. Caméra avant si elle parle de l'enfant.</summary>
         public static bool EstRegard(string text, string prenom, out bool avant)
@@ -142,11 +149,14 @@ namespace MesPremiersJeux.Lib
                 if (vocabulaire != null && vocabulaire.Count > 0)
                     sb.Append(",\"vocab\":[").Append(string.Join(",", vocabulaire.Take(120).Select(m => "{\"cle\":\"" + Esc(m.Cle) + "\",\"mot\":\"" + Esc(m.Label) + "\"}"))).Append("]");
                 if (historique != null && historique.Count > 0)
-                    sb.Append(",\"historique\":[").Append(string.Join(",", historique.Skip(Math.Max(0, historique.Count - 3)).Select(h => "{\"q\":\"" + Esc(h.Question) + "\",\"r\":\"" + Esc(h.Reponse ?? "") + "\",\"t\":\"" + Esc(h.Type ?? "") + "\",\"p\":[" + string.Join(",", h.Propositions.Take(8).Select(x => "\"" + Esc(x) + "\"")) + "]}"))).Append("]");
+                    sb.Append(",\"historique\":[").Append(string.Join(",", historique.Skip(Math.Max(0, historique.Count - Conversation.Garder)).Select(h =>
+                        "{\"q\":\"" + Esc(h.Question) + "\",\"r\":\"" + Esc(h.Reponse ?? "") + "\",\"t\":\"" + Esc(h.Type ?? "") + "\",\"qui\":\"" + Esc(h.Qui ?? "adulte") + "\",\"il\":" + (int)Math.Max(0, (DateTime.Now - h.At).TotalMinutes)
+                        + (string.IsNullOrEmpty(h.Ecart) ? "" : ",\"ecart\":\"" + Esc(h.Ecart) + "\"") + ",\"p\":[" + string.Join(",", h.Propositions.Take(8).Select(x => "\"" + Esc(x) + "\"")) + "]}"))).Append("]");
                 if (suite) sb.Append(",\"suite\":true");
                 if (habitudes.Count > 0)
                     sb.Append(",\"habitudes\":[").Append(string.Join(",", habitudes.Select(h => "{\"q\":\"" + Esc(h.Question) + "\",\"r\":\"" + Esc(h.Reponse) + "\",\"n\":" + h.N + "}"))).Append("]");
                 if (opt != null && opt.Spontane) sb.Append(",\"spontane\":true");
+                if (opt != null && opt.Rebond) sb.Append(",\"rebond\":true,\"reponse\":\"").Append(Esc(opt.Reponse ?? "")).Append("\"");
                 if (opt != null && !string.IsNullOrEmpty(opt.PhotoB64)) sb.Append(",\"vue\":\"").Append(Esc(opt.Vue ?? "scene")).Append("\",\"photo\":\"").Append(opt.PhotoB64).Append("\"");
                 sb.Append("}");
 
@@ -294,6 +304,16 @@ namespace MesPremiersJeux.Lib
             void Add(string t, string mot, string e) => r.Reponses.Add(new Reponse { Texte = t, Mot = mot, Emoji = e, Cle = "", Picto = "" });
             Add("Ça va", "content", "🙂"); Add("Je suis fatiguée", "fatigue", "😴"); Add("Je suis contente", "joie", "🥳"); Add("J'ai mal", "douleur", "🤕");
             Add("Je suis triste", "triste", "😢"); Add("Je veux un câlin", "câlin", "🤗"); Add("Autre chose", "", "💭");
+            return r;
+        }
+
+        /// <summary>Sans IA, après une réponse de l'enfant : ce qu'il pourrait dire ensuite (préciser, demander, rebondir).</summary>
+        public static Resultat DefaultsRebond(string question, string reponse)
+        {
+            var r = new Resultat { Simple = reponse, Type = "rebond" };
+            void Add(string t, string mot, string e) => r.Reponses.Add(new Reponse { Texte = t, Mot = mot, Emoji = e, Cle = "", Picto = "" });
+            Add("Encore", "encore", "🔁"); Add("Et toi ?", "toi", "👉"); Add("Pourquoi ?", "pourquoi", "❓"); Add("Maintenant !", "maintenant", "⚡");
+            Add("Avec toi", "ensemble", "🤝"); Add("Je t'aime", "amour", "❤️");
             return r;
         }
 

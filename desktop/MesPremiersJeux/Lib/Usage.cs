@@ -218,6 +218,7 @@ namespace MesPremiersJeux.Lib
             ["onglet:parcours"] = "Parcours", ["parler"] = "Parler (messages dits)",
             ["ecoute:azure"] = "Écoute · clé Azure réglée", ["ecoute:question"] = "Écoute · questions entendues", ["ecoute:reponse"] = "Écoute · réponses choisies",
             ["ecoute:ia"] = "Écoute · réponses de l'IA", ["ecoute:devine"] = "Écoute · réponses devinées",
+            ["ecoute:rebond"] = "Écoute · rebonds choisis", ["ecoute:autre"] = "Écoute · « Autre chose »", ["ecoute:pasca"] = "Écoute · « Pas ça »", ["ecoute:theme"] = "Écoute · mots pris dans un thème",
         };
 
         public static string Of(string key) => key != null && Games.TryGetValue(key, out var fr) ? fr : key ?? "";

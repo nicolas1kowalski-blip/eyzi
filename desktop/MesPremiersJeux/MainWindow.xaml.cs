@@ -492,6 +492,7 @@ namespace MesPremiersJeux
             ListenAnswersCheck.IsChecked = _settings.ListenAnswers;
             CameraCheck.IsChecked = _settings.CameraParler;
             FatigueCheck.IsChecked = _settings.VeilleFatigue;
+            ConversationCheck.IsChecked = _settings.EcouteConversation;
             foreach (ComboBoxItem it in ListenModeCombo.Items)
                 if ((string)it.Tag == (_settings.ListenMode ?? "off")) { ListenModeCombo.SelectedItem = it; break; }
             if (ListenModeCombo.SelectedItem == null) ListenModeCombo.SelectedIndex = 0;
@@ -2258,6 +2259,7 @@ namespace MesPremiersJeux
             if (_settings == null || CameraCheck == null || _remplissage) return;
             _settings.CameraParler = CameraCheck.IsChecked == true;
             _settings.VeilleFatigue = FatigueCheck.IsChecked == true;
+            _settings.EcouteConversation = ConversationCheck.IsChecked == true;
             _settings.Save();
             Lib.Log.Write("ecoute", "Caméra " + (_settings.CameraParler ? "autorisée" : "interdite") + ", veille fatigue " + (_settings.VeilleFatigue ? "active" : "éteinte"));
         }
@@ -2268,12 +2270,14 @@ namespace MesPremiersJeux
             int n = 0; try { n = Habitudes.Total(); } catch { }
             HabitudesText.Text = n == 0
                 ? "Habitudes : rien d'appris pour l'instant. Chaque réponse regardée est retenue avec sa question (fichier habitudes-<tablette>.ini dans le dossier de la famille, partagé entre les tablettes) ; les questions proches reprennent ces réponses en premier."
-                : "Habitudes : " + n + " choix retenus avec leur question (fichiers habitudes-*.ini du dossier de la famille, partagés entre les tablettes). Les questions proches reprennent ces réponses en premier.";
+                : "Habitudes : " + n + " choix retenus avec leur question (fichiers habitudes-*.ini du dossier de la famille, partagés entre les tablettes). Les questions proches reprennent ces réponses en premier ; un choix ancien pèse moins qu'un récent.";
+            int fil = 0; try { fil = Conversation.Aujourdhui(); } catch { }
+            HabitudesText.Text += " Fil du jour : " + (fil == 0 ? "aucun échange" : fil + " échange" + (fil > 1 ? "s" : "")) + " (gardé sur cette tablette, effacé chaque jour).";
         }
 
         private void HabitudesForget_Click(object sender, RoutedEventArgs e)
         {
-            try { Habitudes.Oublier(); } catch (Exception ex) { Lib.Log.Write("habitudes", ex.Message); }
+            try { Habitudes.Oublier(); Conversation.Oublier(); } catch (Exception ex) { Lib.Log.Write("habitudes", ex.Message); }
             RefreshHabitudes();
         }
 
