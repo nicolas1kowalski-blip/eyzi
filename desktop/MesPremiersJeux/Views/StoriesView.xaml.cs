@@ -121,6 +121,9 @@ namespace MesPremiersJeux.Views
         private Book _book;
         private int _index;
         private int _readIndex;
+        // 🌙 L'histoire du soir : voile sombre, narration douce, pages tournées toutes seules, pas de quiz.
+        private bool _soir;
+        private Border _voile;
 
         // --- Quiz de fin d'histoire ---
         private Grid _quizRoot;
@@ -166,6 +169,9 @@ namespace MesPremiersJeux.Views
             _readerGate.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             _readerGate.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             _readerRoot.Children.Add(_readerGate);
+            _voile = new Border { Background = new SolidColorBrush(Color.FromRgb(0x14, 0x1E, 0x4A)), Opacity = 0.22, IsHitTestVisible = false, Visibility = Visibility.Collapsed };
+            Panel.SetZIndex(_voile, 50);
+            _readerRoot.Children.Add(_voile);
 
             var body = _body = new Grid();
             body.ColumnDefinitions.Add(new ColumnDefinition());
@@ -416,6 +422,7 @@ namespace MesPremiersJeux.Views
             builtIn.Questions.Add(Pick("Montre le chat !", "chat", "poisson", "fleur"));
             builtIn.Questions.Add(Pick("Où est l'arc-en-ciel ?", "arcenciel", "etoile", "papillon"));
             _books.Add(builtIn);
+            foreach (var b in LivresDessines()) _books.Add(b);
 
             // Livres du parent (Documents\MesPremiersJeux\Histoires).
             foreach (var s in UserContent.LoadStories())
@@ -425,6 +432,67 @@ namespace MesPremiersJeux.Views
                     book.Pages.Add(new BookPage { Text = p.Text, ImagePath = p.ImagePath, Zones = p.Zones, Layout = p.Layout });
                 _books.Add(book);
             }
+        }
+
+        /// <summary>
+        /// Quatre livres dessinés, livrés avec l'application : pages courtes, phrases qui se répètent,
+        /// un dessin cartoon ou un emoji par page. Le soir, « Bonne nuit, petit lapin » est fait pour s'endormir.
+        /// </summary>
+        private static IEnumerable<Book> LivresDessines()
+        {
+            Book Livre(string titre, params (string Texte, string Dessin)[] pages)
+            {
+                var b = new Book { Title = titre, Layout = StoryLayouts.Stacked };
+                foreach (var (texte, dessin) in pages)
+                {
+                    var d = dessin;
+                    b.Pages.Add(new BookPage { Text = texte, Cartoon = () => d.StartsWith("emoji:") ? (UIElement)new Viewbox { Child = Art.ForEmoji(d.Substring(6), 400) } : CartoonArt.Draw(d) });
+                }
+                return b;
+            }
+
+            var chat = Livre("Le petit chat et le soleil",
+                ("Minou est un petit chat tout doux. Ce matin, il cherche le soleil.", "chat"),
+                ("Il regarde en haut. Oh ! Un gros nuage cache le soleil.", "nuage"),
+                ("Un oiseau passe et chante : « Patience, petit chat ! »", "oiseau"),
+                ("Et voilà le soleil ! Il brille, il chauffe, il fait du bien.", "soleil"),
+                ("Minou s'allonge dans les fleurs. Un papillon vient se poser sur son nez.", "papillon"),
+                ("Le soir, Minou regarde la première étoile. Bonne nuit, petit chat !", "etoile"));
+            chat.Questions.Add(new UserQuestion { Text = "Minou est un chat ?", Kind = QuizKind.TrueFalse, Answer = true });
+            chat.Questions.Add(Pick("Montre le soleil !", "soleil", "nuage", "etoile"));
+            chat.Questions.Add(Pick("Où est le papillon ?", "papillon", "oiseau", "fleur"));
+            yield return chat;
+
+            var lila = Livre("La princesse des couleurs",
+                ("Dans un grand château vit la princesse Lila.", "chateau"),
+                ("Lila a une belle couronne. Mais autour d'elle, tout est gris.", "couronne"),
+                ("« Je veux des couleurs ! » dit Lila. Elle part chercher l'arc-en-ciel.", "princesse"),
+                ("Une licorne l'emmène sur son dos. Hop ! Par-dessus la rivière !", "licorne"),
+                ("Et là, dans le ciel : rouge, jaune, bleu, vert ! L'arc-en-ciel !", "arcenciel"),
+                ("Lila rapporte toutes les couleurs au château. Son cœur est plein de joie.", "coeur"));
+            lila.Questions.Add(new UserQuestion { Text = "Lila est une princesse ?", Kind = QuizKind.TrueFalse, Answer = true });
+            lila.Questions.Add(Pick("Montre la licorne !", "licorne", "chien", "poisson"));
+            lila.Questions.Add(Pick("Où est l'arc-en-ciel ?", "arcenciel", "couronne", "chateau"));
+            yield return lila;
+
+            var lapin = Livre("Bonne nuit, petit lapin",
+                ("C'est le soir. Petit Lapin a bien joué toute la journée.", "lapin"),
+                ("Il dit bonne nuit aux fleurs du jardin. « Bonne nuit, les fleurs ! »", "fleur"),
+                ("Il dit bonne nuit au poisson de la mare. « Bonne nuit, poisson ! »", "poisson"),
+                ("La lune s'allume dans le ciel, toute ronde, toute douce.", "emoji:🌙"),
+                ("Les étoiles clignotent. Une, deux, trois… Petit Lapin bâille.", "etoile"),
+                ("Maman Lapin fait un gros câlin. Chut… Petit Lapin dort. Bonne nuit !", "coeur"));
+            lapin.Questions.Add(Pick("Montre le lapin !", "lapin", "chat", "cochon"));
+            lapin.Questions.Add(Pick("Où est le poisson ?", "poisson", "oiseau", "papillon"));
+            yield return lapin;
+
+            yield return Livre("Une journée à l'école",
+                ("Ce matin, je mets mon cartable sur le dos. C'est l'heure de l'école !", "emoji:🎒"),
+                ("Dans la classe, la maîtresse dit : « Bonjour tout le monde ! »", "emoji:🏫"),
+                ("On chante, on peint, on fait des rondes avec les copains.", "emoji:🎨"),
+                ("À la cantine, je mange avec mes amis. Miam !", "emoji:🍽️"),
+                ("Après la sieste, c'est la récré ! On court, on glisse, on rit.", "emoji:🛝"),
+                ("Le soir, papa ou maman vient me chercher. À demain, l'école !", "emoji:🏠"));
         }
 
         // Question « choisis la bonne image » à partir de dessins intégrés
@@ -533,6 +601,17 @@ namespace MesPremiersJeux.Views
         private void BuildMenu()
         {
             var tiles = new List<(UIElement Content, Action OnClick)>();
+            // 📍 Reprendre l'histoire laissée en route, 🌙 l'histoire du soir.
+            Lecture.Etat enCours = null;
+            try { enCours = Lecture.EnCours(); } catch { }
+            var livreEnCours = enCours == null ? null : _books.FirstOrDefault(x => string.Equals(x.Title, enCours.Titre, StringComparison.OrdinalIgnoreCase));
+            if (livreEnCours != null)
+            {
+                var pageReprise = Math.Min(enCours.Page, livreEnCours.Pages.Count - 1);
+                tiles.Add((TuileSpeciale("📍", "Continuer", livreEnCours.Title + " · page " + (pageReprise + 1), Color.FromRgb(0x3F, 0x8E, 0xF2), livreEnCours.Pages.Count > 0 ? PreviewOf(livreEnCours.Pages[pageReprise]) : null),
+                    () => OpenBook(livreEnCours, pageReprise, false)));
+            }
+            tiles.Add((TuileSpeciale("🌙", "Histoire du soir", "racontée doucement, les pages tournent toutes seules", Color.FromRgb(0x4A, 0x3F, 0x9B), null), HistoireDuSoir));
             int bi = 0;
             foreach (var b in _books)
             {
@@ -570,9 +649,11 @@ namespace MesPremiersJeux.Views
                     },
                 };
                 content.Children.Add(ribbon);
+                Lecture.Etat et = null; try { et = Lecture.Pour(b.Title); } catch { }
+                string lu = et == null ? "" : et.Fois > 0 ? "   ·   ⭐ lu " + (et.Fois == 1 ? "une fois" : et.Fois + " fois") : et.Page > 0 ? "   ·   📍 page " + (et.Page + 1) : "";
                 var info = new TextBlock
                 {
-                    Text = "📖 " + b.Pages.Count + (b.Pages.Count > 1 ? " pages" : " page") + (b.Questions.Count > 0 ? "   ·   🎯 quiz" : ""),
+                    Text = "📖 " + b.Pages.Count + (b.Pages.Count > 1 ? " pages" : " page") + (b.Questions.Count > 0 ? "   ·   🎯 quiz" : "") + lu,
                     FontSize = 17,
                     Foreground = new SolidColorBrush(Color.FromRgb(0x6B, 0x5B, 0x8A)),
                     HorizontalAlignment = HorizontalAlignment.Center,
@@ -629,6 +710,47 @@ namespace MesPremiersJeux.Views
             });
             tiles.Add((addContent, AddBook));
             _menu.SetTiles(tiles);
+        }
+
+        /// <summary>Une tuile de la bibliothèque qui n'est pas un livre : Continuer, Histoire du soir.</summary>
+        private static UIElement TuileSpeciale(string emoji, string titre, string sous, Color accent, UIElement apercu)
+        {
+            var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, Width = 300 };
+            var cover = new Border
+            {
+                Width = 300, Height = 210, CornerRadius = new CornerRadius(22),
+                Background = new LinearGradientBrush(Color.FromArgb(0x55, accent.R, accent.G, accent.B), Color.FromArgb(0x22, accent.R, accent.G, accent.B), 90),
+                Clip = new RectangleGeometry(new Rect(0, 0, 300, 210), 22, 22),
+                Child = apercu ?? new Viewbox { Margin = new Thickness(40), Child = Art.ForEmoji(emoji, 120) },
+            };
+            content.Children.Add(cover);
+            content.Children.Add(new Border
+            {
+                Background = new SolidColorBrush(accent), CornerRadius = new CornerRadius(16), Padding = new Thickness(16, 8, 16, 8), Margin = new Thickness(10, -20, 10, 0), HorizontalAlignment = HorizontalAlignment.Center,
+                Child = new TextBlock { Text = emoji + " " + titre, FontSize = 22, FontWeight = FontWeights.Bold, Foreground = Brushes.White, TextAlignment = TextAlignment.Center },
+            });
+            var st = new TextBlock { Text = sous, FontSize = 16, Foreground = new SolidColorBrush(Color.FromRgb(0x6B, 0x5B, 0x8A)), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 280, Margin = new Thickness(0, 8, 0, 0) };
+            Emoji.Fix(st);
+            content.Children.Add(st);
+            Emoji.FixTree(content);
+            return content;
+        }
+
+        /// <summary>🌙 L'histoire du soir : l'histoire en route s'il y en a une, sinon un livre au hasard, racontée doucement.</summary>
+        private void HistoireDuSoir()
+        {
+            if (_books.Count == 0) return;
+            Lecture.Etat enCours = null; try { enCours = Lecture.EnCours(); } catch { }
+            var livre = enCours == null ? null : _books.FirstOrDefault(x => string.Equals(x.Title, enCours.Titre, StringComparison.OrdinalIgnoreCase));
+            int page = livre != null ? Math.Min(enCours.Page, livre.Pages.Count - 1) : 0;
+            if (livre == null)
+            {
+                // De préférence un livre pas encore lu aujourd'hui.
+                var candidats = _books.Where(x => { var e = Lecture.Pour(x.Title); return e == null || e.Derniere.Date != DateTime.Today; }).ToList();
+                if (candidats.Count == 0) candidats = _books;
+                livre = candidats[new Random().Next(candidats.Count)];
+            }
+            OpenBook(livre, page, true);
         }
 
         private void AddBook()
@@ -713,6 +835,9 @@ namespace MesPremiersJeux.Views
         {
             _narrToken++;
             _listenMode = false;
+            _soir = false; Speech.Douce = false;
+            if (_voile != null) _voile.Visibility = Visibility.Collapsed;
+            BuildMenu(); // les badges « lu » et « Continuer » suivent la lecture qui vient de finir
             SetNarrating(false);
             UnhighlightNext();
             InputGate.Clear(_readerGate);
@@ -722,9 +847,15 @@ namespace MesPremiersJeux.Views
             Chrome.Immersive = false;
         }
 
-        private void OpenBook(Book book)
+        private void OpenBook(Book book) => OpenBook(book, 0, false);
+
+        private void OpenBook(Book book, int page, bool soir)
         {
             _book = book;
+            _soir = soir;
+            Speech.Douce = soir;
+            _voile.Visibility = soir ? Visibility.Visible : Visibility.Collapsed;
+            _listenMode = soir; // le soir, l'histoire est racontée d'elle-même
             _title.Text = "✨ " + book.Title + " ✨";
             Emoji.Fix(_title);
             _bg.Source = null;
@@ -739,7 +870,8 @@ namespace MesPremiersJeux.Views
             _readerRoot.Visibility = Visibility.Visible;
             Chrome.Immersive = true; // plein écran pour lire
             InputGate.Set(_readerGate, () => _narrating); // pendant la narration, le regard ne sélectionne rien ici
-            ShowPage(0);
+            if (soir) Speech.Say("C'est l'heure de l'histoire du soir. Installe-toi bien…");
+            ShowPage(page);
         }
 
         /// <summary>➡ : la page suivante, ou l'écran de fin après la dernière page.</summary>
@@ -815,6 +947,11 @@ namespace MesPremiersJeux.Views
             if (_book == null) return;
             bool last = _index >= _book.Pages.Count - 1;
             HighlightNext(last ? "La fin !" : "Suite");
+            if (_soir)
+            {
+                int tok = _narrToken;
+                Delay(2200, () => { if (_soir && _book != null && tok == _narrToken && _readerRoot.Visibility == Visibility.Visible) NextOrEnd(); });
+            }
         }
 
         private void HighlightNext(string label)
@@ -1030,14 +1167,15 @@ namespace MesPremiersJeux.Views
             _endBg.Visibility = _bg.Source != null ? Visibility.Visible : Visibility.Collapsed;
             _endCover.Child = _book.Pages.Count > 0 ? PreviewOf(_book.Pages[0]) : null;
 
+            try { Lecture.Fini(_book.Title); } catch { }
             _endButtons.Children.Clear();
-            if (_book.Questions.Count > 0)
+            if (_book.Questions.Count > 0 && !_soir)
                 _endButtons.Children.Add(EndButton("Le quiz", Color.FromRgb(0xFF, 0x9F, 0x43), IconTarget(), () => { _endRoot.Visibility = Visibility.Collapsed; StartQuiz(); }));
             _endButtons.Children.Add(EndButton("Relire", Color.FromRgb(0x7E, 0x3F, 0xF2), IconRepeat(), () => { _endRoot.Visibility = Visibility.Collapsed; ShowPage(0); }));
             _endButtons.Children.Add(EndButton("Un autre livre", Color.FromRgb(0x2E, 0xB8, 0x8A), IconBooks(), () => { _endRoot.Visibility = Visibility.Collapsed; ShowMenu(); }));
             _endRoot.Visibility = Visibility.Visible;
             _endRoot.Dispatcher.BeginInvoke(new Action(BuildEndDeco), DispatcherPriority.Loaded);
-            Speech.Say("C'est la fin de l'histoire. Bravo !");
+            Speech.Say(_soir ? "C'est la fin de l'histoire. Bonne nuit, fais de beaux rêves…" : "C'est la fin de l'histoire. Bravo !");
         }
 
         private void UpdateDots(int n)
@@ -1211,6 +1349,7 @@ namespace MesPremiersJeux.Views
             int n = _book.Pages.Count;
             _index = ((i % n) + n) % n;
             var page = _book.Pages[_index];
+            try { Lecture.Noter(_book.Title, _index, n); } catch { }
             UpdateDots(n);
             var mode = StoryLayouts.Resolve(page.Layout, _book.Layout);
             if (mode != _layoutMode) { _layoutMode = mode; ApplyLayout(); }

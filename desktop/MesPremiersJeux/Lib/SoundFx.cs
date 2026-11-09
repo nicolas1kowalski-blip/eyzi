@@ -397,40 +397,66 @@ namespace MesPremiersJeux.Lib
         {
             string[] names = { "grosse-caisse", "caisse-claire", "tom", "cymbale" };
             int k = Math.Max(0, Math.Min(3, kind));
-            Play("kit-" + k, names[k], () =>
+            Play("kit-" + k, names[k], () => KitSamples(k));
+        }
+
+        private static float[] KitSamples(int k)
+        {
+            var rng = new Random(3 + k);
+            double dur = k == 3 ? 0.9 : k == 0 ? 0.35 : 0.3;
+            int n = (int)(Rate * dur);
+            var s = new float[n];
+            double lp = 0, phase = 0;
+            for (int i = 0; i < n; i++)
             {
-                var rng = new Random(3 + k);
-                double dur = k == 3 ? 0.9 : k == 0 ? 0.35 : 0.3;
-                int n = (int)(Rate * dur);
-                var s = new float[n];
-                double lp = 0, phase = 0;
-                for (int i = 0; i < n; i++)
+                double t = i / (double)n, ts = i / (double)Rate;
+                double noise = rng.NextDouble() * 2 - 1;
+                double v;
+                switch (k)
                 {
-                    double t = i / (double)n, ts = i / (double)Rate;
-                    double noise = rng.NextDouble() * 2 - 1;
-                    double v;
-                    switch (k)
-                    {
-                        case 0: // grosse caisse : sinus qui plonge, très rond
-                            phase += 2 * Math.PI * (120 - 70 * Math.Min(1, ts * 8)) / Rate;
-                            v = Math.Sin(phase) * Math.Exp(-6 * t) * 1.1;
-                            break;
-                        case 1: // caisse claire : coup + bruit sec
-                            lp += 0.6 * (noise - lp);
-                            v = Math.Sin(2 * Math.PI * 190 * ts) * Math.Exp(-18 * t) * 0.6 + lp * Math.Exp(-9 * t) * 0.9;
-                            break;
-                        case 2: // tom : note moyenne qui descend
-                            phase += 2 * Math.PI * (240 - 90 * Math.Min(1, ts * 6)) / Rate;
-                            v = Math.Sin(phase) * Math.Exp(-7 * t) * 0.9;
-                            break;
-                        default: // cymbale : bruit brillant qui s'éteint lentement
-                            lp += 0.9 * (noise - lp);
-                            v = (noise - lp * 0.5) * Math.Exp(-3.2 * t) * 0.5;
-                            break;
-                    }
-                    s[i] = (float)Math.Max(-1, Math.Min(1, v));
+                    case 0: // grosse caisse : sinus qui plonge, très rond
+                        phase += 2 * Math.PI * (120 - 70 * Math.Min(1, ts * 8)) / Rate;
+                        v = Math.Sin(phase) * Math.Exp(-6 * t) * 1.1;
+                        break;
+                    case 1: // caisse claire : coup + bruit sec
+                        lp += 0.6 * (noise - lp);
+                        v = Math.Sin(2 * Math.PI * 190 * ts) * Math.Exp(-18 * t) * 0.6 + lp * Math.Exp(-9 * t) * 0.9;
+                        break;
+                    case 2: // tom : note moyenne qui descend
+                        phase += 2 * Math.PI * (240 - 90 * Math.Min(1, ts * 6)) / Rate;
+                        v = Math.Sin(phase) * Math.Exp(-7 * t) * 0.9;
+                        break;
+                    default: // cymbale : bruit brillant qui s'éteint lentement
+                        lp += 0.9 * (noise - lp);
+                        v = (noise - lp * 0.5) * Math.Exp(-3.2 * t) * 0.5;
+                        break;
                 }
-                return s;
+                s[i] = (float)Math.Max(-1, Math.Min(1, v));
+            }
+            return s;
+        }
+
+        // ------------------------------------------------------------------
+        //  🎼 La fabrique de musique : plusieurs sons EN MÊME TEMPS. Le lecteur ne
+        //  joue qu'un son à la fois, alors les parts d'un même temps sont mélangées
+        //  en une seule onde, mise en cache sous sa clé.
+        // ------------------------------------------------------------------
+        public static Func<float[]> KitPart(int k) => () => KitSamples(Math.Max(0, Math.Min(3, k)));
+        public static Func<float[]> NotePart(string timbre, int degree, double dur = 0.45) => () => Timbre(timbre, Freq(Math.Max(-7, Math.Min(14, degree))), dur, 0.5);
+
+        public static void PlayMix(string key, IList<Func<float[]>> parts)
+        {
+            if (parts == null || parts.Count == 0) return;
+            Play("mix-" + key, () =>
+            {
+                var waves = new List<float[]>();
+                foreach (var p in parts) { try { waves.Add(p()); } catch { } }
+                int n = 0; foreach (var w in waves) n = Math.Max(n, w.Length);
+                var res = new float[n];
+                foreach (var w in waves) for (int i = 0; i < w.Length; i++) res[i] += w[i];
+                double g = waves.Count > 1 ? 1.0 / Math.Sqrt(waves.Count) : 1.0;
+                for (int i = 0; i < n; i++) res[i] = (float)Math.Tanh(res[i] * g * 1.2);
+                return res;
             });
         }
 

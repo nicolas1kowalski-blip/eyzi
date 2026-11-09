@@ -183,11 +183,12 @@ namespace MesPremiersJeux.Views
 
             // Les grands boutons vers les activités.
             // Les trois PORTES : Jouer, Apprendre, Parler. Un regard, et on entre dans le monde.
-            var go = new UniformGrid { Columns = 3, Margin = new Thickness(0, 6, 0, 0), HorizontalAlignment = HorizontalAlignment.Center };
+            var go = new UniformGrid { Columns = 4, Margin = new Thickness(0, 6, 0, 0), HorizontalAlignment = HorizontalAlignment.Center };
             column.Children.Add(go);
             _doors = go;
-            go.Children.Add(Door("🎮", "Jouer", "jeux · coloriage · musique", "monde:jouer", Color.FromRgb(0xFF, 0x9F, 0x43)));
+            go.Children.Add(Door("🎮", "Jouer", "jeux · la télé", "monde:jouer", Color.FromRgb(0xFF, 0x9F, 0x43)));
             go.Children.Add(Door("🎓", "Apprendre", "éducatif · histoires · parcours", "monde:apprendre", Color.FromRgb(0x2E, 0xB8, 0x8A)));
+            go.Children.Add(Door("🎨", "Créer", "peindre · sculpter · musique", "monde:creer", Color.FromRgb(0xF2, 0x6B, 0x8A)));
             go.Children.Add(Door("💬", "Parler", "dire ce que je veux", "monde:parler", Color.FromRgb(0x7E, 0x3F, 0xF2)));
 
             // Le soleil / la lune : un regard dessus, et la nuit tombe (ou le jour se lève).
@@ -447,10 +448,10 @@ namespace MesPremiersJeux.Views
         /// <summary>Les portes selon la licence : un monde non compris n'est simplement pas là.</summary>
         public void SetWorlds(bool jouer, bool apprendre, bool parler)
         {
-            if (_doors == null || _doors.Children.Count < 3) return;
-            var flags = new[] { jouer, apprendre, parler };
+            if (_doors == null || _doors.Children.Count < 4) return;
+            var flags = new[] { jouer, apprendre, jouer, parler }; // Créer suit Jouer
             int n = 0;
-            for (int i = 0; i < 3; i++) { _doors.Children[i].Visibility = flags[i] ? Visibility.Visible : Visibility.Collapsed; if (flags[i]) n++; }
+            for (int i = 0; i < 4; i++) { _doors.Children[i].Visibility = flags[i] ? Visibility.Visible : Visibility.Collapsed; if (flags[i]) n++; }
             _doors.Columns = Math.Max(1, n);
         }
 
@@ -464,7 +465,7 @@ namespace MesPremiersJeux.Views
             var b = new Button
             {
                 Style = (Style)Application.Current.Resources["MenuTile"],
-                Width = 390, Height = 250,
+                Width = 330, Height = 240,
                 Background = new LinearGradientBrush(color, Color.FromArgb(0xFF, (byte)(color.R * 0.8), (byte)(color.G * 0.8), (byte)(color.B * 0.8)), 90),
                 BorderBrush = new SolidColorBrush(Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF)),
                 Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new Thickness(12), Child = content },

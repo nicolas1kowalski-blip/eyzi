@@ -132,7 +132,7 @@ namespace MesPremiersJeux.Views
             le.Click += (s, e) => { _fromRoot = true; Play(c => new LearningView(c)); };
             Cats.Children.Add(le);
             // Le monde Apprendre, c'est aussi les histoires et le parcours du jour.
-            var st = MenuKit.ThemeTile("📖", "Histoires", Color.FromRgb(0xFF, 0xEF, 0xDC), "📚  🎃  🍂");
+            var st = MenuKit.ThemeTile("📖", "Histoires", Color.FromRgb(0xFF, 0xEF, 0xDC), "📚  🌙  📍");
             st.Click += (s, e) => Navigate?.Invoke("stories");
             Cats.Children.Add(st);
             var pa = MenuKit.ThemeTile("📅", "Mon parcours", Color.FromRgb(0xE8, 0xF0, 0xFF), "☀️  🧩  ⭐");

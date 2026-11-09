@@ -107,13 +107,7 @@ namespace MesPremiersJeux.Views
                 tile.Click += (s, e) => OpenTheme(theme);
                 Cats.Children.Add(tile);
             }
-            // Le monde Jouer, c'est aussi le coloriage et la musique.
-            var col = MenuKit.ThemeTile("🎨", "Coloriage", Color.FromRgb(0xFF, 0xE6, 0xF4), "🖍️  🎨  🖼️");
-            col.Click += (s, e) => Navigate?.Invoke("coloring");
-            Cats.Children.Add(col);
-            var mus = MenuKit.ThemeTile("🎵", "Musique", Color.FromRgb(0xDE, 0xF7, 0xEA), "🎶  🎧  🎤");
-            mus.Click += (s, e) => Navigate?.Invoke("music");
-            Cats.Children.Add(mus);
+            // Le coloriage et la musique ont déménagé dans le monde Créer (version 233).
             // 📺 La télé de la maison (si elle est réglée).
             _tvTile = MenuKit.ThemeTile("📺", "La télé", Color.FromRgb(0xE6, 0xEE, 0xFF), "🔊  ⏯  ▶️");
             _tvTile.Click += (s, e) => Navigate?.Invoke("tv");

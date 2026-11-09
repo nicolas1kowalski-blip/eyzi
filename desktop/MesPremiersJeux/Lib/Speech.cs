@@ -677,6 +677,9 @@ namespace MesPremiersJeux.Lib
         /// Lit un texte entier ; onWord est appelé à chaque mot prononcé (0, 1, 2…)
         /// et onDone à la fin. Utilisé pour l'« histoire racontée » synchronisée.
         /// </summary>
+        /// <summary>🌙 L'histoire du soir : la narration des pages est plus lente et plus douce.</summary>
+        public static bool Douce;
+
         public static void SayPage(string text, Action<int> onWord, Action onDone)
         {
             if (string.IsNullOrWhiteSpace(text)) { onDone?.Invoke(); return; }
@@ -685,7 +688,7 @@ namespace MesPremiersJeux.Lib
             {
                 LocalStop();
                 AzureTts.SpeakPage(text, Pitch, onWord, onDone,
-                    () => LocalSayPage(text, onWord, onDone));
+                    () => LocalSayPage(text, onWord, onDone), Douce ? -22 : 0);
                 return;
             }
             if (UsePiper)
@@ -705,6 +708,7 @@ namespace MesPremiersJeux.Lib
             {
                 _tts.SpeakAsyncCancelAll();
                 ApplyVoice();
+                if (Douce) _tts.Rate = Math.Max(-10, _tts.Rate - 3);
                 _onWord = onWord;
                 _onDone = onDone;
                 _wordCount = 0;

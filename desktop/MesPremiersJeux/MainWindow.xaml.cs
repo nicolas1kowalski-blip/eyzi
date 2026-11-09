@@ -92,6 +92,9 @@ namespace MesPremiersJeux
             _views["parler"] = parler;
             _views["coloring"] = coloring;
             _views["music"] = new MusicView();
+            var creer = new CreerView();
+            creer.Navigate += id => Select(id);               // Coloriage, Mes musiques depuis le monde Créer
+            _views["creer"] = creer;
             var tv = new TvView();
             tv.BackRequested += () => { (_views["games"] as GamesView)?.ShowRoot(); Select("games"); };
             _views["tv"] = tv;
@@ -508,7 +511,7 @@ namespace MesPremiersJeux
             }));
             Fatigue.Demarrer(() => _settings != null && _settings.VeilleFatigue && Licence.HasModule(_settings, "parler") && IsActive
                 && EcouteHost.Visibility != Visibility.Visible && AdminHost.Visibility != Visibility.Visible && PauseHost.Visibility != Visibility.Visible && !CommBoard.IsOpen
-                && _views.Any(kv => kv.Value.IsVisible && (kv.Key == "games" || kv.Key == "edu" || kv.Key == "parcours" || kv.Key == "stories" || kv.Key == "coloring")));
+                && _views.Any(kv => kv.Value.IsVisible && (kv.Key == "games" || kv.Key == "edu" || kv.Key == "parcours" || kv.Key == "stories" || kv.Key == "coloring" || kv.Key == "creer")));
             ListenHint.Text += Listening.KeywordAvailable ? " Mot-clé installé : « Dis Eyzi »." : " Le fichier du mot-clé (Voix\\eyzi.table) n'est pas installé : seul le bouton marche pour l'instant.";
             Listening.Heard += text => Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -1284,6 +1287,7 @@ namespace MesPremiersJeux
             {
                 bool j = Licence.HasModule(_settings, "jouer"), a = Licence.HasModule(_settings, "apprendre"), p = Licence.HasModule(_settings, "parler");
                 if (TabJouer != null) TabJouer.Visibility = j ? Visibility.Visible : Visibility.Collapsed;
+                if (TabCreer != null) TabCreer.Visibility = j ? Visibility.Visible : Visibility.Collapsed; // Créer fait partie du monde Jouer de la licence
                 if (TabApprendre != null) TabApprendre.Visibility = a ? Visibility.Visible : Visibility.Collapsed;
                 if (TabParler != null) TabParler.Visibility = p ? Visibility.Visible : Visibility.Collapsed;
                 _accueil?.SetWorlds(j, a, p);
@@ -1459,7 +1463,7 @@ namespace MesPremiersJeux
             {
                 int limit = _settings?.SessionMinutes ?? 0;
                 if (limit <= 0 || _pauseShown || CommBoard.IsOpen) return;
-                bool playing = _views.Any(kv => kv.Value.IsVisible && (kv.Key == "games" || kv.Key == "edu" || kv.Key == "parcours" || kv.Key == "stories" || kv.Key == "coloring"));
+                bool playing = _views.Any(kv => kv.Value.IsVisible && (kv.Key == "games" || kv.Key == "edu" || kv.Key == "parcours" || kv.Key == "stories" || kv.Key == "coloring" || kv.Key == "creer"));
                 if (!playing || !IsActive) return;
                 _playedSeconds += 5;
                 if (_playedSeconds >= limit * 60) ProposePause();
@@ -1842,6 +1846,7 @@ namespace MesPremiersJeux
                 if (_settings.PointerWorldColors)
                 {
                     if (_monde == "jouer") c = Color.FromRgb(0xF5, 0x7C, 0x00);
+                    else if (_monde == "creer") c = Color.FromRgb(0xE0, 0x3E, 0x6B);
                     else if (_monde == "apprendre") c = Color.FromRgb(0x2E, 0x9E, 0x4F);
                     else if (_monde == "parler") c = Color.FromRgb(0x7E, 0x3F, 0xF2);
                 }
@@ -2375,7 +2380,8 @@ namespace MesPremiersJeux
         {
             switch (id)
             {
-                case "games": case "coloring": case "music": case "tv": return "jouer";
+                case "games": case "tv": return "jouer";
+                case "creer": case "coloring": case "music": return "creer";
                 case "edu": case "stories": case "parcours": return "apprendre";
                 case "parler": return "parler";
                 default: return "";
@@ -2393,6 +2399,7 @@ namespace MesPremiersJeux
             }
             switch (world)
             {
+                case "creer": (_views["creer"] as CreerView)?.ShowRoot(); Select("creer"); Speech.Say("Le monde pour créer !"); break;
                 case "jouer": (_views["games"] as GamesView)?.ShowRoot(); Select("games"); Speech.Say("Le monde des jeux !"); break;
                 case "apprendre": (_views["edu"] as EducationView)?.ShowRoot(); Select("edu"); Speech.Say("Le monde pour apprendre !"); break;
                 case "parler": Select("parler"); break;
@@ -2415,7 +2422,7 @@ namespace MesPremiersJeux
             foreach (var kv in _views) kv.Value.Visibility = kv.Key == id ? Visibility.Visible : Visibility.Collapsed;
             // Un jeu resté ouvert dans un autre monde attend qu'on y revienne : il n'avance pas tout seul, caché.
             Games.GameControl.Paused = CommBoard.IsOpen || EcouteHost.Visibility == Visibility.Visible
-                || !(id == "games" || id == "edu" || id == "parcours" || id == "stories" || id == "coloring" || id == "music");
+                || !(id == "games" || id == "edu" || id == "parcours" || id == "stories" || id == "coloring" || id == "music" || id == "creer");
             HighlightWorld(WorldOf(id));
             ApplyTiles();
             if (_monde != WorldOf(id)) { _monde = WorldOf(id); if (_settings != null && _settings.PointerWorldColors) ApplyPointerStyle(); }
@@ -2425,7 +2432,7 @@ namespace MesPremiersJeux
         private void HighlightWorld(string world)
         {
             if (TabJouer == null) return;
-            foreach (var (btn, key) in new[] { (TabJouer, "jouer"), (TabApprendre, "apprendre"), (TabParler, "parler") })
+            foreach (var (btn, key) in new[] { (TabJouer, "jouer"), (TabApprendre, "apprendre"), (TabCreer, "creer"), (TabParler, "parler") })
             {
                 bool on = key == world;
                 btn.Opacity = on || world == "" ? 1.0 : 0.72;

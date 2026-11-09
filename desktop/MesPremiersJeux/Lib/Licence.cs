@@ -175,6 +175,7 @@ namespace MesPremiersJeux.Lib
         /// <summary>Le monde « m » fait-il partie de la licence ? (essai, licences maîtres : tout.)</summary>
         public static bool HasModule(Settings s, string m)
         {
+            if (m == "creer") m = "jouer"; // le monde Créer est compris dans Jouer
             if (s == null) return true;
             if (!s.LicenceOk || IsMaster(s.LicenceKey) || string.IsNullOrWhiteSpace(s.LicenceKey)) return true;
             var list = (s.LicenceModules ?? "").Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);

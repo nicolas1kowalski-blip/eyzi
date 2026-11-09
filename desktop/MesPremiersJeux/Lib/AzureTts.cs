@@ -152,11 +152,11 @@ namespace MesPremiersJeux.Lib
         // Lecture d'une page avec suivi des mots (temps estimés sur la durée
         // réelle de l'audio, pondérés par la longueur des mots).
         // ------------------------------------------------------------------
-        public static async void SpeakPage(string text, double pitch, Action<int> onWord, Action onDone, Action onFail)
+        public static async void SpeakPage(string text, double pitch, Action<int> onWord, Action onDone, Action onFail, int ratePercent = 0)
         {
             try
             {
-                var file = await GetAudio(text, pitch, 0);
+                var file = await GetAudio(text, pitch, ratePercent);
                 double duration = WavDurationSeconds(file);
 
                 var words = text.Split(' ').Where(t => t.Any(char.IsLetterOrDigit)).ToList();
