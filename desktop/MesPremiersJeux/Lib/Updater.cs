@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MesPremiersJeux.Lib
@@ -25,11 +26,17 @@ namespace MesPremiersJeux.Lib
     {
         private const string Repo = "nicolas1kowalski-blip/eyzi";
         private static readonly HttpClient Http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
+        // Le téléchargement de l'installeur : SANS délai global (358 Mo sur une connexion lente dépassent
+        // n'importe quel délai fixe) ; seule l'inactivité compte (plus rien reçu pendant 90 s), et le
+        // téléchargement reprend là où il s'est arrêté (Range) jusqu'à quatre essais.
+        private static readonly HttpClient Dl = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
+        private const int Inactivite = 90; // secondes sans rien recevoir avant de réessayer
 
         static Updater()
         {
             Http.DefaultRequestHeaders.UserAgent.ParseAdd("MesPremiersJeux/" + Current);
             Http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+            Dl.DefaultRequestHeaders.UserAgent.ParseAdd("MesPremiersJeux/" + Current);
         }
 
         public static Version Current => Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0, 1);
@@ -155,37 +162,21 @@ namespace MesPremiersJeux.Lib
                     : "Mise à jour complète (voix installée : « " + (local ?? "aucune") + " », publiée : « " + (info.VoicePackId ?? "?") + " » ; pictos installés : « " + (localPictos ?? "aucun") + " », publiés : « " + (info.PictoPackId ?? "?") + " »)");
 
                 var path = Path.Combine(UpdatesDir, name);
+                Directory.CreateDirectory(UpdatesDir);
                 status?.Invoke("Téléchargement de la version " + info.Version + (light ? " (mise à jour légère)" : "") + "…", 0);
-                using (var res = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+                string expected = null;
+                if (shaUrl != null) { try { expected = (await Http.GetStringAsync(shaUrl)).Trim().Split(' ')[0].ToLowerInvariant(); } catch (Exception ex) { Log.Write("maj", "Empreinte attendue illisible : " + ex.Message); } }
+                // Le fichier est peut-être déjà là, entier et bon (un essai précédent arrêté juste avant l'installation).
+                if (File.Exists(path) && expected != null)
                 {
-                    res.EnsureSuccessStatusCode();
-                    long total = res.Content.Headers.ContentLength ?? -1;
-                    using (var src = await res.Content.ReadAsStreamAsync())
-                    using (var fs = File.Create(path))
-                    {
-                        var buf = new byte[256 * 1024];
-                        long done = 0; int lastPct = -1; int n;
-                        while ((n = await src.ReadAsync(buf, 0, buf.Length)) > 0)
-                        {
-                            await fs.WriteAsync(buf, 0, n);
-                            done += n;
-                            if (total > 0)
-                            {
-                                int pct = (int)(done * 100 / total);
-                                if (pct != lastPct)
-                                {
-                                    lastPct = pct;
-                                    status?.Invoke("Téléchargement de la version " + info.Version + " : " + pct + " % (" + (done / 1048576) + " / " + (total / 1048576) + " Mo)", pct / 100.0);
-                                }
-                            }
-                            else status?.Invoke("Téléchargement de la version " + info.Version + " : " + (done / 1048576) + " Mo", -1);
-                        }
-                    }
+                    var deja = await Task.Run(() => Sha256(path, pct => status?.Invoke("Vérification du fichier déjà téléchargé : " + pct + " %", pct / 100.0)));
+                    if (deja == expected) { Log.Write("maj", "Installeur déjà téléchargé et vérifié : " + path); return Installer(info, path, status); }
+                    try { File.Delete(path); } catch { }
                 }
-                if (shaUrl != null)
+                await TelechargerAsync(url, path, info.Version.ToString(), status);
+                if (expected != null)
                 {
                     status?.Invoke("Vérification du fichier…", -1);
-                    var expected = (await Http.GetStringAsync(shaUrl)).Trim().Split(' ')[0].ToLowerInvariant();
                     var actual = await Task.Run(() => Sha256(path, pct => status?.Invoke("Vérification du fichier : " + pct + " %", pct / 100.0)));
                     if (expected != actual)
                     {
@@ -194,16 +185,102 @@ namespace MesPremiersJeux.Lib
                         return "Le fichier téléchargé est abîmé (empreinte différente). Réessaie plus tard.";
                     }
                 }
-                Log.Write("maj", "Installation de " + info.Version + " depuis " + path);
-                status?.Invoke("Installation : l'application se ferme et se relance toute seule…", 1);
-                Settings.Load().Save(); // rien à changer, mais on s'assure que tout est écrit avant de quitter
-                return Launch(path);
+                return Installer(info, path, status);
             }
             catch (Exception ex)
             {
                 Log.Write("maj", "Échec : " + ex);
-                return "Mise à jour impossible : " + ex.Message;
+                var msg = ex is TaskCanceledException || ex is OperationCanceledException ? "la connexion est restée muette trop longtemps (" + Inactivite + " s)" : ex.Message;
+                return "Mise à jour impossible : " + msg + "\nLe téléchargement reprendra là où il s'est arrêté au prochain essai (⚙ → Nuage → Vérifier les mises à jour).";
             }
+        }
+
+        private static string Installer(Info info, string path, Action<string, double> status)
+        {
+            Log.Write("maj", "Installation de " + info.Version + " depuis " + path);
+            status?.Invoke("Installation : l'application se ferme et se relance toute seule…", 1);
+            Settings.Load().Save(); // rien à changer, mais on s'assure que tout est écrit avant de quitter
+            return Launch(path);
+        }
+
+        /// <summary>
+        /// Télécharge « url » dans « path » (fichier .part pendant le transfert), en reprenant là où un essai
+        /// précédent s'est arrêté (en-tête Range), jusqu'à quatre essais ; seul un silence de 90 s compte comme panne.
+        /// </summary>
+        private static async Task TelechargerAsync(string url, string path, string version, Action<string, double> status)
+        {
+            var part = path + ".part";
+            Exception derniere = null;
+            for (int essai = 1; essai <= 4; essai++)
+            {
+                long deja = 0;
+                try { if (File.Exists(part)) deja = new FileInfo(part).Length; } catch { deja = 0; }
+                var debut = DateTime.Now; long recu = 0;
+                try
+                {
+                    var req = new HttpRequestMessage(HttpMethod.Get, url);
+                    if (deja > 0) req.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(deja, null);
+                    using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(Inactivite)))
+                    using (var res = await Dl.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token))
+                    {
+                        bool reprise = res.StatusCode == System.Net.HttpStatusCode.PartialContent;
+                        if (res.StatusCode == System.Net.HttpStatusCode.RequestedRangeNotSatisfiable)
+                        {
+                            // Le serveur ne veut pas de notre morceau (fichier changé ?) : on repart de zéro.
+                            try { File.Delete(part); } catch { }
+                            Log.Write("maj", "Reprise refusée (416) : téléchargement depuis le début");
+                            continue;
+                        }
+                        res.EnsureSuccessStatusCode();
+                        if (!reprise && deja > 0) { Log.Write("maj", "Pas de reprise possible : téléchargement depuis le début"); deja = 0; }
+                        long total = res.Content.Headers.ContentLength.HasValue ? res.Content.Headers.ContentLength.Value + deja : -1;
+                        if (reprise) Log.Write("maj", "Reprise du téléchargement à " + (deja / 1048576) + " Mo (essai " + essai + ")");
+                        using (var src = await res.Content.ReadAsStreamAsync())
+                        using (var fs = new FileStream(part, deja > 0 ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20))
+                        {
+                            var buf = new byte[256 * 1024];
+                            long done = deja; int lastPct = -1; int n;
+                            while (true)
+                            {
+                                cts.CancelAfter(TimeSpan.FromSeconds(Inactivite)); // le délai repart à chaque morceau reçu
+                                n = await src.ReadAsync(buf, 0, buf.Length, cts.Token);
+                                if (n <= 0) break;
+                                await fs.WriteAsync(buf, 0, n);
+                                done += n; recu += n;
+                                if (total > 0)
+                                {
+                                    int pct = (int)(done * 100 / total);
+                                    if (pct != lastPct)
+                                    {
+                                        lastPct = pct;
+                                        var sec = (DateTime.Now - debut).TotalSeconds;
+                                        var debit = sec > 2 ? recu / sec : 0;
+                                        var reste = debit > 0 ? (total - done) / debit : 0;
+                                        status?.Invoke("Téléchargement de la version " + version + " : " + pct + " % (" + (done / 1048576) + " / " + (total / 1048576) + " Mo"
+                                            + (debit > 0 ? ", " + (debit / 1048576.0).ToString("0.0") + " Mo/s" + (reste > 0 ? ", encore " + (reste < 90 ? ((int)reste) + " s" : ((int)Math.Ceiling(reste / 60)) + " min") : "") : "") + ")", pct / 100.0);
+                                    }
+                                }
+                                else status?.Invoke("Téléchargement de la version " + version + " : " + (done / 1048576) + " Mo", -1);
+                            }
+                            if (total > 0 && done < total) throw new IOException("fichier incomplet (" + done + " / " + total + " octets)");
+                        }
+                    }
+                    if (File.Exists(path)) File.Delete(path);
+                    File.Move(part, path);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    derniere = ex;
+                    Log.Write("maj", "Téléchargement, essai " + essai + " : " + ex.Message + " (" + (recu / 1048576) + " Mo reçus cette fois)");
+                    if (essai < 4)
+                    {
+                        status?.Invoke("La connexion a été coupée : nouvel essai dans quelques secondes (le téléchargement reprend où il s'est arrêté)…", -1);
+                        await Task.Delay(TimeSpan.FromSeconds(3 * essai));
+                    }
+                }
+            }
+            throw derniere ?? new IOException("téléchargement impossible");
         }
 
         /// <summary>L'installeur de la version précédente, s'il est encore là.</summary>
