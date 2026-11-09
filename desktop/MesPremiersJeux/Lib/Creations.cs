@@ -29,7 +29,7 @@ namespace MesPremiersJeux.Lib
 
         private static readonly Dictionary<string, string> Noms = new Dictionary<string, string>
         {
-            ["peinture"] = "Ma peinture", ["collage"] = "Mon collage", ["sculpture"] = "Mon vase", ["statue"] = "Ma statue", ["musique"] = "Ma musique",
+            ["peinture"] = "Ma peinture", ["collage"] = "Mon collage", ["sculpture"] = "Mon vase", ["statue"] = "Ma statue", ["totem"] = "Mon totem", ["gravure"] = "Ma gravure", ["musique"] = "Ma musique",
         };
         public static string Nom(string genre) => Noms.TryGetValue(genre ?? "", out var n) ? n : "Mon œuvre";
 

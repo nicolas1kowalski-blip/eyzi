@@ -84,7 +84,12 @@ namespace MesPremiersJeux.Views
         private void Tuile(string icon, string name, Color tint, string minis, Action action)
         {
             var t = MenuKit.ThemeTile(icon, name, tint, minis);
-            t.Click += (s, e) => action();
+            t.Click += (s, e) =>
+            {
+                // Un atelier qui ne s'ouvre pas le DIT (et l'écrit au journal) au lieu de rester muet.
+                try { action(); }
+                catch (Exception ex) { Log.Write("creer", "« " + name + " » ne s'ouvre pas : " + ex); Menu(); Speech.Say("Oh, cet atelier ne veut pas s'ouvrir. On le dira à un grand."); }
+            };
             _cats.Children.Add(t);
         }
 
