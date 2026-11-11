@@ -131,7 +131,7 @@
       if (isLic) {
         mods = document.createElement('div'); mods.className = 'mods';
         var cur = (q.modules || 'jouer,apprendre,parler').split(',');
-        mods.innerHTML = '<span>Mondes :</span>' + [['jouer','🎮 Jouer'],['apprendre','🎓 Apprendre'],['parler','💬 Parler']].map(function(m){
+        mods.innerHTML = '<span>Mondes :</span>' + [['jouer','🎮 Jouer + 🎨 Créer'],['apprendre','🎓 Apprendre'],['parler','💬 Parler']].map(function(m){
           return '<label><input type="checkbox" value="'+m[0]+'"'+(cur.indexOf(m[0])>=0?' checked':'')+'> '+m[1]+'</label>';
         }).join('');
         acts.parentNode.insertBefore(mods, acts);

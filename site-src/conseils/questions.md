@@ -10,7 +10,7 @@ faq: 1
 ## L'essentiel
 
 ### Eyzi, c'est quoi ?
-Une application Windows à commande oculaire pour les enfants qui ne peuvent ni parler ni utiliser leurs mains. Trois mondes : jouer, apprendre avec un programme de maternelle adapté, et parler avec un tableau de pictogrammes et une écoute qui propose les réponses à la question posée.
+Une application Windows à commande oculaire pour les enfants qui ne peuvent ni parler ni utiliser leurs mains. Quatre mondes : jouer, apprendre avec un programme de maternelle adapté, créer (peindre, sculpter, composer une musique), et parler avec un tableau de pictogrammes et une écoute qui propose les réponses à la question posée.
 
 ### Combien ça coûte ?
 Rien. Eyzi est en version bêta gratuite. Vous demandez un numéro de licence sur le site, et en échange nous aimerions vos retours pour l'améliorer. L'écoute avec réponses proposées par l'IA, qui a un coût par question, n'est ouverte qu'à quelques familles pendant la bêta.
