@@ -255,7 +255,9 @@ namespace MesPremiersJeux.Learning
         internal Acteur(Canvas scene, FrameworkElement contenu, double w, double h)
         {
             _contenu = contenu; W = w; H = h;
-            Boite = new Grid { Width = w, Height = h, RenderTransformOrigin = new Point(0.5, 1) };
+            // Un acteur ne reçoit ni le regard ni le clic, sauf pendant son « à toi » (voir Eveiller) :
+            // un acteur encore invisible posé par-dessus ne doit pas masquer la cible.
+            Boite = new Grid { Width = w, Height = h, RenderTransformOrigin = new Point(0.5, 1), IsHitTestVisible = false };
             Boite.Children.Add(contenu);
             var g = new TransformGroup();
             g.Children.Add(_s); g.Children.Add(_r); g.Children.Add(_t);
@@ -305,6 +307,13 @@ namespace MesPremiersJeux.Learning
             Bouton = new Button { Style = (Style)Application.Current.Resources["BalloonButton"], Content = _contenu, Width = W, Height = H, Focusable = false, IsHitTestVisible = false };
             Boite.Children.Add(Bouton);
             return this;
+        }
+
+        /// <summary>Réveille (ou rendort) la cible : seule celle du « à toi » en cours reçoit le regard.</summary>
+        public void Eveiller(bool oui)
+        {
+            Boite.IsHitTestVisible = oui;
+            if (Bouton != null) Bouton.IsHitTestVisible = oui;
         }
 
         // ----- les mouvements -----

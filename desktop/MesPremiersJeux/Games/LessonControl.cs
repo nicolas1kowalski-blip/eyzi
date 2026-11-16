@@ -287,7 +287,7 @@ namespace MesPremiersJeux.Games
                     if (fait) return;
                     fait = true;
                     btn.Click -= clic;
-                    btn.IsHitTestVisible = false;
+                    t.Cible.Eveiller(false);
                     if (fini || gen != _gen || Closed) return;
                     Locked = true;
                     t.Cible.Calme();
@@ -296,7 +296,7 @@ namespace MesPremiersJeux.Games
                 };
                 clic = (s, a) => { GameKit.Success(); jouer(); };
                 btn.Click += clic;
-                btn.IsHitTestVisible = true;
+                t.Cible.Eveiller(true);
                 SpeakConsigne(t.Dit);
                 t.Cible.Respirer();
                 Locked = false;

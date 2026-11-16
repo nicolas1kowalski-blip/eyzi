@@ -18,7 +18,7 @@ namespace MesPremiersJeux.Learning
     /// scène a son « à toi », déclenché au regard.
     /// Première série : les grandeurs et la comparaison des quantités.
     /// </summary>
-    public static class Explications
+    public static partial class Explications
     {
         private const double Sol = Demo.Sol;
         private static readonly Color Bleu = Color.FromRgb(0x3B, 0x9B, 0xFF), Orange = Color.FromRgb(0xFF, 0x8A, 0x2B), Vert = Color.FromRgb(0x4C, 0xB8, 0x5E),

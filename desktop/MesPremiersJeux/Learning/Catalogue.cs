@@ -85,18 +85,18 @@ namespace MesPremiersJeux.Learning
         // ==================================================================
         private static Competence Denombrer() => C("nombres.denombrer", "Dénombrer", "🍎",
             P(1,
-                A("a", "compter et choisir le chiffre", () => Compter(1, 3, 2, false)),
-                A("b", "montrer la collection demandée", () => Montrer(1, 3, 2))),
+                A("a", "compter et choisir le chiffre", () => Compter(1, 3, 2, false), E.Denombrer(3)),
+                A("b", "montrer la collection demandée", () => Montrer(1, 3, 2), E.MontrerCollection(3))),
             P(2,
-                A("a", "compter et choisir le chiffre", () => Compter(1, 6, 3, false)),
-                A("b", "montrer la collection demandée", () => Montrer(1, 6, 3)),
-                A("c", "le dé qui montre autant", () => DeAutant(1, 6, 3)),
-                A("d", "compter en désordre", () => Compter(1, 6, 3, true))),
+                A("a", "compter et choisir le chiffre", () => Compter(1, 6, 3, false), E.Denombrer(6)),
+                A("b", "montrer la collection demandée", () => Montrer(1, 6, 3), E.MontrerCollection(6)),
+                A("c", "le dé qui montre autant", () => DeAutant(1, 6, 3), E.DeAutant(6)),
+                A("d", "compter en désordre", () => Compter(1, 6, 3, true), E.Denombrer(6))),
             P(3,
-                A("a", "compter et choisir le chiffre", () => Compter(1, 10, 4, false)),
-                A("b", "montrer la collection demandée", () => Montrer(3, 10, 3)),
-                A("c", "la boîte de 10 qui montre autant", () => Boite10Autant(1, 10, 3)),
-                A("d", "compter en désordre, objets variés", () => Compter(4, 10, 4, true, true))));
+                A("a", "compter et choisir le chiffre", () => Compter(1, 10, 4, false), E.Denombrer(10)),
+                A("b", "montrer la collection demandée", () => Montrer(3, 10, 3), E.MontrerCollection(10)),
+                A("c", "la boîte de 10 qui montre autant", () => Boite10Autant(1, 10, 3), E.BoiteAutant(10)),
+                A("d", "compter en désordre, objets variés", () => Compter(4, 10, 4, true, true), E.Denombrer(10))));
 
         private static ExerciceChoix Compter(int min, int max, int count, bool desordre, bool varies = false)
         {
@@ -145,16 +145,16 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Chiffres() => C("nombres.chiffres", "Reconnaître les chiffres", "🔢",
             P(1,
-                A("a", "où est le chiffre ?", () => OuEstChiffre(1, 3, 2, false)),
-                A("b", "le chiffre et le dé", () => ChiffreVersDe(1, 3, 2))),
+                A("a", "où est le chiffre ?", () => OuEstChiffre(1, 3, 2, false), E.Chiffres(3)),
+                A("b", "le chiffre et le dé", () => ChiffreVersDe(1, 3, 2), E.ChiffreDe(3))),
             P(2,
-                A("a", "où est le chiffre ?", () => OuEstChiffre(1, 6, 4, false)),
-                A("b", "le chiffre et le dé", () => ChiffreVersDe(1, 6, 3)),
-                A("c", "le chiffre et la boîte de 10", () => ChiffreVersBoite(1, 6, 3))),
+                A("a", "où est le chiffre ?", () => OuEstChiffre(1, 6, 4, false), E.Chiffres(6)),
+                A("b", "le chiffre et le dé", () => ChiffreVersDe(1, 6, 3), E.ChiffreDe(6)),
+                A("c", "le chiffre et la boîte de 10", () => ChiffreVersBoite(1, 6, 3), E.ChiffreBoite(6))),
             P(3,
-                A("a", "où est le chiffre ? (chiffres proches)", () => OuEstChiffre(1, 10, 4, true)),
-                A("b", "le chiffre et la boîte de 10", () => ChiffreVersBoite(1, 10, 4)),
-                A("c", "ranger trois chiffres", () => OrdonnerNombres(1, 10, 3))));
+                A("a", "où est le chiffre ? (chiffres proches)", () => OuEstChiffre(1, 10, 4, true), E.Chiffres(10)),
+                A("b", "le chiffre et la boîte de 10", () => ChiffreVersBoite(1, 10, 4), E.ChiffreBoite(10)),
+                A("c", "ranger trois chiffres", () => OrdonnerNombres(1, 10, 3), E.RangerNombres)));
 
         private static ExerciceChoix OuEstChiffre(int min, int max, int count, bool proches)
         {
@@ -199,7 +199,7 @@ namespace MesPremiersJeux.Learning
                 A("c", "oui ou non : autant ?", () => AutantOuiNon(6), E.Autant)),
             P(3,
                 A("a", "le plus grand nombre", () => PlusGrandNombre(), E.PlusGrandNombre),
-                A("b", "ranger trois nombres", () => OrdonnerNombres(1, 10, 3)),
+                A("b", "ranger trois nombres", () => OrdonnerNombres(1, 10, 3), E.RangerNombres),
                 A("c", "oui ou non : plus grand ?", () => PlusGrandOuiNon(), E.PlusGrandNombre),
                 A("d", "autant que le modèle (jusqu'à 10)", () => Autant(10), E.Autant)));
 
@@ -256,17 +256,17 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Composer() => C("nombres.composer", "Composer et décomposer", "➕",
             P(1,
-                A("a", "2, c'est 1 et combien ?", () => Decomposer(2, 3)),
-                A("b", "j'ajoute un (jusqu'à 3)", () => AjouteUn(true, 3))),
+                A("a", "2, c'est 1 et combien ?", () => Decomposer(2, 3), E.Decomposer(2, 3)),
+                A("b", "j'ajoute un (jusqu'à 3)", () => AjouteUn(true, 3), E.AjouteUn(3))),
             P(2,
-                A("a", "4, c'est 2 et combien ?", () => Decomposer(3, 6)),
-                A("b", "j'ajoute un", () => AjouteUn(true, 6)),
-                A("c", "j'enlève un", () => AjouteUn(false, 6))),
+                A("a", "4, c'est 2 et combien ?", () => Decomposer(3, 6), E.Decomposer(3, 6)),
+                A("b", "j'ajoute un", () => AjouteUn(true, 6), E.AjouteUn(6)),
+                A("c", "j'enlève un", () => AjouteUn(false, 6), E.EnleveUn(6))),
             P(3,
-                A("a", "décomposer jusqu'à 10", () => Decomposer(6, 10)),
-                A("b", "décomposer 10 avec la boîte", () => Decomposer10()),
-                A("c", "les doubles : 3 et 3", () => Doubles()),
-                A("d", "j'enlève un", () => AjouteUn(false, 10))));
+                A("a", "décomposer jusqu'à 10", () => Decomposer(6, 10), E.Decomposer(6, 10)),
+                A("b", "décomposer 10 avec la boîte", () => Decomposer10(), E.Decomposer10),
+                A("c", "les doubles : 3 et 3", () => Doubles(), E.Doubles),
+                A("d", "j'enlève un", () => AjouteUn(false, 10), E.EnleveUn(10))));
 
         private static ExerciceChoix Decomposer(int min, int max)
         {
@@ -308,18 +308,18 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Suite() => C("nombres.suite", "La suite des nombres", "🔢",
             P(1,
-                A("a", "quel nombre vient après ? (jusqu'à 6)", () => Apres(1, 5, true)),
-                A("b", "le nombre qui manque sur la bande (1 à 6)", () => Manquant(1, 6))),
+                A("a", "quel nombre vient après ? (jusqu'à 6)", () => Apres(1, 5, true), E.Apres(6)),
+                A("b", "le nombre qui manque sur la bande (1 à 6)", () => Manquant(1, 6), E.Manquant(6))),
             P(2,
-                A("a", "quel nombre vient après ? (jusqu'à 12)", () => Apres(1, 11, true)),
-                A("b", "quel nombre vient avant ?", () => Apres(2, 12, false)),
-                A("c", "le nombre qui manque sur la bande (1 à 12)", () => Manquant(1, 12))),
+                A("a", "quel nombre vient après ? (jusqu'à 12)", () => Apres(1, 11, true), E.Apres(12)),
+                A("b", "quel nombre vient avant ?", () => Apres(2, 12, false), E.Avant(12)),
+                A("c", "le nombre qui manque sur la bande (1 à 12)", () => Manquant(1, 12), E.Manquant(12))),
             P(3,
-                A("a", "quel nombre vient après ? (jusqu'à 30)", () => Apres(1, 29, true)),
-                A("b", "quel nombre vient avant ?", () => Apres(2, 30, false)),
-                A("c", "le nombre qui manque sur la bande (1 à 30)", () => Manquant(1, 30)),
-                A("d", "compter à rebours", () => Rebours()),
-                A("e", "de deux en deux", () => SuiteNombres(2))));
+                A("a", "quel nombre vient après ? (jusqu'à 30)", () => Apres(1, 29, true), E.Apres(30)),
+                A("b", "quel nombre vient avant ?", () => Apres(2, 30, false), E.Avant(30)),
+                A("c", "le nombre qui manque sur la bande (1 à 30)", () => Manquant(1, 30), E.Manquant(30)),
+                A("d", "compter à rebours", () => Rebours(), E.Rebours),
+                A("e", "de deux en deux", () => SuiteNombres(2), E.DeuxEnDeux)));
 
         private static ExerciceChoix Apres(int min, int max, bool apres)
         {
@@ -346,15 +346,15 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Rang() => C("nombres.rang", "Le rang et la bande", "🚂",
             P(2,
-                A("a", "le premier, le dernier", () => RangFile(4, 6, false)),
-                A("b", "le deuxième, le troisième", () => RangFile(4, 6, true)),
-                A("c", "le dé sur la bande", () => DeSurBande(6)),
-                A("d", "compléter la bande (1 à 6)", () => Manquant(1, 6))),
+                A("a", "le premier, le dernier", () => RangFile(4, 6, false), E.RangFile(4)),
+                A("b", "le deuxième, le troisième", () => RangFile(4, 6, true), E.RangFile(4)),
+                A("c", "le dé sur la bande", () => DeSurBande(6), E.DeBande),
+                A("d", "compléter la bande (1 à 6)", () => Manquant(1, 6), E.Manquant(6))),
             P(3,
-                A("a", "premier, dernier, avant-dernier", () => RangFile(6, 10, true)),
-                A("b", "avancer sur la piste", () => Piste(10, true)),
-                A("c", "reculer sur la piste", () => Piste(10, false)),
-                A("d", "compléter la bande (1 à 10)", () => Manquant(1, 10))));
+                A("a", "premier, dernier, avant-dernier", () => RangFile(6, 10, true), E.RangFile(5)),
+                A("b", "avancer sur la piste", () => Piste(10, true), E.Avancer),
+                A("c", "reculer sur la piste", () => Piste(10, false), E.Reculer),
+                A("d", "compléter la bande (1 à 10)", () => Manquant(1, 10), E.Manquant(10))));
 
         private static readonly string[] Ordinaux = { "premier", "deuxième", "troisième", "quatrième", "cinquième", "sixième", "septième", "huitième", "neuvième", "dixième" };
 
@@ -398,18 +398,18 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Probleme() => C("nombres.probleme", "Petits problèmes", "🧺",
             P(1,
-                A("a", "j'en ajoute (jusqu'à 3)", () => Ajout(3)),
-                A("b", "j'en enlève (jusqu'à 3)", () => Retrait(3))),
+                A("a", "j'en ajoute (jusqu'à 3)", () => Ajout(3), E.Ajout(3)),
+                A("b", "j'en enlève (jusqu'à 3)", () => Retrait(3), E.Retrait(3))),
             P(2,
-                A("a", "j'en ajoute (jusqu'à 6)", () => Ajout(6)),
-                A("b", "j'en enlève (jusqu'à 6)", () => Retrait(6)),
-                A("c", "partager en deux", () => Partage(3))),
+                A("a", "j'en ajoute (jusqu'à 6)", () => Ajout(6), E.Ajout(6)),
+                A("b", "j'en enlève (jusqu'à 6)", () => Retrait(6), E.Retrait(6)),
+                A("c", "partager en deux", () => Partage(3), E.Partage(3))),
             P(3,
-                A("a", "j'en ajoute (jusqu'à 10)", () => Ajout(10)),
-                A("b", "j'en enlève (jusqu'à 10)", () => Retrait(10)),
-                A("c", "partager en deux", () => Partage(5)),
-                A("d", "combien en plus ?", () => Ecart()),
-                A("e", "combien en manque-t-il ?", () => Manque())));
+                A("a", "j'en ajoute (jusqu'à 10)", () => Ajout(10), E.Ajout(10)),
+                A("b", "j'en enlève (jusqu'à 10)", () => Retrait(10), E.Retrait(10)),
+                A("c", "partager en deux", () => Partage(5), E.Partage(5)),
+                A("d", "combien en plus ?", () => Ecart(), E.Ecart),
+                A("e", "combien en manque-t-il ?", () => Manque(), E.Manque)));
 
         private static ExerciceChoix Ajout(int max)
         {
