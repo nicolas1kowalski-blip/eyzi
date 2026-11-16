@@ -169,7 +169,16 @@ namespace MesPremiersJeux.Learning
                     for (int y = 0; y < h; y++)
                         for (int x = 0; x < w; x++)
                             if (px[(y * w + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-                    if (x1 > x0 && y1 > y0) { var c = new CroppedBitmap(f, new Int32Rect(x0, y0, x1 - x0 + 1, y1 - y0 + 1)); c.Freeze(); res = c; }
+                    if (x1 > x0 && y1 > y0)
+                    {
+                        // Une copie indépendante des pixels utiles (toujours figeable, quel que soit l'original).
+                        int cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+                        var coupe = new byte[cw * ch * 4];
+                        for (int y = 0; y < ch; y++) Buffer.BlockCopy(px, ((y0 + y) * w + x0) * 4, coupe, y * cw * 4, cw * 4);
+                        var c = BitmapSource.Create(cw, ch, 96, 96, PixelFormats.Bgra32, null, coupe, cw * 4);
+                        c.Freeze();
+                        res = c;
+                    }
                 }
             }
             catch { res = null; }
