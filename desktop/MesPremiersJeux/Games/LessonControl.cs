@@ -21,6 +21,12 @@ namespace MesPremiersJeux.Games
         private readonly Action<string> _onDone;   // « encore » ou « chemin »
         private int _index = -1;
         private bool _errored;
+        private int _erreurs;                                             // les erreurs sur l'exercice en cours
+        private int _demos, _gen;                                         // explications jouées dans la leçon ; numéro de l'explication en cours
+        private readonly HashSet<string> _expliquees = new HashSet<string>(); // les notions déjà montrées dans cette leçon
+        private FrameworkElement _aideCible;                              // la bonne réponse du moment, et sa consigne
+        private Func<string> _aideDit;
+        private const int DemosMax = 2;
         private Pas Pas => _index >= 0 && _index < _lecon.Pas.Count ? _lecon.Pas[_index] : null;
 
         private static readonly Brush Ink = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A));
@@ -44,10 +50,31 @@ namespace MesPremiersJeux.Games
             _index++;
             if (_index >= _lecon.Pas.Count) { Terminer(); return; }
             _errored = false;
+            _erreurs = 0;
+            _aideCible = null; _aideDit = null;
             Locked = false;
             Question.Text = (_lecon.EstDefi ? "⚡ Défi  " : "🧭 Leçon  ") + Points();
             Emoji.Fix(Question);
+
+            // AVANT L'EXERCICE, L'EXPLICATION : la notion est montrée par une petite animation,
+            // tant que l'axe n'est pas validé — une fois par notion et par leçon, deux au plus.
+            var fam = FamilleDuPas;
+            if (!_lecon.EstDefi && fam != null && Pas.Genre == Genre.Noeud && _demos < DemosMax
+                && !_expliquees.Contains(fam.Cle) && !Acquisition.AxeValide(Pas.Noeud, Pas.Axe))
+            {
+                _expliquees.Add(fam.Cle);
+                _demos++;
+                SetConsigne(null, null);
+                JouerDemo(fam.Prochaine(), "Je te montre quelque chose.", MontrerExercice);
+                return;
+            }
+            MontrerExercice();
+        }
+
+        private void MontrerExercice()
+        {
             var ex = Pas.Exercice;
+            Locked = false;
             try
             {
                 if (ex is ExerciceChoix c) MontrerChoix(c);
@@ -90,10 +117,194 @@ namespace MesPremiersJeux.Games
         private void Erreur(Button btn, string consigne, bool cacher)
         {
             _errored = true;
+            _erreurs++;
             Shake(btn);
             if (cacher) btn.Visibility = Visibility.Hidden; // une mauvaise cible en moins : on ne bloque jamais
+
+            // L'ERREUR EXPLIQUE : à la première, on montre pourquoi avec les objets mêmes de
+            // l'exercice (s'il sait le faire) ; à la deuxième, on remontre la notion sous un autre angle.
+            Explication e = null;
+            if (!_lecon.EstDefi)
+            {
+                var ex = Pas.Exercice; var fam = FamilleDuPas;
+                if (_erreurs == 1 && ex.Pourquoi != null) e = new Explication { Id = "pourquoi", Make = ex.Pourquoi };
+                else if (_erreurs == 2 && fam != null) e = fam.Prochaine();
+            }
+            if (e != null)
+            {
+                Locked = true;
+                DisarmHint();
+                Schedule(700, () => JouerDemo(e, "Regarde, je te montre.", () => Reprendre(consigne)));
+                return;
+            }
             Speak(GameKit.Encourage());
             Schedule(1500, () => SpeakConsigne(consigne));
+        }
+
+        // ------------------------------------------------------------------
+        //  LES EXPLICATIONS ANIMÉES (voir Learning/Explications.cs)
+        // ------------------------------------------------------------------
+        private Famille FamilleDuPas
+        {
+            get
+            {
+                var p = Pas;
+                return p?.Noeud?.Def?.Axes.Find(a => a.Id == p.Axe)?.Explications;
+            }
+        }
+
+        /// <summary>La bonne réponse du moment : le coup de pouce la fera « respirer » (sauf en défi), et après une explication on y revient.</summary>
+        private void Aide(FrameworkElement cible, Func<string> dit)
+        {
+            _aideCible = cible; _aideDit = dit;
+            if (!_lecon.EstDefi && cible != null) ArmHint(cible, dit);
+        }
+
+        /// <summary>Après une explication : on revient à l'exercice, là où il en était.</summary>
+        private void Reprendre(string consigne)
+        {
+            Locked = false;
+            if (!_lecon.EstDefi && _aideCible != null) ArmHint(_aideCible, _aideDit);
+            string dit = consigne;
+            if (dit == null) { try { dit = _aideDit?.Invoke(); } catch { } }
+            if (!string.IsNullOrEmpty(dit)) SpeakConsigne(dit);
+        }
+
+        /// <summary>La bulle de consigne de l'exercice, avec 🎬 pour revoir l'explication quand la notion en a une.</summary>
+        private void Consigne(Exercice ex, Func<string> dit)
+        {
+            SetConsigne(Modele(ex), dit, 72);
+            var fam = FamilleDuPas;
+            if (_lecon.EstDefi || fam == null) return;
+            var revoir = new Button
+            {
+                Style = (Style)Application.Current.Resources["AnswerButton"],
+                Width = 66, Height = 66,
+                Content = new TextBlock { Text = "🎬", FontSize = 30, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+            };
+            Emoji.FixTree(revoir);
+            revoir.Click += (s, e) =>
+            {
+                if (Locked) return;
+                Locked = true;
+                DisarmHint();
+                JouerDemo(fam.Prochaine(), null, () => Reprendre(null));
+            };
+            ConsigneBouton(revoir);
+        }
+
+        /// <summary>Attend au moins <paramref name="ms"/>, et que la voix ait fini sa phrase.</summary>
+        private void Attendre(int ms, Action puis)
+        {
+            var debut = DateTime.Now;
+            Action tic = null;
+            tic = () =>
+            {
+                double passe = (DateTime.Now - debut).TotalMilliseconds;
+                if (passe < ms || (Speech.IsBusy && passe < ms + 9000)) { Schedule(90, tic); return; }
+                puis();
+            };
+            Schedule(90, tic);
+        }
+
+        /// <summary>
+        /// Joue une explication par-dessus l'exercice (qui reste en place dessous), temps après
+        /// temps : la voix dit, la scène bouge, on attend la fin des deux. Un « à toi » attend le
+        /// regard de l'enfant sur sa cible — et se joue tout seul au bout d'un moment : on ne
+        /// bloque jamais. Puis <paramref name="apres"/>.
+        /// </summary>
+        private void JouerDemo(Explication e, string annonce, Action apres)
+        {
+            Demo d;
+            try { d = e.Make(); }
+            catch (Exception err) { Log.Write("lecons", "Explication " + e.Id + " : " + err); apres(); return; }
+
+            int gen = ++_gen;
+            Locked = true;
+            DisarmHint();
+            ConsigneVisible(false);
+            try { Usage.Count("lecon:explication"); } catch { }
+
+            Emoji.FixTree(d.Scene);
+            d.Scene.Clip = new RectangleGeometry(new Rect(0, 0, Demo.W, Demo.H), 44, 44);
+            var carte = new Border
+            {
+                Width = Demo.W, Height = Demo.H, Margin = new Thickness(40, 30, 40, 30), CornerRadius = new CornerRadius(44), Child = d.Scene,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 30, ShadowDepth = 4, Opacity = 0.25 },
+            };
+            var voile = new Grid { Background = new SolidColorBrush(Color.FromRgb(0xEF, 0xF7, 0xFF)) };
+            voile.Children.Add(new Viewbox { Child = carte, Stretch = Stretch.Uniform });
+
+            // L'exercice reste en place dessous, mais caché : le regard ne doit pas être attiré par ses boutons.
+            var dessous = new List<UIElement>();
+            foreach (UIElement el in Body.Children) if (el.Visibility == Visibility.Visible) { dessous.Add(el); el.Visibility = Visibility.Hidden; }
+
+            bool fini = false;
+            void Fin()
+            {
+                if (fini) return;
+                fini = true;
+                if (gen != _gen || Closed) return;
+                Body.Children.Remove(voile);
+                foreach (var el in dessous) el.Visibility = Visibility.Visible;
+                ConsigneVisible(true);
+                apres();
+            }
+
+            // « Passer » : pour l'accompagnant seulement (le regard ne peut pas le déclencher).
+            var passer = new Button
+            {
+                Style = (Style)Application.Current.Resources["BackButton"], Content = "⏭  Passer",
+                HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(16),
+            };
+            MesPremiersJeux.Gaze.GazeTargets.SetParentOnly(passer, true);
+            Emoji.FixTree(passer);
+            passer.Click += (s, a) => { Speech.Stop(); Fin(); };
+            voile.Children.Add(passer);
+            Body.Children.Add(voile);
+
+            int i = -1;
+            Action etape = null;
+            etape = () =>
+            {
+                if (fini || gen != _gen || Closed) return;
+                i++;
+                if (i >= d.Temps.Count) { Attendre(600, Fin); return; }
+                var t = d.Temps[i];
+                if (t.Cible?.Bouton == null)
+                {
+                    if (!string.IsNullOrEmpty(t.Dit)) Speak(t.Dit);
+                    try { t.Jouer?.Invoke(); } catch (Exception err) { Log.Write("lecons", "Explication " + e.Id + " temps " + i + " : " + err.Message); }
+                    Attendre(t.Ms, etape);
+                    return;
+                }
+                // « À toi ! » : l'enfant regarde la cible, et la suite se joue.
+                var btn = t.Cible.Bouton;
+                bool fait = false;
+                RoutedEventHandler clic = null;
+                Action jouer = () =>
+                {
+                    if (fait) return;
+                    fait = true;
+                    btn.Click -= clic;
+                    btn.IsHitTestVisible = false;
+                    if (fini || gen != _gen || Closed) return;
+                    Locked = true;
+                    t.Cible.Calme();
+                    try { t.Jouer?.Invoke(); } catch (Exception err) { Log.Write("lecons", "Explication " + e.Id + " temps " + i + " : " + err.Message); }
+                    Attendre(t.Ms, etape);
+                };
+                clic = (s, a) => { GameKit.Success(); jouer(); };
+                btn.Click += clic;
+                btn.IsHitTestVisible = true;
+                SpeakConsigne(t.Dit);
+                t.Cible.Respirer();
+                Locked = false;
+                Attendre(9000, jouer);
+            };
+
+            if (!string.IsNullOrEmpty(annonce)) Speak(annonce);
+            Attendre(500, etape);
         }
 
         private double TailleReponse(int n, double voulue) => voulue > 0 ? voulue : n <= 2 ? 300 : n == 3 ? 260 : n == 4 ? 230 : 195;
@@ -126,7 +337,7 @@ namespace MesPremiersJeux.Games
         // ------------------------------------------------------------------
         private void MontrerChoix(ExerciceChoix c)
         {
-            SetConsigne(Modele(c), () => c.Consigne, 72);
+            Consigne(c, () => c.Consigne);
             var boutons = new List<Button>();
             Button bon = null;
             double size = TailleReponse(c.Reponses.Count, c.Taille);
@@ -146,7 +357,7 @@ namespace MesPremiersJeux.Games
             var answers = Rangee(boutons);
             if (c.Scene != null) SetBody(Scene(c.Scene()), answers);
             else SetBody(answers);
-            if (!_lecon.EstDefi && bon != null) ArmHint(bon, () => c.Consigne);
+            Aide(bon, () => c.Consigne);
             DireConsigne(c.Consigne);
         }
 
@@ -157,7 +368,7 @@ namespace MesPremiersJeux.Games
         {
             int index = 0;
             string ConsigneObjet(ExerciceAttribution ex) => index < ex.Objets.Count ? string.Format(ex.ConsigneObjet, ex.Objets[index].Dit) : ex.Consigne;
-            SetConsigne(Modele(a), () => ConsigneObjet(a), 72);
+            Consigne(a, () => ConsigneObjet(a));
             var compteurs = new List<TextBlock>();
             var boutons = new List<Button>();
             ContentControl stageHost = new ContentControl { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
@@ -201,7 +412,7 @@ namespace MesPremiersJeux.Games
                         index++;
                         if (index >= a.Objets.Count) { Reussite(btn, a.Bravo ?? "Tout est rangé ! Bravo !"); return; }
                         Speak("Oui !");
-                        Schedule(900, () => { Afficher(); if (!_lecon.EstDefi) ArmHint(boutons[a.Objets[index].Cible], () => ConsigneObjet(a)); SpeakConsigne(ConsigneObjet(a)); });
+                        Schedule(900, () => { Afficher(); Aide(boutons[a.Objets[index].Cible], () => ConsigneObjet(a)); SpeakConsigne(ConsigneObjet(a)); });
                     }
                     else Erreur(btn, ConsigneObjet(a), false);
                 };
@@ -209,7 +420,7 @@ namespace MesPremiersJeux.Games
             }
             Afficher();
             SetBody(stageHost, Rangee(boutons));
-            if (!_lecon.EstDefi) ArmHint(boutons[a.Objets[0].Cible], () => ConsigneObjet(a));
+            Aide(boutons[a.Objets[0].Cible], () => ConsigneObjet(a));
             DireConsigne(a.Consigne + " " + ConsigneObjet(a));
         }
 
@@ -218,7 +429,7 @@ namespace MesPremiersJeux.Games
         // ------------------------------------------------------------------
         private void MontrerOrdre(ExerciceOrdre o)
         {
-            SetConsigne(Modele(o), () => o.Consigne, 72);
+            Consigne(o, () => o.Consigne);
             int next = 0;
             var slots = new List<Border>();
             var slotRow = Row();
@@ -254,14 +465,14 @@ namespace MesPremiersJeux.Games
                         if (next >= o.Cartes.Count) { Reussite(null, o.Bravo ?? "Tout est dans l'ordre ! Bravo !"); return; }
                         SpeakConsigne(o.ConsigneSuite);
                         Locked = false;
-                        if (!_lecon.EstDefi) ArmHint(boutons.First(b => b.Index == next).Btn, () => o.ConsigneSuite);
+                        Aide(boutons.First(b => b.Index == next).Btn, () => o.ConsigneSuite);
                     }
                     else Erreur(btn, next == 0 ? o.Consigne : o.ConsigneSuite, false);
                 };
                 boutons.Add((btn, i));
             }
             SetBody(new Viewbox { Child = slotRow, MaxHeight = 220, Margin = new Thickness(0, 10, 0, 10) }, Rangee(boutons.Select(b => b.Btn).ToList()));
-            if (!_lecon.EstDefi) ArmHint(boutons.First(b => b.Index == 0).Btn, () => o.Consigne);
+            Aide(boutons.First(b => b.Index == 0).Btn, () => o.Consigne);
             DireConsigne(o.Consigne);
         }
 

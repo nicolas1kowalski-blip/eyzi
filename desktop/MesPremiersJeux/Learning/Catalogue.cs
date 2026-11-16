@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using V = MesPremiersJeux.Learning.Visuels;
+using E = MesPremiersJeux.Learning.Explications;
 
 namespace MesPremiersJeux.Learning
 {
@@ -55,7 +56,8 @@ namespace MesPremiersJeux.Learning
             return p;
         }
 
-        private static Axe A(string id, string nom, Func<Exercice> make) => new Axe { Id = id, Nom = nom, Make = make };
+        /// <summary>Un axe ; <paramref name="explications"/> = la notion montrée en animation avant l'exercice (facultatif).</summary>
+        private static Axe A(string id, string nom, Func<Exercice> make, Famille explications = null) => new Axe { Id = id, Nom = nom, Make = make, Explications = explications };
 
         /// <summary>Un choix : les réponses sont des nombres (chiffres) dont « bon ».</summary>
         private static ExerciceChoix ChoixChiffres(string consigne, Func<FrameworkElement> scene, int bon, int count, int min, int max, bool proches = false)
@@ -188,18 +190,18 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Comparer() => C("nombres.comparer", "Comparer", "⚖️",
             P(1,
-                A("a", "où y en a-t-il beaucoup ?", () => BeaucoupPeu(true)),
-                A("b", "où y en a-t-il le moins ?", () => BeaucoupPeu(false)),
-                A("c", "où y en a-t-il le plus ? (jusqu'à 4)", () => PlusMoins(true, 4))),
+                A("a", "où y en a-t-il beaucoup ?", () => BeaucoupPeu(true), E.Beaucoup),
+                A("b", "où y en a-t-il le moins ?", () => BeaucoupPeu(false), E.Beaucoup),
+                A("c", "où y en a-t-il le plus ? (jusqu'à 4)", () => PlusMoins(true, 4), E.PlusMoins)),
             P(2,
-                A("a", "où y en a-t-il le plus ?", () => PlusMoins(true, 6)),
-                A("b", "autant que le modèle", () => Autant(6)),
-                A("c", "oui ou non : autant ?", () => AutantOuiNon(6))),
+                A("a", "où y en a-t-il le plus ?", () => PlusMoins(true, 6), E.PlusMoins),
+                A("b", "autant que le modèle", () => Autant(6), E.Autant),
+                A("c", "oui ou non : autant ?", () => AutantOuiNon(6), E.Autant)),
             P(3,
-                A("a", "le plus grand nombre", () => PlusGrandNombre()),
+                A("a", "le plus grand nombre", () => PlusGrandNombre(), E.PlusGrandNombre),
                 A("b", "ranger trois nombres", () => OrdonnerNombres(1, 10, 3)),
-                A("c", "oui ou non : plus grand ?", () => PlusGrandOuiNon()),
-                A("d", "autant que le modèle (jusqu'à 10)", () => Autant(10))));
+                A("c", "oui ou non : plus grand ?", () => PlusGrandOuiNon(), E.PlusGrandNombre),
+                A("d", "autant que le modèle (jusqu'à 10)", () => Autant(10), E.Autant)));
 
         private static ExerciceChoix BeaucoupPeu(bool beaucoup)
         {
@@ -207,6 +209,7 @@ namespace MesPremiersJeux.Learning
             var ex = new ExerciceChoix { Consigne = beaucoup ? "Où y a-t-il beaucoup de " + o.Plur + " ?" : "Où y a-t-il le moins de " + o.Plur + " ?", Taille = 300 };
             ex.Reponses.Add(new Carte { Visuel = () => V.Collection(o, bcp, 60, true), Bonne = beaucoup, Dit = "beaucoup" });
             ex.Reponses.Add(new Carte { Visuel = () => V.Collection(o, peu, 60, true), Bonne = !beaucoup, Dit = "un peu" });
+            ex.Pourquoi = () => E.PourquoiQuantites(o, new[] { bcp, peu });
             if (V.Rng.Next(2) == 0) ex.Reponses.Reverse();
             return ex;
         }
@@ -217,6 +220,7 @@ namespace MesPremiersJeux.Learning
             int bon = plus ? nums.Max() : nums.Min();
             var ex = new ExerciceChoix { Consigne = plus ? "Où y a-t-il le plus de " + o.Plur + " ?" : "Où y a-t-il le moins de " + o.Plur + " ?", Taille = 300 };
             foreach (var n in nums) { int k = n; ex.Reponses.Add(new Carte { Visuel = () => V.Collection(o, k, 60), Bonne = k == bon, Dit = o.N(k) }); }
+            ex.Pourquoi = () => E.PourquoiQuantites(o, nums);
             return ex;
         }
 
@@ -607,18 +611,18 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Grandeurs() => C("formes.grandeurs", "Les grandeurs", "📏",
             P(1,
-                A("a", "le grand ou le petit", () => GrandPetit(true)),
-                A("b", "le plus petit", () => GrandPetit(false)),
-                A("c", "long ou court", () => LongCourt())),
+                A("a", "le grand ou le petit", () => GrandPetit(true), E.GrandPetit),
+                A("b", "le plus petit", () => GrandPetit(false), E.GrandPetit),
+                A("c", "long ou court", () => LongCourt(), E.LongCourt)),
             P(2,
-                A("a", "ranger trois longueurs", () => OrdonnerLongueurs(3)),
-                A("b", "gros ou mince", () => GrosMince()),
-                A("c", "ranger trois tailles", () => OrdonnerTailles(3)),
-                A("d", "lourd ou léger", () => LourdLeger())),
+                A("a", "ranger trois longueurs", () => OrdonnerLongueurs(3), E.RangerLongueurs3),
+                A("b", "gros ou mince", () => GrosMince(), E.GrosMince),
+                A("c", "ranger trois tailles", () => OrdonnerTailles(3), E.RangerTailles3),
+                A("d", "lourd ou léger", () => LourdLeger(), E.LourdLeger)),
             P(3,
-                A("a", "ranger cinq tailles", () => OrdonnerTailles(5)),
-                A("b", "ranger cinq longueurs", () => OrdonnerLongueurs(5)),
-                A("c", "du plus léger au plus lourd", () => OrdonnerPoids())));
+                A("a", "ranger cinq tailles", () => OrdonnerTailles(5), E.RangerTailles5),
+                A("b", "ranger cinq longueurs", () => OrdonnerLongueurs(5), E.RangerLongueurs5),
+                A("c", "du plus léger au plus lourd", () => OrdonnerPoids(), E.RangerPoids)));
 
         private static ExerciceOrdre OrdonnerLongueurs(int n)
         {
@@ -649,6 +653,7 @@ namespace MesPremiersJeux.Learning
             var ex = new ExerciceChoix { Consigne = grand ? "Où est le grand ? Montre " + o.Sing.Replace("une ", "la grande ").Replace("un ", "le grand ") + "." : "Montre " + o.Sing.Replace("une ", "la plus petite ").Replace("un ", "le plus petit ") + "." , Taille = 280 };
             ex.Reponses.Add(new Carte { Visuel = () => V.Taille(o, 170, 200), Bonne = grand, Dit = "grand" });
             ex.Reponses.Add(new Carte { Visuel = () => V.Taille(o, 70, 200), Bonne = !grand, Dit = "petit" });
+            ex.Pourquoi = () => E.PourquoiTailles(o);
             if (V.Rng.Next(2) == 0) ex.Reponses.Reverse();
             return ex;
         }
@@ -659,6 +664,7 @@ namespace MesPremiersJeux.Learning
             var ex = new ExerciceChoix { Consigne = longQ ? "Montre la barre la plus longue." : "Montre la barre la plus courte.", Taille = 300 };
             ex.Reponses.Add(new Carte { Visuel = () => V.Barre(240, 44, col), Bonne = longQ, Dit = "la longue" });
             ex.Reponses.Add(new Carte { Visuel = () => V.Barre(110, 44, col), Bonne = !longQ, Dit = "la courte" });
+            ex.Pourquoi = () => E.PourquoiLongueurs(col);
             if (V.Rng.Next(2) == 0) ex.Reponses.Reverse();
             return ex;
         }
@@ -669,6 +675,7 @@ namespace MesPremiersJeux.Learning
             var ex = new ExerciceChoix { Consigne = grosQ ? "Montre le gros bâton." : "Montre le bâton mince.", Taille = 300 };
             ex.Reponses.Add(new Carte { Visuel = () => V.Barre(150, 90, col, true), Bonne = grosQ, Dit = "le gros" });
             ex.Reponses.Add(new Carte { Visuel = () => V.Barre(150, 26, col, true), Bonne = !grosQ, Dit = "le mince" });
+            ex.Pourquoi = () => E.PourquoiGrosseurs(col);
             if (V.Rng.Next(2) == 0) ex.Reponses.Reverse();
             return ex;
         }
@@ -694,6 +701,7 @@ namespace MesPremiersJeux.Learning
             var ex = new ExerciceChoix { Consigne = lourdQ ? "Qu'est-ce qui est le plus lourd ?" : "Qu'est-ce qui est le plus léger ?", Taille = 280 };
             ex.Reponses.Add(new Carte { Visuel = () => MesPremiersJeux.Lib.Art.Visual("", l.Emoji, 170), Bonne = lourdQ, Dit = l.Nom });
             ex.Reponses.Add(new Carte { Visuel = () => MesPremiersJeux.Lib.Art.Visual("", g.Emoji, 170), Bonne = !lourdQ, Dit = g.Nom });
+            ex.Pourquoi = () => E.PourquoiPoids(l.Emoji, l.Nom, g.Emoji, g.Nom);
             if (V.Rng.Next(2) == 0) ex.Reponses.Reverse();
             return ex;
         }

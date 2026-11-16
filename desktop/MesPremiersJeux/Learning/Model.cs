@@ -16,6 +16,8 @@ namespace MesPremiersJeux.Learning
         public string Id;          // « a », « b »…
         public string Nom;         // « compter et choisir le chiffre »
         public Func<Exercice> Make;
+        /// <summary>Les explications animées de la notion, sous plusieurs angles (facultatif).</summary>
+        public Famille Explications;
     }
 
     /// <summary>Un palier d'une compétence (≈ PS, MS, GS), avec ses axes.</summary>
@@ -83,6 +85,8 @@ namespace MesPremiersJeux.Learning
         public Func<FrameworkElement> Modele;
         /// <summary>Ce que dit la voix quand c'est réussi (facultatif, sinon un bravo).</summary>
         public string Bravo;
+        /// <summary>L'explication jouée après une erreur, avec les objets mêmes de l'exercice (facultatif).</summary>
+        public Func<Demo> Pourquoi;
     }
 
     /// <summary>Choisir : une scène facultative et 2 à 6 réponses dont une bonne.</summary>

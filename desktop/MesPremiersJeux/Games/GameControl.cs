@@ -444,6 +444,22 @@ namespace MesPremiersJeux.Games
             _consigneBubble.Visibility = Visibility.Visible;
         }
 
+        /// <summary>Ajoute un bouton à la bulle de consigne (🎬 revoir l'explication…).</summary>
+        protected void ConsigneBouton(FrameworkElement b)
+        {
+            b.VerticalAlignment = VerticalAlignment.Center;
+            b.Margin = new Thickness(12, 0, 0, 0);
+            _consigne.Children.Add(b);
+            _consigneBubble.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>Cache la bulle de consigne le temps d'une explication, puis la remet.</summary>
+        protected void ConsigneVisible(bool visible)
+        {
+            if (_consigne.Children.Count == 0) return;
+            _consigneBubble.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         private static Button ButtonUnder(DependencyObject d)
         {
             while (d != null && !(d is Button))

@@ -63,6 +63,7 @@ export default {
  "ecoute:ia": "Écoute · réponses de l'IA",
  "ecoute:devine": "Écoute · réponses devinées",
  "ecoute:rebond": "Écoute · rebonds choisis",
+ "lecon:explication": "Leçons · explications animées",
  "ecoute:autre": "Écoute · « Autre chose »",
  "ecoute:pasca": "Écoute · « Pas ça »",
  "ecoute:theme": "Écoute · mots pris dans un thème"
