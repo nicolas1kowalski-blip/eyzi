@@ -453,20 +453,20 @@ namespace MesPremiersJeux.Learning
         // ==================================================================
         private static Competence FormesC() => C("formes.formes", "Les formes", "🔷",
             P(1,
-                A("a", "où est le rond, le carré ?", () => OuEstForme(2, 2, false)),
-                A("b", "la même forme que le modèle", () => MemeForme(3)),
-                A("c", "trier ronds et carrés", () => TrierFormes(2, 4, 2))),
+                A("a", "où est le rond, le carré ?", () => OuEstForme(2, 2, false), E.Formes(2)),
+                A("b", "la même forme que le modèle", () => MemeForme(3), E.MemeForme),
+                A("c", "trier ronds et carrés", () => TrierFormes(2, 4, 2), E.TrierFormes(2))),
             P(2,
-                A("a", "où est la forme ? (rond, carré, triangle)", () => OuEstForme(3, 3, false)),
-                A("b", "trier trois formes", () => TrierFormes(3, 6, 3)),
-                A("c", "la forme dans l'objet", () => FormeObjet(3)),
-                A("d", "formes de toutes tailles et couleurs", () => OuEstForme(3, 3, true))),
+                A("a", "où est la forme ? (rond, carré, triangle)", () => OuEstForme(3, 3, false), E.Formes(3)),
+                A("b", "trier trois formes", () => TrierFormes(3, 6, 3), E.TrierFormes(3)),
+                A("c", "la forme dans l'objet", () => FormeObjet(3), E.FormeObjet(3)),
+                A("d", "formes de toutes tailles et couleurs", () => OuEstForme(3, 3, true), E.FormesVariees)),
             P(3,
-                A("a", "où est la forme ? (avec le rectangle)", () => OuEstForme(4, 4, true)),
-                A("b", "formes tournées : le carré sur la pointe", () => OuEstForme(4, 4, true, true)),
-                A("c", "trier quatre formes", () => TrierFormes(4, 8, 4)),
-                A("d", "la forme dans l'objet", () => FormeObjet(4)),
-                A("e", "oui ou non : c'est un triangle ?", () => FormeOuiNon())));
+                A("a", "où est la forme ? (avec le rectangle)", () => OuEstForme(4, 4, true), E.Formes(4)),
+                A("b", "formes tournées : le carré sur la pointe", () => OuEstForme(4, 4, true, true), E.FormesVariees),
+                A("c", "trier quatre formes", () => TrierFormes(4, 8, 4), E.TrierFormes(3)),
+                A("d", "la forme dans l'objet", () => FormeObjet(4), E.FormeObjet(4)),
+                A("e", "oui ou non : c'est un triangle ?", () => FormeOuiNon(), E.FormeOuiNon)));
 
         /// <summary>Un modèle, trois formes d'une autre couleur : « montre la même forme ».</summary>
         private static ExerciceChoix MemeForme(int nFormes)
@@ -539,14 +539,14 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Solides() => C("formes.solides", "Les solides", "🧊",
             P(2,
-                A("a", "où est le cube, la boule ?", () => OuEstSolide(4)),
-                A("b", "l'objet qui a cette forme", () => SolideObjet(4)),
-                A("c", "trier les solides et les formes plates", () => TrierSolidesPlats())),
+                A("a", "où est le cube, la boule ?", () => OuEstSolide(4), E.Solides(4)),
+                A("b", "l'objet qui a cette forme", () => SolideObjet(4), E.SolideObjet(4)),
+                A("c", "trier les solides et les formes plates", () => TrierSolidesPlats(), E.SolidesPlats)),
             P(3,
-                A("a", "où est le solide ? (avec le cône et le pavé)", () => OuEstSolide(6)),
-                A("b", "l'objet qui a cette forme", () => SolideObjet(6)),
-                A("c", "oui ou non : c'est un cylindre ?", () => SolideOuiNon()),
-                A("d", "l'empreinte du solide", () => EmpreinteSolide())));
+                A("a", "où est le solide ? (avec le cône et le pavé)", () => OuEstSolide(6), E.Solides(6)),
+                A("b", "l'objet qui a cette forme", () => SolideObjet(6), E.SolideObjet(6)),
+                A("c", "oui ou non : c'est un cylindre ?", () => SolideOuiNon(), E.SolideOuiNon),
+                A("d", "l'empreinte du solide", () => EmpreinteSolide(), E.Empreinte)));
 
         private static ExerciceChoix OuEstSolide(int nSolides)
         {
@@ -708,20 +708,20 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Suites() => C("formes.suites", "Les motifs", "📿",
             P(1,
-                A("a", "alternance de deux couleurs", () => SuiteCouleurs(2, 2)),
-                A("b", "alternance de deux formes", () => SuiteFormes(2)),
-                A("c", "le collier bien rangé", () => BonCollier(2))),
+                A("a", "alternance de deux couleurs", () => SuiteCouleurs(2, 2), E.Motif("AB", "couleurs")),
+                A("b", "alternance de deux formes", () => SuiteFormes(2), E.Motif("AB", "formes")),
+                A("c", "le collier bien rangé", () => BonCollier(2), E.BonCollier("AB"))),
             P(2,
-                A("a", "motif de trois couleurs", () => SuiteCouleurs(3, 3)),
-                A("b", "forme et couleur", () => SuiteFormeCouleur()),
-                A("c", "motif AAB", () => SuiteMotif("AAB")),
-                A("d", "le collier bien rangé (motif de trois)", () => BonCollier(3))),
+                A("a", "motif de trois couleurs", () => SuiteCouleurs(3, 3), E.Motif("ABC", "couleurs")),
+                A("b", "forme et couleur", () => SuiteFormeCouleur(), E.Motif("AB", "formecouleur")),
+                A("c", "motif AAB", () => SuiteMotif("AAB"), E.Motif("AAB", "couleurs")),
+                A("d", "le collier bien rangé (motif de trois)", () => BonCollier(3), E.BonCollier("ABC"))),
             P(3,
-                A("a", "motif ABC de formes", () => SuiteFormes(3)),
-                A("b", "motif ABB ou AAB", () => SuiteMotif(V.Rng.Next(2) == 0 ? "ABB" : "AAB")),
-                A("c", "le motif qui grandit", () => Evolutif()),
-                A("d", "rangé comme le modèle", () => MemeStructure()),
-                A("e", "suite de nombres", () => SuiteNombres())));
+                A("a", "motif ABC de formes", () => SuiteFormes(3), E.Motif("ABC", "formes")),
+                A("b", "motif ABB ou AAB", () => SuiteMotif(V.Rng.Next(2) == 0 ? "ABB" : "AAB"), E.Motif("ABB", "couleurs")),
+                A("c", "le motif qui grandit", () => Evolutif(), E.MotifGrandit),
+                A("d", "rangé comme le modèle", () => MemeStructure(), E.MemeStructure),
+                A("e", "suite de nombres", () => SuiteNombres(), E.SuiteDeNombres)));
 
         /// <summary>Trois colliers : un seul suit le motif sans faute.</summary>
         private static ExerciceChoix BonCollier(int nCouleurs)
@@ -839,16 +839,16 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Puzzles() => C("formes.puzzles", "Puzzles", "🧩",
             P(1,
-                A("a", "deux pièces côte à côte", () => PieceManquante(2, 1, 2, "autre")),
-                A("b", "deux pièces l'une sur l'autre", () => PieceManquante(1, 2, 2, "autre"))),
+                A("a", "deux pièces côte à côte", () => PieceManquante(2, 1, 2, "autre"), E.Puzzle(2, 1)),
+                A("b", "deux pièces l'une sur l'autre", () => PieceManquante(1, 2, 2, "autre"), E.Puzzle(1, 2))),
             P(2,
-                A("a", "quatre pièces", () => PieceManquante(2, 2, 3, "meme")),
-                A("b", "où va la pièce ?", () => OuVaLaPiece(2, 2, 2)),
-                A("c", "six pièces", () => PieceManquante(3, 2, 3, "meme"))),
+                A("a", "quatre pièces", () => PieceManquante(2, 2, 3, "meme"), E.Puzzle(2, 2)),
+                A("b", "où va la pièce ?", () => OuVaLaPiece(2, 2, 2), E.OuVaPiece),
+                A("c", "six pièces", () => PieceManquante(3, 2, 3, "meme"), E.Puzzle(3, 2))),
             P(3,
-                A("a", "neuf pièces", () => PieceManquante(3, 3, 4, "meme")),
-                A("b", "la pièce à l'endroit", () => PieceManquante(3, 3, 3, "tournee")),
-                A("c", "où va la pièce ? (trois cases)", () => OuVaLaPiece(3, 3, 3))));
+                A("a", "neuf pièces", () => PieceManquante(3, 3, 4, "meme"), E.Puzzle(3, 3)),
+                A("b", "la pièce à l'endroit", () => PieceManquante(3, 3, 3, "tournee"), E.PuzzleTourne),
+                A("c", "où va la pièce ? (trois cases)", () => OuVaLaPiece(3, 3, 3), E.OuVaPiece)));
 
         /// <summary>La pièce qui manque, parmi des pièces d'une autre image, de la même image, ou la bonne pièce tournée.</summary>
         private static ExerciceChoix PieceManquante(int cols, int rows, int count, string distracteurs)
@@ -898,16 +898,16 @@ namespace MesPremiersJeux.Learning
 
         private static Competence Classer() => C("formes.classer", "Classer", "🧺",
             P(1,
-                A("a", "trier par couleur", () => TrierCouleur(2, 4)),
-                A("b", "trier par couleur, formes variées", () => TrierCouleur(2, 4, true))),
+                A("a", "trier par couleur", () => TrierCouleur(2, 4), E.TrierCouleur(2, false)),
+                A("b", "trier par couleur, formes variées", () => TrierCouleur(2, 4, true), E.TrierCouleur(2, true))),
             P(2,
-                A("a", "trier par forme", () => TrierFormes(2, 6, 4)),
-                A("b", "trier grands et petits", () => TrierTaille()),
-                A("c", "trier trois couleurs", () => TrierCouleur(3, 6, true))),
+                A("a", "trier par forme", () => TrierFormes(2, 6, 4), E.TrierFormes(2)),
+                A("b", "trier grands et petits", () => TrierTaille(), E.TrierTaille),
+                A("c", "trier trois couleurs", () => TrierCouleur(3, 6, true), E.TrierCouleur(3, true))),
             P(3,
-                A("a", "deux critères : grand et rouge", () => TrierDeuxCriteres()),
-                A("b", "trier par nombre", () => TrierNombre()),
-                A("c", "oui ou non : c'est grand et rouge ?", () => DeuxCriteresOuiNon())));
+                A("a", "deux critères : grand et rouge", () => TrierDeuxCriteres(), E.DeuxCriteres),
+                A("b", "trier par nombre", () => TrierNombre(), E.TrierNombre),
+                A("c", "oui ou non : c'est grand et rouge ?", () => DeuxCriteresOuiNon(), E.DeuxCriteres)));
 
         private static ExerciceAttribution TrierCouleur(int nBoites, int nObjets, bool formesVariees = false)
         {
