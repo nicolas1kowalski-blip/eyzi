@@ -49,6 +49,7 @@ namespace MesPremiersJeux.Views
         // UI
         private readonly PagedMenu _tiles; // chansons paginées (pas d'ascenseur)
         private readonly TextBlock _emptyMsg;
+        private readonly StackPanel _emptyBox;
         private readonly TextBlock _nowPlaying;
         private readonly TextBlock _toggleGlyph;
         private readonly StackPanel _adminPanel;
@@ -112,7 +113,26 @@ namespace MesPremiersJeux.Views
                 TextAlignment = TextAlignment.Center, FontSize = 26, Foreground = Dark,
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
             };
-            tilesArea.Children.Add(_emptyMsg);
+            // L'enfant ne peut pas « demander à un grand » avec sa voix : un gros bouton le dit pour lui,
+            // et la page le lui annonce à voix haute (elle ne sait pas lire).
+            var demander = new Button
+            {
+                Style = (Style)Application.Current.Resources["AnswerButton"], Width = 460, Height = 150, Margin = new Thickness(0, 26, 0, 0),
+                Content = new TextBlock { Text = "🙋  Je veux de la musique !", FontSize = 30, FontWeight = FontWeights.Bold, Foreground = Dark, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+            };
+            Emoji.FixTree(demander);
+            demander.Click += (s, e) => Speech.Say("Je veux écouter de la musique ! Tu peux ajouter mes chansons ?");
+            _emptyBox = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            _emptyBox.Children.Add(_emptyMsg);
+            _emptyBox.Children.Add(demander);
+            tilesArea.Children.Add(_emptyBox);
+            IsVisibleChanged += (s, e) =>
+            {
+                if (!IsVisible || _favs.Count > 0) return;
+                var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+                t.Tick += (s2, e2) => { t.Stop(); if (IsVisible && _favs.Count == 0) Speech.Say("Il n'y a pas encore de chansons. Regarde le bouton pour demander de la musique."); };
+                t.Start();
+            };
             tilesArea.Children.Add(_tiles);
             tilesArea.Children.Add(_web); // WebView2 invisible (lecteur)
             Grid.SetRow(tilesArea, 1);
@@ -246,7 +266,7 @@ namespace MesPremiersJeux.Views
             var els = new List<UIElement>();
             foreach (var fav in _favs) els.Add(BuildTile(fav));
             _tiles.SetElements(els);
-            _emptyMsg.Visibility = _favs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (_emptyBox != null) _emptyBox.Visibility = _favs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private FrameworkElement BuildTile(Favorite fav)

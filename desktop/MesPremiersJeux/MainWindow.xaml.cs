@@ -401,6 +401,7 @@ namespace MesPremiersJeux
             };
 
             _dwell = new DwellController(RootGrid, GazeIndicator, GazeProgress, GazeDot);
+            GazeFeed.Sample += SurveillerRegardHors;
             ApplyPointerStyle();
 
             // Sources du regard : démarrées selon le PILOTE choisi (réglages).
@@ -1078,6 +1079,16 @@ namespace MesPremiersJeux
             // panneau ni au reste de l'application.
             SettingsBtn.PreviewMouseLeftButtonUp += (s, e) => { Cancel(s, e); if (SettingsBtn.IsMouseCaptured) SettingsBtn.ReleaseMouseCapture(); };
             SettingsBtn.MouseLeave += Cancel;
+            // Dès que la souris arrive sur ⚙, on dit comment l'ouvrir (on ne le devine pas).
+            SettingsBtn.MouseEnter += (s, e) => { if (AdminHost.Visibility != Visibility.Visible) ShowAdminHint(6); };
+            // Échap (clavier) : sortir du plein écran, pour retrouver la croix et les autres fenêtres.
+            PreviewKeyDown += (s, e) =>
+            {
+                if (e.Key != System.Windows.Input.Key.Escape || !_isFullscreen || AdminHost.Visibility == Visibility.Visible) return;
+                e.Handled = true;
+                ToggleFullscreen();
+                FlashStatus("Petite fenêtre. Le bouton ⛶ remet le plein écran.");
+            };
             SettingsBtn.LostMouseCapture += Cancel;
         }
 
@@ -1745,6 +1756,52 @@ namespace MesPremiersJeux
 
         private void GazeMode_Changed(object sender, RoutedEventArgs e) => ApplyGazeMode();
 
+        // ------------------------------------------------------------------
+        //  LE REGARD NE SORT PAS D'EYZI. Sans commande oculaire, c'est le curseur
+        //  de la souris qui fait office de regard : posé un instant sur Word, sur
+        //  le bureau ou sur une autre fenêtre, il y déclenchait un clic. Et posé
+        //  sur ⚙ (réservé à l'accompagnant), l'aimant l'envoyait cliquer sur le
+        //  bouton voisin. Ici, on met simplement le pilotage en pause tant que le
+        //  point est hors d'une fenêtre d'Eyzi ou sur une zone réservée — sans
+        //  toucher au moteur du regard. Revenu sur Eyzi, tout reprend.
+        // ------------------------------------------------------------------
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct PointEcran { public int X, Y; }
+        [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr WindowFromPoint(PointEcran p);
+        [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
+        [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+        private static readonly uint NotreProcessus = (uint)System.Diagnostics.Process.GetCurrentProcess().Id;
+        private bool _regardVoulu = true, _regardHors;
+        private DateTime _horsVu = DateTime.MinValue;
+
+        private void SurveillerRegardHors(Point ecran, bool valide)
+        {
+            if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(() => SurveillerRegardHors(ecran, valide))); return; }
+            if (_dwell == null || !valide) return;
+            var maintenant = DateTime.Now;
+            if ((maintenant - _horsVu).TotalMilliseconds < 100) return;   // dix fois par seconde suffisent
+            _horsVu = maintenant;
+            bool hors = false;
+            try
+            {
+                if (GazeTargets.IsForbidden(ecran)) hors = true;
+                else
+                {
+                    var h = WindowFromPoint(new PointEcran { X = (int)Math.Round(ecran.X), Y = (int)Math.Round(ecran.Y) });
+                    if (h != IntPtr.Zero)
+                    {
+                        var racine = GetAncestor(h, 2);                 // la fenêtre principale (le lecteur de musique est une fenêtre fille)
+                        GetWindowThreadProcessId(racine != IntPtr.Zero ? racine : h, out uint pid);
+                        hors = pid != 0 && pid != NotreProcessus;
+                    }
+                }
+            }
+            catch { hors = false; }                                     // dans le doute, le regard reste actif
+            if (hors == _regardHors) return;
+            _regardHors = hors;
+            _dwell.Enabled = _regardVoulu && !_regardHors;
+        }
+
         private void ApplyGazeMode()
         {
             if (_dwell == null) return;
@@ -1753,9 +1810,10 @@ namespace MesPremiersJeux
             bool admin = AdminCheck != null && AdminCheck.IsChecked == true;
             AdminMode.Set(admin); // affiche/masque les outils parent partout
             bool enabled = GazeModeCheck.IsChecked == true && !admin && !GazeGate.IsPaused;
-            if (_dwell.Enabled != enabled)
+            if (_regardVoulu != enabled)
                 Lib.Log.Write("app", $"Pilotage au regard : {(enabled ? "ACTIF" : "en pause")} (case={GazeModeCheck.IsChecked == true}, admin={admin}, fenêtreParent={GazeGate.IsPaused})");
-            _dwell.Enabled = enabled;
+            _regardVoulu = enabled;
+            _dwell.Enabled = enabled && !_regardHors;
             _dwell.TargetsOnly = GazeGate.IsTargetsOnly; // jeux d'exploration
             if (admin || GazeGate.IsPaused)
                 GazeStatus.Text = "⏸  Regard en pause";
@@ -2485,10 +2543,15 @@ namespace MesPremiersJeux
                 Topmost = _prevTopmost;
                 if (_prevState == WindowState.Normal)
                 {
-                    Left = _prevRect.Left;
-                    Top = _prevRect.Top;
-                    Width = _prevRect.Width;
-                    Height = _prevRect.Height;
+                    // La petite fenêtre tient toujours dans l'écran (1280 × 800 dépassait
+                    // sur un portable réglé à 150 % : le bas et la droite étaient coupés).
+                    var zone = SystemParameters.WorkArea;
+                    double w = Math.Min(_prevRect.Width >= 400 ? _prevRect.Width : 1280, zone.Width);
+                    double h = Math.Min(_prevRect.Height >= 300 ? _prevRect.Height : 800, zone.Height);
+                    Width = w;
+                    Height = h;
+                    Left = Math.Max(zone.Left, Math.Min(_prevRect.Left, zone.Right - w));
+                    Top = Math.Max(zone.Top, Math.Min(_prevRect.Top, zone.Bottom - h));
                 }
                 WindowState = _prevState;
                 _isFullscreen = false;

@@ -112,7 +112,7 @@ Depuis la version 233, le coloriage et la musique ont déménagé dans un quatri
   - *La gravure* : une planche de **bois** (le trait brûle, comme en pyrogravure), une dalle de **pierre** (au ciseau) ou le **sable** de la plage. Le regard creuse un sillon là où il passe, avec l'ombre et la lumière sur ses bords. Trait fin ou large, quatre **poinçons** qui se frappent d'un regard posé (étoile, cœur, spirale, soleil), le 🦋 miroir qui grave des deux côtés, ↩ annuler. Sur le sable, 🌊 fait passer la vague qui efface tout.
   Les formes à sculpter sont fabriquées à partir des dessins de l'application : la silhouette est gonflée comme une ronde-bosse, et chaque trait du dessin devient un sillon. Rien n'est téléchargé, tout est calculé sur la tablette.
 - **🎼 La fabrique de musique** : une grille de six instruments (grosse caisse, caisse claire, cymbale, piano, guitare, xylophone) sur huit temps, qui tourne en boucle. L'enfant allume des cases d'un regard ; la première case allumée lance la boucle. Les notes suivent une gamme qui sonne toujours juste : impossible de faire faux. 🐢/🐇 règlent la vitesse, 🎲 propose une surprise, 💾 garde la musique.
-- **🎨 Coloriage**, **🎸 Instruments** (le petit orchestre, le xylophone et la chanson, un instrument, la guitare et ses chansons, le piano et ses chansons) et **🎧 Mes musiques** (Spotify) : comme avant, déplacés ici.
+- **🎨 Coloriage**, **🎸 Instruments** (le petit orchestre, le xylophone et la chanson, un instrument, la guitare et ses chansons, le piano et ses chansons) et **🎧 Mes musiques** (Spotify) : comme avant, déplacés ici. Tant qu'aucune chanson n'est ajoutée, la page le dit à voix haute et propose un grand bouton « Je veux de la musique ! » que l'enfant regarde pour le demander.
 - **🖼️ Ma galerie** : tout ce que l'enfant a créé, le plus récent d'abord, avec le jour. Un regard l'ouvre en grand ; **🙋 C'est moi qui l'ai fait !** le dit avec fierté ; une musique se rejoue dans la fabrique. Les œuvres sont des images PNG dans le dossier `Créations` du contenu de la famille : elles partent avec la sauvegarde et le nuage, s'impriment, s'envoient à mamie. En mode administration, 🗑 retire une œuvre.
 
 Côté licence, Créer fait partie du monde Jouer : une famille qui a Jouer a Créer.
@@ -230,7 +230,9 @@ Le panneau est rangé en huit pages (menu à gauche), chacune ouverte par une li
 - **📊 Suivi** : bilan de la semaine, bilan de la session, rapport du regard.
 - **🛠 Avancé** (versions de test seulement) : état technique du pilote, journal, réglages du serveur.
 
-En bas du panneau : plein écran, réduire, quitter Eyzi.
+En bas du panneau : plein écran, réduire, quitter Eyzi. Dès que la souris passe sur ⚙, une bulle rappelle comment l'ouvrir. Au clavier, **Échap** sort du plein écran (la fenêtre retrouve sa croix et tient toujours dans l'écran) et **Alt + F4** quitte.
+
+**À la souris, sans commande oculaire** : le curseur fait office de regard, le cercle se remplit sous lui et clique tout seul. Il ne le fait que sur Eyzi : dès que le curseur passe sur une autre fenêtre (un document, le bureau), rien n'est cliqué, et tout reprend quand il revient. Sur ⚙, réservé à l'accompagnant, le cercle ne se remplit pas non plus.
 
 Dans le détail :
 

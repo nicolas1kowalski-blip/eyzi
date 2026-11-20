@@ -337,7 +337,7 @@
       if(!c.pre&&(!bestProd||newer(c.v,bestProd.v))) bestProd=c;
     });
     var pick=bestProd||best;
-    if(pick){ btn.href=pick.url; info.textContent='Version '+pick.tag.replace(/^v/,'')+(pick.pre?' (bêta, canal test)':'')+' · '+Math.round(pick.size/1048576)+' Mo · si Windows affiche un avertissement, c\'est normal pour une application récente : voir « Comment ça marche ».'; }
+    if(pick){ btn.href=pick.url; info.textContent='Version '+pick.tag.replace(/^v/,'')+(pick.pre?' (bêta, canal test)':'')+' · '+Math.round(pick.size/1048576)+' Mo · si Windows affiche « Windows a protégé votre ordinateur », cliquez sur « Informations complémentaires » puis « Exécuter quand même » : c\'est normal pour une application récente.'; }
     else info.textContent='Aucune version publiée pour le moment.';
   }catch(e){ info.textContent='Toutes les versions sont sur GitHub (bouton ci-dessus).'; }
 })();

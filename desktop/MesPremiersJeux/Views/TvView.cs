@@ -139,6 +139,7 @@ namespace MesPremiersJeux.Views
             bool ok = !string.IsNullOrWhiteSpace(_settings.TvIp);
             _grid.Visibility = ok ? Visibility.Visible : Visibility.Collapsed;
             _empty.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
+            if (!ok) Speech.Say("La télé n'est pas encore réglée. Il faut qu'un grand la règle."); // l'enfant ne lit pas le message
             MontrerEtat(LgTv.Status);
             if (ok && !LgTv.Connected) _ = Connecter();
         }
