@@ -86,9 +86,7 @@ namespace MesPremiersJeux
             _views["edu"] = edu;
             var parler = new ParlerView();
             parler.BackRequested += () => Select("accueil");
-            parler.EcouteRequested += () => { OuvrirEcoute(); _ = Listening.ListenOnce(); };
             parler.SpontaneRequested += () => { OuvrirEcoute(); if (EcouteHost.Visibility == Visibility.Visible) _ecoute.ShowSpontane(); };
-            parler.LieuChoisi += lieu => { if (_settings != null) _settings.ParlerLieu = lieu; };
             _views["parler"] = parler;
             _views["coloring"] = coloring;
             _views["music"] = new MusicView();
@@ -2353,6 +2351,19 @@ namespace MesPremiersJeux
             RefreshLieux();
         }
 
+        private bool _lieuRemplit;
+
+        /// <summary>Le lieu choisi à la main (sans Wi-Fi, ou pour corriger) : il oriente les réponses proposées.</summary>
+        private void LieuCombo_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            if (_lieuRemplit || _settings == null || !(LieuCombo?.SelectedItem is ComboBoxItem it)) return;
+            var cle = (string)it.Tag;
+            if (_settings.ParlerLieu == cle) return;
+            _settings.ParlerLieu = cle;
+            _settings.Save();
+            Lib.Log.Write("lieu", "Choisi à la main → " + cle);
+        }
+
         /// <summary>La carte 📍 Lieux : le réseau actuel et les réseaux appris, modifiables.</summary>
         private void RefreshLieux()
         {
@@ -2360,7 +2371,15 @@ namespace MesPremiersJeux
             try
             {
                 var r = Lieux.ReseauActuel;
-                LieuReseauText.Text = r.Length == 0 ? "Pas de Wi-Fi connecté pour le moment : le lieu se règle avec le bouton dans Parler."
+                if (LieuCombo != null)
+                {
+                    _lieuRemplit = true;
+                    if (LieuCombo.Items.Count == 0)
+                        foreach (var l in Lieux.Tous) LieuCombo.Items.Add(new ComboBoxItem { Content = l.Icone + " " + l.Nom, Tag = l.Cle });
+                    foreach (ComboBoxItem it in LieuCombo.Items) if ((string)it.Tag == (_settings?.ParlerLieu ?? "maison")) { LieuCombo.SelectedItem = it; break; }
+                    _lieuRemplit = false;
+                }
+                LieuReseauText.Text = r.Length == 0 ? "Pas de Wi-Fi connecté pour le moment : le lieu se règle avec la liste ci-dessus."
                     : "Réseau actuel : « " + r + " »" + (Lieux.LieuDe(r).Length > 0 ? " → " + Lieux.Nom(Lieux.LieuDe(r)) : " (pas encore associé : Parler demandera « on est où ? »)");
                 LieuxPanel.Children.Clear();
                 foreach (var kv in Lieux.Associations())

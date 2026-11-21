@@ -372,8 +372,11 @@ namespace MesPremiersJeux.Views
             // --- En haut : le message dit (en grand), Redire, Retour au jeu ---
             var top = new Grid();
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // les actions ajoutées par la page (« Je veux dire… »)
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(_actions, 1);
+            top.Children.Add(_actions);
             var msg = new Border
             {
                 Background = Brushes.White,
@@ -387,12 +390,12 @@ namespace MesPremiersJeux.Views
 
             var again = BigButton("🔁", "Redire", Color.FromRgb(0xDC, 0xD6, 0xFF));
             again.Click += (s, e) => { if (_last != null) SayItem(_last, record: false); };
-            Grid.SetColumn(again, 1);
+            Grid.SetColumn(again, 2);
             top.Children.Add(again);
 
             var back = BigButton("🎮", "Retour au jeu", Color.FromRgb(0xB8, 0xF0, 0xC0));
             back.Click += (s, e) => CloseRequested?.Invoke();
-            Grid.SetColumn(back, 2);
+            Grid.SetColumn(back, 3);
             top.Children.Add(back);
             Grid.SetColumnSpan(top, 2);
             root.Children.Add(top);
@@ -410,6 +413,18 @@ namespace MesPremiersJeux.Views
 
             Content = root;
             ShowCategory(0);
+        }
+
+        private readonly StackPanel _actions = new StackPanel { Orientation = Orientation.Horizontal };
+
+        /// <summary>Un bouton de plus dans la rangée du message (à gauche de « Redire ») :
+        /// il ne prend rien aux cases. Le monde Parler y pose « Je veux dire… ».</summary>
+        public void AjouterAction(string icon, string label, Color bg, Action action)
+        {
+            var b = BigButton(icon, label, bg);
+            b.Click += (s, e) => action?.Invoke();
+            _actions.Children.Add(b);
+            Emoji.FixTree(b);
         }
 
         /// <summary>Le bouton « Parler », toujours accessible (posé par la fenêtre).</summary>
