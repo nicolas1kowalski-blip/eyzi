@@ -277,6 +277,8 @@ namespace MesPremiersJeux.Views
         {
             if (key.StartsWith("pers-")) key = key.Substring(5);
             if (key.StartsWith("mal-")) return "mal : " + key.Substring(4);
+            if (key.StartsWith("v-") || key.StartsWith("t-")) return key.Substring(2).Replace('-', ' ');
+            if (key.StartsWith("veux-")) return "je veux : " + key.Substring(5);
             return key;
         }
 

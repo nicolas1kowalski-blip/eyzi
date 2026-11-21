@@ -36,6 +36,8 @@ namespace MesPremiersJeux.Views
         private sealed class Item
         {
             public string Key, Label, Say, Img, Emoji;
+            public string Mot;              // le mot français à chercher dans ARASAAC, quand le libellé est une phrase
+            public char Nat;                // la nature du mot, pour le code couleur (voir Couleur) ; 0 = d'après la clé
             public bool Alert;              // fait sonner avant de parler (appel, douleur)
             public Func<FrameworkElement> Photo; // photo de famille
         }
@@ -79,6 +81,14 @@ namespace MesPremiersJeux.Views
         private static Item I(string key, string label, string say, string img, string emoji, bool alert = false) =>
             new Item { Key = key, Label = label, Say = say, Img = img, Emoji = emoji, Alert = alert };
 
+        /// <summary>Un mot des pages suivantes : sa nature (v verbe, n nom, d mot qui décrit, s social, q question, p personne, o oui, x non, m douleur), sans image maison (picto ARASAAC, sinon l'emoji).</summary>
+        private static Item P(char nat, string key, string label, string say, string emoji, string mot = null, bool alert = false) =>
+            new Item { Key = key, Label = label, Say = say, Img = "", Emoji = emoji, Mot = mot, Nat = nat, Alert = alert };
+
+        /// <summary>Un verbe seul (« Chercher. »).</summary>
+        private static Item V(string cle, string label, string emoji) =>
+            new Item { Key = "v-" + cle, Label = label, Say = label + ".", Img = "", Emoji = emoji, Mot = label.ToLowerInvariant(), Nat = 'v' };
+
         private static readonly Color Orange = Color.FromRgb(0xFF, 0xD8, 0xA8);
         private static readonly Color Blue = Color.FromRgb(0xC8, 0xE4, 0xFF);
         private static readonly Color Green = Color.FromRgb(0xCF, 0xF2, 0xC8);
@@ -109,12 +119,18 @@ namespace MesPremiersJeux.Views
         private static Color? Couleur(Item it)
         {
             string k = it?.Key ?? "";
-            if (k.StartsWith("pers-")) return Yellow;
-            if (k.StartsWith("v-")) return Green;
-            if (k.StartsWith("mal")) return Red;
-            if (!Nature.TryGetValue(k, out var t)) return k.StartsWith("w-") ? Orange : (Color?)null;
+            char t = it?.Nat ?? (char)0;
+            if (t == 0)
+            {
+                if (k.StartsWith("pers-")) return Yellow;
+                if (k.StartsWith("v-")) return Green;
+                if (k.StartsWith("mal")) return Red;
+                if (!Nature.TryGetValue(k, out t)) return k.StartsWith("w-") ? Orange : (Color?)null;
+            }
             switch (t)
             {
+                case 'p': return Yellow;
+                case 'm': return Red;
                 case 'o': return Oui;
                 case 'x': return Non;
                 case 'v': return Green;
@@ -142,6 +158,36 @@ namespace MesPremiersJeux.Views
             I("jetaime", "Je t'aime", "Je t'aime !", "coeur", "❤"),
         };
 
+        // La suite de « L'essentiel » : les petits mots qui servent partout, puis les questions.
+        private static readonly List<Item> EssentialsPlus = new List<Item>
+        {
+            P('v', "jenesaispas", "Je ne sais pas", "Je ne sais pas.", "🤷", "ne pas savoir"),
+            P('v', "attends", "Attends", "Attends, s'il te plaît !", "✋", "attendre"),
+            P('v', "regarde", "Regarde !", "Regarde !", "👀", "regarder"),
+            P('v', "jaime", "J'aime", "J'aime ça !", "💖", "aimer"),
+            P('v', "jaimepas", "Je n'aime pas", "Je n'aime pas ça.", "🙁", "ne pas aimer"),
+            P('o', "daccord", "D'accord", "D'accord !", "👍", "d'accord"),
+            P('x', "stop", "Stop", "Stop ! Arrête !", "🛑", "stop"),
+            P('d', "unpeu", "Un peu", "Un peu.", "🤏", "un peu"),
+            P('d', "beaucoup", "Beaucoup", "Beaucoup !", "🔢", "beaucoup"),
+            P('d', "plustard", "Plus tard", "Plus tard.", "⏰", "plus tard"),
+            P('d', "autrechose", "Autre chose", "Je veux autre chose.", "💭", "autre"),
+            P('p', "amoi", "À moi", "C'est à moi !", "🙋", "moi"),
+
+            P('p', "atoi", "À toi", "C'est à toi !", "👉", "toi"),
+            P('q', "cestquoi", "C'est quoi ?", "C'est quoi ?", "❔", "quoi"),
+            P('q', "cestqui", "C'est qui ?", "C'est qui ?", "👥", "qui"),
+            P('q', "cestou", "C'est où ?", "C'est où ?", "🗺", "où"),
+            P('q', "cestquand", "C'est quand ?", "C'est quand ?", "⏰", "quand"),
+            P('q', "pourquoi", "Pourquoi ?", "Pourquoi ?", "❓", "pourquoi"),
+            P('d', "ici", "Ici", "Ici !", "📍", "ici"),
+            P('d', "labas", "Là-bas", "Là-bas !", "👉", "là-bas"),
+            P('d', "pareil", "Pareil", "C'est pareil.", "👯", "pareil"),
+            P('d', "paspareil", "Pas pareil", "Ce n'est pas pareil.", "↔", "différent"),
+            P('d', "vite", "Vite", "Vite !", "🏃", "vite"),
+            P('d', "doucement", "Doucement", "Doucement.", "🐢", "doucement"),
+        };
+
         private static readonly List<Item> Feelings = new List<Item>
         {
             I("bien", "Ça va bien", "Ça va bien ! Je suis de bonne humeur !", "comm-content", "😄"),
@@ -156,6 +202,22 @@ namespace MesPremiersJeux.Views
             I("ennui", "Je m'ennuie", "Je m'ennuie... on fait autre chose ?", "comm-ennui", "😐"),
             I("bruit", "Trop de bruit", "Il y a trop de bruit !", "comm-bruit", "🔊"),
             I("pause", "Pause", "Je veux faire une pause.", "comm-pause", "⏸"),
+        };
+
+        private static readonly List<Item> FeelingsPlus = new List<Item>
+        {
+            P('d', "fatigue", "Fatigue", "Je suis fatiguée.", "😴", "fatigue"),
+            P('d', "calme", "Calme", "Je suis calme.", "😌", "calme"),
+            P('d', "malade", "Malade", "Je suis malade.", "🤒", "malade"),
+            P('d', "timide", "Timide", "Je suis timide.", "😳", "timide"),
+            P('d', "honte", "J'ai honte", "J'ai honte.", "😳", "honte"),
+            P('d', "pleurer", "Envie de pleurer", "J'ai envie de pleurer.", "😭", "pleurer"),
+            P('d', "enerve", "Ça m'énerve", "Ça m'énerve !", "😤", "énervé"),
+            P('d', "inquiet", "Je m'inquiète", "Je m'inquiète.", "😟", "inquiet"),
+            P('d', "reussi", "J'ai réussi", "J'ai réussi !", "😎", "fier"),
+            P('d', "hate", "J'ai hâte", "J'ai hâte !", "🤩", "impatient"),
+            P('d', "manques", "Tu me manques", "Tu me manques.", "💗", "manquer"),
+            P('d', "tranquille", "Tranquille", "Je veux être tranquille.", "🤫", "tranquille"),
         };
 
         private static readonly List<Item> Wants = new List<Item>
@@ -174,6 +236,35 @@ namespace MesPremiersJeux.Views
             I("ballon", "Le ballon", "Je veux jouer au ballon !", "ballon", "⚽"),
         };
 
+        private static readonly List<Item> WantsPlus = new List<Item>
+        {
+            P('n', "veux-gouter", "Mon goûter", "Je veux mon goûter !", "🍪", "goûter"),
+            P('n', "veux-eau", "De l'eau", "Je veux de l'eau.", "💧", "eau"),
+            P('n', "veux-gateau", "Un gâteau", "Je veux un gâteau !", "🍰", "gâteau"),
+            P('n', "veux-compote", "Une compote", "Je veux une compote.", "🍎", "compote"),
+            P('n', "veux-livre", "Un livre", "Je veux un livre.", "📖", "livre"),
+            P('v', "veux-dessiner", "Dessiner", "Je veux dessiner.", "✏", "dessiner"),
+            P('v', "veux-chanter", "Chanter", "Je veux chanter !", "🎤", "chanter"),
+            P('v', "veux-danser", "Danser", "Je veux danser !", "💃", "danser"),
+            P('n', "veux-bulles", "Des bulles", "Je veux des bulles !", "🎈", "bulles de savon"),
+            P('n', "veux-puzzle", "Un puzzle", "Je veux faire un puzzle.", "🧩", "puzzle"),
+            P('n', "veux-tablette", "La tablette", "Je veux la tablette.", "📱", "tablette"),
+            P('n', "veux-photos", "Des photos", "Je veux regarder des photos.", "🖼", "photo"),
+
+            P('n', "veux-promenade", "Me promener", "Je veux me promener.", "🚶", "promenade"),
+            P('n', "veux-parc", "Le parc", "Je veux aller au parc !", "🌳", "parc"),
+            P('n', "veux-voiture", "La voiture", "Je veux aller en voiture.", "🚗", "voiture"),
+            P('n', "veux-velo", "Le vélo", "Je veux faire du vélo.", "🚲", "vélo"),
+            P('n', "veux-balancoire", "La balançoire", "Je veux faire de la balançoire !", "🎠", "balançoire"),
+            P('n', "veux-piscine", "La piscine", "Je veux aller à la piscine !", "🏊", "piscine"),
+            P('n', "veux-maison", "La maison", "Je veux rentrer à la maison.", "🏠", "maison"),
+            P('n', "veux-lit", "Mon lit", "Je veux aller au lit.", "🛏", "lit"),
+            P('v', "veux-bras", "Les bras", "Je veux aller dans les bras.", "🤗", "porter"),
+            P('n', "veux-couverture", "Ma couverture", "Je veux ma couverture.", "🛌", "couverture"),
+            P('n', "veux-lumiere", "La lumière", "Je veux de la lumière.", "💡", "lumière"),
+            P('v', "veux-repos", "Me reposer", "Je veux me reposer.", "🛋", "se reposer"),
+        };
+
         private static readonly List<Item> Body = new List<Item>
         {
             I("mal-tete", "La tête", "J'ai mal à la tête.", "comm-tete", "🤕", alert: true),
@@ -188,6 +279,22 @@ namespace MesPremiersJeux.Views
             I("mal-jambe", "La jambe", "J'ai mal à la jambe.", "comm-jambe", "🦵", alert: true),
             I("mal-pied", "Le pied", "J'ai mal au pied.", "comm-pied", "🦶", alert: true),
             I("mal-partout", "Je ne sais pas", "J'ai mal, mais je ne sais pas où.", "comm-mal", "❓", alert: true),
+        };
+
+        private static readonly List<Item> BodyPlus = new List<Item>
+        {
+            P('m', "mal-genou", "Le genou", "J'ai mal au genou.", "🦵", "genou", alert: true),
+            P('m', "mal-hanche", "La hanche", "J'ai mal à la hanche.", "🦵", "hanche", alert: true),
+            P('m', "mal-cou", "Le cou", "J'ai mal au cou.", "🧣", "cou", alert: true),
+            P('m', "mal-epaule", "L'épaule", "J'ai mal à l'épaule.", "💪", "épaule", alert: true),
+            P('m', "mal-doigt", "Le doigt", "J'ai mal au doigt.", "☝", "doigt", alert: true),
+            P('m', "mal-nez", "Le nez", "J'ai mal au nez.", "👃", "nez", alert: true),
+            P('m', "mal-bouche", "La bouche", "J'ai mal à la bouche.", "👄", "bouche", alert: true),
+            P('m', "mal-fesses", "Les fesses", "J'ai mal aux fesses.", "🍑", "fesses", alert: true),
+            P('m', "mal-poitrine", "La poitrine", "J'ai mal à la poitrine.", "🧍", "poitrine", alert: true),
+            P('m', "mal-gratte", "Ça gratte", "Ça me gratte.", "🖐", "gratter"),
+            P('m', "mal-vomir", "Envie de vomir", "J'ai envie de vomir.", "🤮", "vomir", alert: true),
+            P('d', "mieux", "Ça va mieux", "Ça va mieux.", "🙂", "mieux"),
         };
 
         private static readonly List<Item> Social = new List<Item>
@@ -206,6 +313,22 @@ namespace MesPremiersJeux.Views
             I("bonnenuit", "Bonne nuit", "Bonne nuit !", "lune", "🌙"),
         };
 
+        private static readonly List<Item> SocialPlus = new List<Item>
+        {
+            P('s', "salut", "Salut", "Salut !", "👋", "salut"),
+            P('s', "bonnejournee", "Bonne journée", "Bonne journée !", "☀", "bonne journée"),
+            P('s', "ademain", "À demain", "À demain !", "👋", "à demain"),
+            P('s', "atoutalheure", "À tout à l'heure", "À tout à l'heure !", "⏰", "à tout à l'heure"),
+            P('s', "derien", "De rien", "De rien !", "🙂", "de rien"),
+            P('s', "excuse", "Excuse-moi", "Excuse-moi.", "🙇", "excuser"),
+            P('s', "bienjoue", "Bien joué", "Bien joué !", "👍", "bien"),
+            P('s', "bonanniversaire", "Bon anniversaire", "Bon anniversaire !", "🎂", "anniversaire"),
+            P('s', "joyeuxnoel", "Joyeux Noël", "Joyeux Noël !", "🎄", "Noël"),
+            P('s', "bonneannee", "Bonne année", "Bonne année !", "🎉", "bonne année"),
+            P('s', "bonnesvacances", "Bonnes vacances", "Bonnes vacances !", "🏖", "vacances"),
+            P('q', "ettoi", "Et toi ?", "Et toi ?", "👉", "toi"),
+        };
+
         // Les ACTIONS : des verbes seuls, pour répondre quand on lui demande ce qu'elle veut faire
         // (« Tu veux regarder ? écouter ? »), et pour que l'adulte les montre en parlant.
         private static readonly List<Item> Verbs = new List<Item>
@@ -222,6 +345,22 @@ namespace MesPremiersJeux.Views
             I("v-prendre", "Prendre", "Prendre.", "comm-main", "✊"),
             I("v-ouvrir", "Ouvrir", "Ouvrir.", "cadeau", "📂"),
             I("v-arreter", "Arrêter", "Arrêter.", "comm-fini", "✋"),
+        };
+
+        // La suite des actions : les verbes de tous les jours, puis les activités, puis bouger.
+        private static readonly List<Item> VerbsPlus = new List<Item>
+        {
+            V("aider", "Aider", "🙋"), V("vouloir", "Vouloir", "🙌"), V("aimer", "Aimer", "💖"), V("faire", "Faire", "🛠"),
+            V("mettre", "Mettre", "📥"), V("enlever", "Enlever", "📤"), V("fermer", "Fermer", "🚪"), V("chercher", "Chercher", "🔍"),
+            V("attendre", "Attendre", "⏳"), V("finir", "Finir", "🏁"), V("montrer", "Montrer", "👉"), V("parler", "Parler", "🗣"),
+
+            V("chanter", "Chanter", "🎤"), V("danser", "Danser", "💃"), V("lire", "Lire", "📖"), V("dessiner", "Dessiner", "✏"),
+            V("peindre", "Peindre", "🎨"), V("couper", "Couper", "✂"), V("coller", "Coller", "📎"), V("laver", "Laver", "🧼"),
+            V("habiller", "S'habiller", "👕"), V("promener", "Se promener", "🚶"), V("caliner", "Câliner", "🤗"), V("rire", "Rire", "😂"),
+
+            V("sortir", "Sortir", "🚪"), V("monter", "Monter", "⬆"), V("descendre", "Descendre", "⬇"), V("courir", "Courir", "🏃"),
+            V("sauter", "Sauter", "🤸"), V("tomber", "Tomber", "💥"), V("pousser", "Pousser", "🤜"), V("tirer", "Tirer", "🤛"),
+            V("lancer", "Lancer", "🤾"), V("attraper", "Attraper", "🙌"), V("asseoir", "S'asseoir", "💺"), V("lever", "Se lever", "🧍"),
         };
 
         // Les gens : les PHOTOS de la famille d'abord (Contenu\Famille), puis
@@ -272,13 +411,14 @@ namespace MesPremiersJeux.Views
 
         private static readonly Category[] Cats =
         {
-            new Category { Icon = "⭐", Name = "L'essentiel", Tint = Orange, Items = () => Essentials },
-            new Category { Icon = "😊", Name = "Je ressens", Tint = Blue, Items = () => Feelings },
-            new Category { Icon = "🙌", Name = "Je veux", Tint = Green, Items = () => Wants },
-            new Category { Icon = "🏃", Name = "Les actions", Tint = Green, Items = () => Verbs },
-            new Category { Icon = "🤕", Name = "J'ai mal où ?", Tint = Red, Items = () => Body },
+            new Category { Icon = "⭐", Name = "L'essentiel", Tint = Orange, Items = () => Essentials.Concat(EssentialsPlus).ToList() },
+            new Category { Icon = "😊", Name = "Je ressens", Tint = Blue, Items = () => Feelings.Concat(FeelingsPlus).ToList() },
+            new Category { Icon = "🙌", Name = "Je veux", Tint = Green, Items = () => Wants.Concat(WantsPlus).ToList() },
+            new Category { Icon = "🏃", Name = "Les actions", Tint = Green, Items = () => Verbs.Concat(VerbsPlus).ToList() },
+            new Category { Icon = "🤕", Name = "J'ai mal où ?", Tint = Red, Items = () => Body.Concat(BodyPlus).ToList() },
             new Category { Icon = "👪", Name = "Les gens", Tint = Yellow, Items = People },
-            new Category { Icon = "👋", Name = "Bonjour, merci", Tint = Pink, Items = () => Social },
+            new Category { Icon = "👋", Name = "Bonjour, merci", Tint = Pink, Items = () => Social.Concat(SocialPlus).ToList() },
+            new Category { Key = "themes", Icon = "📚", Name = "Les thèmes", Tint = Color.FromRgb(0xEC, 0xEC, 0xF6), Items = () => new List<Item>() },
             new Category { Key = "jour", Icon = "📅", Name = "Ma journée", Tint = Pink, Items = () => DayItems },
             new Category { Key = "phrase", Icon = "🧩", Name = "Je fais une phrase", Tint = Color.FromRgb(0xE0, 0xE8, 0xFF), Items = () => Starters, MinLevel = 2 },
         };
@@ -372,10 +512,43 @@ namespace MesPremiersJeux.Views
             // --- En haut : le message dit (en grand), Redire, Retour au jeu ---
             var top = new Grid();
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // « Suivant », quand la page a une suite
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // les actions ajoutées par la page (« Je veux dire… »)
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            Grid.SetColumn(_actions, 1);
+            // ➡ Suivant : toujours au même endroit, hors des cases (aucun mot ne perd sa place) ; il n'apparaît
+            // que si la page a une suite, et après la dernière page il revient à la première.
+            _next = new Button
+            {
+                Style = (Style)Application.Current.Resources["AnswerButton"],
+                Margin = new Thickness(6, 0, 6, 10), MinWidth = 190,
+                Background = new SolidColorBrush(Color.FromRgb(0xFF, 0xE9, 0xA8)),
+                Visibility = Visibility.Collapsed,
+                Content = new Viewbox
+                {
+                    Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
+                    Child = new StackPanel
+                    {
+                        Children =
+                        {
+                            new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
+                                Children =
+                                {
+                                    new TextBlock { Text = "➡", FontSize = 40, VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)) },
+                                    new TextBlock { Text = "Suivant", FontSize = 30, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) },
+                                },
+                            },
+                            _nextInfo,
+                        },
+                    },
+                },
+            };
+            _next.Click += (s, e) => _suivant?.Invoke();
+            Grid.SetColumn(_next, 1);
+            top.Children.Add(_next);
+            Grid.SetColumn(_actions, 2);
             top.Children.Add(_actions);
             var msg = new Border
             {
@@ -390,12 +563,12 @@ namespace MesPremiersJeux.Views
 
             var again = BigButton("🔁", "Redire", Color.FromRgb(0xDC, 0xD6, 0xFF));
             again.Click += (s, e) => { if (_last != null) SayItem(_last, record: false); };
-            Grid.SetColumn(again, 2);
+            Grid.SetColumn(again, 3);
             top.Children.Add(again);
 
             var back = BigButton("🎮", "Retour au jeu", Color.FromRgb(0xB8, 0xF0, 0xC0));
             back.Click += (s, e) => CloseRequested?.Invoke();
-            Grid.SetColumn(back, 3);
+            Grid.SetColumn(back, 4);
             top.Children.Add(back);
             Grid.SetColumnSpan(top, 2);
             root.Children.Add(top);
@@ -416,6 +589,125 @@ namespace MesPremiersJeux.Views
         }
 
         private readonly StackPanel _actions = new StackPanel { Orientation = Orientation.Horizontal };
+        private Button _next;
+        private readonly TextBlock _nextInfo = new TextBlock { FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x6E, 0x65, 0x87)), HorizontalAlignment = HorizontalAlignment.Center };
+        private Action _suivant;
+        private const int ParPage = 12;
+
+        /// <summary>Règle le bouton « Suivant » pour la grille affichée : page « page » sur « n ».</summary>
+        private void Pages(int page, int n, Action<int> aller)
+        {
+            if (_next == null) return;
+            bool suite = n > 1 && aller != null;
+            _next.Visibility = suite ? Visibility.Visible : Visibility.Collapsed;
+            _nextInfo.Text = suite ? "page " + (page + 1) + " sur " + n : "";
+            _suivant = !suite ? (Action)null : () =>
+            {
+                bool fin = page + 1 >= n;
+                Speech.SayAlways(fin ? "Le début !" : "La suite !");
+                aller(fin ? 0 : page + 1);
+            };
+        }
+
+        /// <summary>Remplit les douze cases avec la page demandée de « items » et règle « Suivant ».</summary>
+        private void Remplir(IList<Item> items, Color tint, int page, Action<int> aller, Action<Item, Button> clic)
+        {
+            _grid.Children.Clear();
+            int n = Math.Max(1, (items.Count + ParPage - 1) / ParPage);
+            page = Math.Max(0, Math.Min(n - 1, page));
+            foreach (var it in items.Skip(page * ParPage).Take(ParPage))
+            {
+                var item = it;
+                var cell = Cell(item, Couleur(item) ?? tint);
+                cell.Click += (s, e) => clic(item, cell);
+                _grid.Children.Add(cell);
+            }
+            Pages(page, n, aller);
+        }
+
+        // ------------------------------------------------------------------
+        //  📚 Les thèmes : les mêmes seize grilles que « Autre chose » dans l'écoute
+        // ------------------------------------------------------------------
+        private static char NatureTheme(string cle)
+        {
+            switch (cle)
+            {
+                case "gens": return 'p';
+                case "ressens": case "quand": case "couleurs": return 'd';
+                case "faire": return 'v';
+                case "corps": return 'm';
+                case "demande": return 'q';
+                default: return 'n';
+            }
+        }
+
+        private static readonly string[] Articles = { "Un ", "Une ", "Des ", "Du ", "De la ", "De l'", "Le ", "La ", "Les ", "L'", "Mon ", "Ma ", "Mes " };
+
+        /// <summary>La nature d'un mot de thème, pour sa couleur : celle du thème, sauf ce que le mot dit de lui-même.</summary>
+        private static char NatureMot(Themes.Theme t, Suggest.Reponse r)
+        {
+            string x = (r.Texte ?? "").Trim();
+            char defaut = NatureTheme(t.Cle);
+            if (x.EndsWith("?")) return 'q';
+            if (x == "Je t'aime") return 's';
+            if (t.Cle == "corps") return x.StartsWith("Je veux") ? 'v' : x == "Ça va mieux" ? 'd' : 'm';
+            if (t.Cle == "gens") return r.Mot == "chien" || r.Mot == "chat" ? 'n' : 'p';
+            if (x.StartsWith("Je veux") || x.StartsWith("Je ne veux") || x.StartsWith("Je n'aime") || x.StartsWith("Je t'") || x.EndsWith("-moi")) return 'v';
+            if (x.StartsWith("J'ai ") || x.StartsWith("Je suis") || x.StartsWith("Je n'ai plus") || x.StartsWith("C'est") || x.StartsWith("Ça ") || x.StartsWith("Je m'ennuie") || x.StartsWith("Je ne sais")) return 'd';
+            if (x == "Encore" || x == "Chaud" || x == "Froid" || x == "Rien") return 'd';
+            if (x.IndexOf(' ') < 0 && (x.EndsWith("er") || x == "Dormir")) return 'v';
+            if (defaut != 'n' && Articles.Any(a => x.StartsWith(a))) return 'n';
+            return defaut;
+        }
+
+        private static Item CaseTheme(Themes.Theme t) =>
+            new Item { Key = "theme-" + t.Cle, Label = t.Nom, Say = t.Nom + " !", Img = "", Emoji = t.Emoji, Mot = t.Mot, Nat = NatureTheme(t.Cle) };
+
+        private static List<Item> MotsDuTheme(Themes.Theme t)
+        {
+            var res = new List<Item>();
+            List<Item> gens = null;
+            foreach (var r in Themes.MotsDe(t))
+            {
+                if (r == null || string.IsNullOrWhiteSpace(r.Texte) || r.Texte == "Autre chose") continue;
+                if (!string.IsNullOrEmpty(r.Cle))
+                {
+                    // Un proche du tableau : sa case à lui, avec sa photo.
+                    if (gens == null) { try { gens = People(); } catch { gens = new List<Item>(); } }
+                    var proche = gens.FirstOrDefault(g => g.Key == r.Cle);
+                    if (proche != null) { res.Add(proche); continue; }
+                }
+                string x = r.Texte.Trim();
+                bool ponctue = x.EndsWith("?") || x.EndsWith("!") || x.EndsWith(".");
+                res.Add(new Item
+                {
+                    Key = "t-" + Pictos.Norm(x).Replace(' ', '-'), Label = x, Say = ponctue ? x : x + ".", Img = "", Emoji = r.Emoji,
+                    Mot = string.IsNullOrWhiteSpace(r.Mot) ? null : r.Mot, Nat = NatureMot(t, r),
+                });
+            }
+            return res;
+        }
+
+        /// <summary>Les seize thèmes ; on en regarde un pour ouvrir ses mots. L'onglet « Les thèmes » y ramène.</summary>
+        private void ShowThemes(Category cat, int page)
+        {
+            _msgText.Text = "De quoi je veux parler ?";
+            _msgPic.Content = null;
+            Remplir(Themes.Liste.Select(CaseTheme).ToList(), cat.Tint, page, p => ShowThemes(cat, p), (item, cell) =>
+            {
+                var t = Themes.Trouver(item.Key.Substring(6));
+                if (t == null) return;
+                Speech.SayAlways(t.Nom + " !");
+                ShowTheme(cat, t, 0);
+            });
+        }
+
+        private void ShowTheme(Category cat, Themes.Theme t, int page)
+        {
+            _msgText.Text = t.Nom + "...";
+            _msgPic.Content = Pic(CaseTheme(t), 110);
+            Remplir(MotsDuTheme(t), cat.Tint, page, p => ShowTheme(cat, t, p), (item, cell) => SayItem(item, record: true, btn: cell));
+        }
 
         /// <summary>Un bouton de plus dans la rangée du message (à gauche de « Redire ») :
         /// il ne prend rien aux cases. Le monde Parler y pose « Je veux dire… ».</summary>
@@ -523,10 +815,12 @@ namespace MesPremiersJeux.Views
             if (it.Photo != null) return it.Photo();
             var maison = Art.Visual(it.Img, it.Emoji, size);
             if (it.Key == "autre" || it.Key == "phrase" || (it.Key ?? "").StartsWith("jour-") || it.Key == "raconte") return maison;
-            try { return Arasaac.Picture(it.Label, size, maison) ?? maison; } catch { return maison; }
+            try { return Arasaac.Picture(string.IsNullOrEmpty(it.Mot) ? it.Label : it.Mot, size, maison) ?? (it.Mot != null ? Arasaac.Picture(it.Label, size, maison) : null) ?? maison; } catch { return maison; }
         }
 
-        private void ShowCategory(int i)
+        private Category _courante; // la page affichée
+
+        private void ShowCategory(int i, int page = 0)
         {
             var visible = Cats.Where(c => c.MinLevel <= Level.Current).ToList();
             int vi = visible.IndexOf(Cats[i]);
@@ -537,23 +831,20 @@ namespace MesPremiersJeux.Views
             }
             _grid.Children.Clear();
             var cat = Cats[i];
+            _courante = cat;
             if (cat.Key == "phrase") { ShowSentence(cat); return; }
-            if (cat.Key == "jour") { ShowDay(cat); return; }
-            var items = cat.Items();
-            foreach (var it in items.Take(12))
-            {
-                var item = it;
-                var cell = Cell(item, Couleur(item) ?? cat.Tint);
-                cell.Click += (s, e) => SayItem(item, record: true, btn: cell);
-                _grid.Children.Add(cell);
-            }
+            if (cat.Key == "jour") { Pages(0, 1, null); ShowDay(cat); return; }
+            if (cat.Key == "themes") { ShowThemes(cat, 0); return; }
+            Remplir(cat.Items(), cat.Tint, page, p => ShowCategory(i, p), (item, cell) => SayItem(item, record: true, btn: cell));
         }
 
         // 🧩 La phrase : d'abord le début (« Je veux »), puis le mot (« le gâteau »).
-        private void ShowSentence(Category cat)
+        private void ShowSentence(Category cat, int page = 0)
         {
             if (_starter == null)
             {
+                _grid.Children.Clear();
+                Pages(0, 1, null);
                 _msgText.Text = "Je fais une phrase...";
                 foreach (var it in Starters.Take(12))
                 {
@@ -571,7 +862,6 @@ namespace MesPremiersJeux.Views
                 }
                 return;
             }
-            _grid.Children.Clear();
             var words = SentenceWords.ToList();
             // Les gens de la famille font aussi des mots (« Je veux papa »).
             try
@@ -580,23 +870,18 @@ namespace MesPremiersJeux.Views
                     words.Insert(0, p);
             }
             catch { }
-            foreach (var it in words.Take(12))
+            Remplir(words, Orange, page, p => ShowSentence(cat, p), (item, cell) =>
             {
-                var item = it;
-                var cell = Cell(item, Couleur(item) ?? Orange);
-                cell.Click += (s, e) =>
-                {
-                    string obj = item.Key.StartsWith("pers-") ? item.Label : item.Say;
-                    var sentence = new Item { Key = "phrase", Label = _starter.Say + " " + obj, Say = _starter.Say + " " + obj + " !", Img = item.Img, Emoji = item.Emoji, Photo = item.Photo };
-                    SayItem(sentence, record: true, btn: cell);
-                    GazeStats.RecordComm("phrase-" + _starter.Key + "-" + item.Key);
-                    _starter = null;
-                    var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2500) };
-                    t.Tick += (s2, e2) => { t.Stop(); if (IsOpen && _starter == null) ShowSentence(cat); };
-                    t.Start();
-                };
-                _grid.Children.Add(cell);
-            }
+                if (_starter == null) return; // la phrase vient d'être dite : on attend le retour aux débuts
+                string obj = item.Key.StartsWith("pers-") ? item.Label : item.Say;
+                var sentence = new Item { Key = "phrase", Label = _starter.Say + " " + obj, Say = _starter.Say + " " + obj + " !", Img = item.Img, Emoji = item.Emoji, Photo = item.Photo };
+                SayItem(sentence, record: true, btn: cell);
+                GazeStats.RecordComm("phrase-" + _starter.Key + "-" + item.Key);
+                _starter = null;
+                var t = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2500) };
+                t.Tick += (s2, e2) => { t.Stop(); if (IsOpen && _starter == null && ReferenceEquals(_courante, cat)) ShowSentence(cat); };
+                t.Start();
+            });
         }
 
         // 📅 Ma journée : chaque picto s'ajoute à l'histoire du jour ; « Raconter » la dit.
@@ -651,6 +936,9 @@ namespace MesPremiersJeux.Views
                         FontWeight = FontWeights.Bold,
                         Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)),
                         HorizontalAlignment = HorizontalAlignment.Center,
+                        TextAlignment = TextAlignment.Center,
+                        TextWrapping = TextWrapping.Wrap,   // « Je veux aller aux toilettes » : deux lignes plutôt qu'une image rétrécie
+                        MaxWidth = 340,
                         Margin = new Thickness(0, 6, 0, 0),
                     },
                 },
