@@ -204,7 +204,7 @@ namespace MesPremiersJeux.Lib
             ["CapitalsGame"] = "Le tour du monde", ["SuitcaseGame"] = "La valise du voyageur", ["FoodGame"] = "Les bons plats",
             ["PlanetsGame"] = "Les planètes", ["DayNightGame"] = "Jour et nuit",
             ["MagicGame"] = "Bulles magiques", ["BalloonsGame"] = "Ballons 3D", ["ColorsGame"] = "Couleurs",
-            ["ShapesGame"] = "Formes", ["CountGame"] = "Compter", ["ShadowGame"] = "Les ombres",
+            ["ShapesGame"] = "Formes", ["CountGame"] = "Compter", ["ShadowGame"] = "Les ombres", ["SameGame"] = "Le même",
             ["SeekFindGame"] = "Cherche et trouve", ["StringsGame"] = "Les ficelles", ["CupsGame"] = "Les gobelets",
             ["PuzzleGame"] = "Puzzle", ["FamiliesGame"] = "Les familles", ["MemoryGame"] = "Les paires",
             ["GooseGame"] = "Jeu de l'oie", ["HorseGame"] = "Petits chevaux", ["TicTacToeGame"] = "Morpion",

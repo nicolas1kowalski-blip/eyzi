@@ -44,13 +44,13 @@ namespace MesPremiersJeux.Learning
         private static Demo Decompose(int min, int max)
         {
             var d = new Demo("table");
-            var o = Visuels.Objet(); int total = Visuels.Entre(Math.Max(2, min), Math.Max(2, max));
+            var o = ObjetCourant(); int total = NombreCourant(2, 10, () => Visuels.Entre(Math.Max(2, min), Math.Max(2, max)));
             double pas = Math.Min(125, 880.0 / total), t = Math.Min(100, pas - 18);
             var xs = Rang(total, pas);
             var a = new Acteur[total];
             for (int i = 0; i < total; i++) a[i] = Obj(d, o.Nom, o.Emoji, t, pas - 12).En(xs[i], Sol - 60).Opacite(0);
             var c = Chiffre(d, total, 170).En(640, 230).Opacite(0);
-            int s1 = Visuels.Entre(1, total - 1), s2 = total > 2 ? (s1 % (total - 1)) + 1 : 1;
+            int s1 = Courant?.N2 is int part && part >= 1 && part < total ? part : Visuels.Entre(1, total - 1), s2 = total > 2 ? (s1 % (total - 1)) + 1 : 1;
             void Separer(int s) { for (int i = 0; i < total; i++) a[i].Aller(xs[i] + (i < s ? -70 : 70), Sol - 60, 900); }
             void Reunir() { for (int i = 0; i < total; i++) a[i].Aller(xs[i], Sol - 60, 800); }
             d.Dire(Maj(o.N(total)) + ".", () => { for (int i = 0; i < total; i++) a[i].Pop(i * 100); c.Pop(total * 100); }, 1600);
@@ -66,7 +66,7 @@ namespace MesPremiersJeux.Learning
         private static Demo DeuxPlateaux(int min, int max)
         {
             var d = new Demo("piece");
-            var o = Visuels.Objet(); int total = Math.Min(8, Visuels.Entre(Math.Max(2, min), Math.Max(2, max)));
+            var o = ObjetCourant(); int total = NombreCourant(2, 8, () => Math.Min(8, Visuels.Entre(Math.Max(2, min), Math.Max(2, max))));
             d.Rect(420, 30, Brun, 12).En(330, Sol);
             d.Rect(420, 30, Brun, 12).En(950, Sol);
             (double x, double y) G(int j) => (330 - 135 + (j % 4) * 90, Sol - 30 - (j / 4) * 92);
@@ -94,8 +94,8 @@ namespace MesPremiersJeux.Learning
         private static Demo UnDePlus(int max)
         {
             var d = new Demo();
-            var o = Visuels.Objet(); int n = Visuels.Entre(1, Math.Max(1, Math.Min(7, max - 1)));
-            int ajouts = n + 2 <= Math.Max(3, max) ? 2 : 1, tot = n + ajouts;
+            var o = ObjetCourant(); int n = NombreCourant(1, 8, () => Visuels.Entre(1, Math.Max(1, Math.Min(7, max - 1))));
+            int ajouts = n + 2 <= Math.Min(10, Math.Max(3, max)) ? 2 : 1, tot = n + ajouts;
             double pas = Math.Min(135, 920.0 / tot), t = Math.Min(110, pas - 18);
             var xs = Rang(tot, pas);
             var a = new Acteur[tot];
@@ -135,7 +135,7 @@ namespace MesPremiersJeux.Learning
         private static Demo UnDeMoins(int max)
         {
             var d = new Demo();
-            var o = Visuels.Objet(); int n = Visuels.Entre(2, Math.Max(2, Math.Min(8, max)));
+            var o = ObjetCourant(); int n = NombreCourant(2, 10, () => Visuels.Entre(2, Math.Max(2, Math.Min(8, max))));
             int retraits = n >= 3 ? 2 : 1;
             double pas = Math.Min(135, 920.0 / n), t = Math.Min(110, pas - 18);
             var xs = Rang(n, pas);
@@ -195,7 +195,7 @@ namespace MesPremiersJeux.Learning
         {
             var d = new Demo("table");
             const double C = 110;
-            int a = Visuels.Entre(2, 9), b = 10 - a;
+            int a = NombreCourant(1, 9, () => Visuels.Entre(2, 9)), b = 10 - a;
             var cadre = CadreDix(d, 640 - 2.5 * C, 230, C, out var place);
             var j = new Acteur[10];
             for (int i = 0; i < 10; i++) j[i] = d.Rond(C - 28, i < a ? Bleu : Orange).En(place(i).x, place(i).y).Opacite(0);
@@ -214,7 +214,7 @@ namespace MesPremiersJeux.Learning
         private static Demo DoublesMiroir()
         {
             var d = new Demo("piece");
-            var o = Visuels.Objet(); int a = Visuels.Entre(1, 5);
+            var o = ObjetCourant(); int a = NombreCourant(1, 5, () => Visuels.Entre(1, 5));
             var g = new Acteur[a]; var dr = new Acteur[a];
             for (int i = 0; i < a; i++) { g[i] = Obj(d, o.Nom, o.Emoji, 90, 92).En(545 - i * 100, Sol - 70).Opacite(0); dr[i] = Obj(d, o.Nom, o.Emoji, 90, 92).En(735 + i * 100, Sol - 70).EchelleXY(-1, 1).Opacite(0); }
             var mg = new Grid { Width = 46, Height = 390 };
@@ -233,7 +233,7 @@ namespace MesPremiersJeux.Learning
         private static Demo DoublesDomino()
         {
             var d = new Demo("table");
-            int a = Visuels.Entre(1, 5);
+            int a = NombreCourant(1, 5, () => Visuels.Entre(1, 5));
             var cadre = d.Rect(570, 300, Color.FromRgb(0xFF, 0xF6, 0xE0), 34).En(640, Sol - 40).Opacite(0);
             var milieu = d.Trait(640, Sol - 320, 640, Sol - 60, Demo.Encre, 6);
             var g = d.Chose(Visuels.De(a, 220), 220, 220).En(495, Sol - 80).Opacite(0);
@@ -257,6 +257,13 @@ namespace MesPremiersJeux.Learning
             var d = new Demo();
             int de = max <= 6 ? 1 : max <= 12 ? Visuels.Entre(1, 5) : Visuels.Entre(1, max - 8), fin = max <= 6 ? 6 : de + 7;
             int n = sens > 0 ? Visuels.Entre(de, fin - 2) : Visuels.Entre(de + 2, fin);
+            // Le nombre de l'exercice, s'il y en a un : la bande se cale autour de lui.
+            if (Courant?.N is int sujet && sujet >= (sens > 0 ? 1 : 3) && sujet <= 98)
+            {
+                n = sujet;
+                if (max <= 6 && n + (sens > 0 ? 2 : 0) <= 7) { de = 1; fin = Math.Max(6, n + (sens > 0 ? 2 : 0)); }
+                else { de = Math.Max(1, sens > 0 ? n - 2 : n - 5); fin = de + 7; }
+            }
             var X = PoserBande(d, de, fin, fin - de + 1 <= 6 ? 130 : 108);
             double y = Sol - 12;
             var gre = d.Image("grenouille", "🐸", 115).En(X(n), y).Opacite(0);
@@ -276,7 +283,7 @@ namespace MesPremiersJeux.Learning
         {
             var d = new Demo("piece");
             const double T = 54;
-            int n = sens > 0 ? Visuels.Entre(1, Math.Max(1, Math.Min(6, max - 2))) : Visuels.Entre(3, Math.Max(3, Math.Min(8, max)));
+            int n = NombreCourant(sens > 0 ? 1 : 3, sens > 0 ? 6 : 8, () => sens > 0 ? Visuels.Entre(1, Math.Max(1, Math.Min(6, max - 2))) : Visuels.Entre(3, Math.Max(3, Math.Min(8, max))));
             int haut = sens > 0 ? n + 2 : n;
             var b = new Acteur[haut];
             for (int i = 0; i < haut; i++) b[i] = d.Bloc(T, (sens > 0 ? i >= n : i >= n - 2) ? Demo.Or : Bleu).En(500, Sol - i * T).Opacite(0);
@@ -302,6 +309,7 @@ namespace MesPremiersJeux.Learning
             var d = new Demo();
             int de = max <= 6 ? Visuels.Entre(1, 2) : max <= 12 ? Visuels.Entre(1, 8) : Visuels.Entre(1, max - 4);
             int trou = de + Visuels.Entre(1, 3);
+            if (Courant?.N is int sTrou && Courant?.N2 is int sDe && sDe >= 1 && sTrou > sDe && sTrou < sDe + 4) { de = sDe; trou = sTrou; }   // la bande de l'exercice
             const double Cell = 150, Pas = 158;
             var X = PoserBande(d, de, de + 4, Cell, trou);
             double y = Sol - 12, milieu = Sol - 8 + Pas / 2;
@@ -460,7 +468,7 @@ namespace MesPremiersJeux.Learning
         private static Demo DeSurBande()
         {
             var d = new Demo();
-            int n = Visuels.Entre(2, 6);
+            int n = NombreCourant(1, 6, () => Visuels.Entre(2, 6));
             const double Pas = 138;
             var X = PoserBande(d, 1, 6, 130);
             var de = d.Chose(Visuels.De(n, 180), 180, 180).En(640, 300).Opacite(0);
@@ -484,18 +492,28 @@ namespace MesPremiersJeux.Learning
         {
             var d = new Demo();
             var X = PoserBande(d, 1, 10, 96);
-            int s = avance ? 1 : -1, k = avance ? Visuels.Entre(1, 7) : Visuels.Entre(4, 10);
+            int s = avance ? 1 : -1, k = avance ? Visuels.Entre(1, 7) : Visuels.Entre(4, 10), sauts = 2;
+            // La case et le nombre de sauts de l'exercice, s'il y en a un.
+            if (Courant?.N is int sk && Courant?.N2 is int sd && (sd == 1 || sd == 2) && sk + s * sd >= 1 && sk + s * sd <= 10 && sk >= 1 && sk <= 10) { k = sk; sauts = sd; }
             double y = Sol - 12;
             var gre = d.Image("grenouille", "🐸", 105).En(X(k), y).Opacite(0);
             var p1 = Pastille(d, 1).En(X(k + s), Sol - 190).Opacite(0);
-            var p2 = Pastille(d, 2).En(X(k + 2 * s), Sol - 190).Opacite(0);
-            var grand = Chiffre(d, k + 2 * s, 170).En(640, 230).Opacite(0);
+            var p2 = Pastille(d, 2).En(X(Math.Max(1, Math.Min(10, k + 2 * s))), Sol - 190).Opacite(0);
+            var grand = Chiffre(d, k + sauts * s, 170).En(640, 230).Opacite(0);
             d.Dire("La grenouille est sur le " + Dit(k) + ".", () => gre.Pop(), 1500);
-            d.Dire("Elle " + (avance ? "avance" : "recule") + " de deux cases.", null, 1500);
-            d.Dire("Un saut.", () => { gre.Bond(X(k + s), y, 70, 600); p1.Pop(500); }, 1200);
-            d.Toi("À toi ! Regarde la grenouille pour faire le deuxième saut.", gre, () => { gre.Bond(X(k + 2 * s), y, 70, 600); p2.Pop(500); }, 1000);
-            d.Dire("Deux sauts.", null, 900);
-            d.Dire("Elle arrive sur le " + Dit(k + 2 * s) + ".", () => grand.Pop(), 1800);
+            d.Dire("Elle " + (avance ? "avance" : "recule") + (sauts == 1 ? " d'une case." : " de deux cases."), null, 1500);
+            if (sauts == 1)
+            {
+                d.Toi("À toi ! Regarde la grenouille pour la faire sauter.", gre, () => { gre.Bond(X(k + s), y, 70, 600); p1.Pop(500); }, 1000);
+                d.Dire("Un saut.", null, 900);
+            }
+            else
+            {
+                d.Dire("Un saut.", () => { gre.Bond(X(k + s), y, 70, 600); p1.Pop(500); }, 1200);
+                d.Toi("À toi ! Regarde la grenouille pour faire le deuxième saut.", gre, () => { gre.Bond(X(k + 2 * s), y, 70, 600); p2.Pop(500); }, 1000);
+                d.Dire("Deux sauts.", null, 900);
+            }
+            d.Dire("Elle arrive sur le " + Dit(k + sauts * s) + ".", () => grand.Pop(), 1800);
             return d;
         }
 
@@ -506,8 +524,9 @@ namespace MesPremiersJeux.Learning
         private static Demo AjoutCompte(int max)
         {
             var d = new Demo();
-            var o = Visuels.Objet(); int cap = Math.Max(2, Math.Min(max, 8));
+            var o = ObjetCourant(); int cap = Math.Max(2, Math.Min(max, 8));
             int a = Visuels.Entre(1, cap - 1), b = Visuels.Entre(1, Math.Min(3, cap - a)), tot = a + b;
+            if (Courant?.N is int sa && Courant?.N2 is int sb && sa >= 1 && sb >= 1 && sa + sb <= 10) { a = sa; b = sb; tot = a + b; }
             double pas = Math.Min(140, 960.0 / tot), t = Math.Min(115, pas - 22);
             var xs = Rang(tot, pas);
             var obj = new Acteur[tot]; var p = new Acteur[tot];
@@ -533,6 +552,7 @@ namespace MesPremiersJeux.Learning
             var d = new Demo("piece");
             const double T = 54;
             int cap = Math.Max(2, Math.Min(max, 8)), a = Visuels.Entre(1, cap - 1), b = Visuels.Entre(1, Math.Min(3, cap - a)), tot = a + b;
+            if (Courant?.N is int sa && Courant?.N2 is int sb && sa >= 1 && sb >= 1 && sa + sb <= 10) { a = sa; b = sb; tot = a + b; }
             var bleu = Tour(d, 480, a, T, Bleu);
             var or = new Acteur[b];
             for (int i = 0; i < b; i++) or[i] = d.Bloc(T, Orange).En(760 + i * 80, Sol).Opacite(0);
@@ -554,12 +574,13 @@ namespace MesPremiersJeux.Learning
         {
             var d = new Demo("ciel");
             int cap = Math.Max(2, Math.Min(max, 7)), a = Visuels.Entre(2, cap), b = Visuels.Entre(1, Math.Min(3, a - 1)), reste = a - b;
+            if (Courant?.N is int sa && Courant?.N2 is int sb && sa >= 2 && sa <= 10 && sb >= 1 && sb < sa) { a = sa; b = sb; reste = a - b; }
             var fil = d.Trait(90, 352, 1190, 352, Demo.Encre, 5); fil.Opacity = 1;
             var xs = Rang(a, Math.Min(160, 980.0 / a));
             var o = new Acteur[a]; var p = new Acteur[a];
             for (int i = 0; i < a; i++)
             {
-                o[i] = Obj(d, "oiseau-" + (i % 6 + 1), "🐦", 105, 130).En(xs[i], 358).Opacite(0);
+                o[i] = Obj(d, "oiseau-" + (i % 6 + 1), "🐦", 105, Math.Min(130, 980.0 / a - 8)).En(xs[i], 358).Opacite(0);
                 p[i] = Pastille(d, i + 1).En(xs[i], 358 - o[i].H - 12).Opacite(0);
             }
             var total = Chiffre(d, reste, 150).En(640, Sol - 10).Opacite(0);
@@ -581,6 +602,7 @@ namespace MesPremiersJeux.Learning
             var d = new Demo("piece");
             const double T = 54;
             int cap = Math.Max(2, Math.Min(max, 8)), a = Visuels.Entre(2, cap), b = Visuels.Entre(1, Math.Min(3, a - 1)), reste = a - b;
+            if (Courant?.N is int sa && Courant?.N2 is int sb && sa >= 2 && sa <= 10 && sb >= 1 && sb < sa) { a = sa; b = sb; reste = a - b; }
             var t = new Acteur[a];
             for (int i = 0; i < a; i++) t[i] = d.Bloc(T, i >= reste ? Orange : Bleu).En(480, Sol - i * T).Opacite(0);
             var compteur = new Compteur(d, reste, a, 1010, 300, 190);
@@ -599,10 +621,10 @@ namespace MesPremiersJeux.Learning
         private static Demo PartageLapins(int moitie)
         {
             var d = new Demo();
-            int m = Visuels.Entre(1, Math.Max(1, Math.Min(4, moitie)));
+            int m = NombreCourant(1, 5, () => Visuels.Entre(1, Math.Max(1, Math.Min(4, moitie))));
             var lg = d.Image("lapin", "🐰", 200).En(230, Sol).Opacite(0);
             var ld = d.Image("lapin", "🐰", 200).En(1050, Sol).Opacite(0);
-            double[] jx = { -70, 40, -20, 80, -100, 10, 60, -50 }, jy = { 0, -40, 50, 20, 40, -70, -30, 70 };
+            double[] jx = { -70, 40, -20, 80, -100, 10, 60, -50, 110, -120 }, jy = { 0, -40, 50, 20, 40, -70, -30, 70, 60, -10 };
             var c = new Acteur[2 * m];
             for (int i = 0; i < 2 * m; i++) c[i] = d.Image("carotte", "🥕", 96).En(640 + jx[i], 300 + jy[i]).Opacite(0);
             (double x, double y) Tas(bool gauche, int j) => ((gauche ? 400 : 880) + (gauche ? 1 : -1) * (j % 2) * 66, Sol - 8 - (j / 2) * 104);
@@ -621,7 +643,7 @@ namespace MesPremiersJeux.Learning
         {
             var d = new Demo("piece");
             const double T = 54;
-            int m = Visuels.Entre(1, Math.Max(1, Math.Min(4, moitie))), n = 2 * m;
+            int m = NombreCourant(1, 5, () => Visuels.Entre(1, Math.Max(1, Math.Min(4, moitie)))), n = 2 * m;
             var t = Tour(d, 640, n, T, Violet);
             var total = Chiffre(d, n, 92).Au(640, Sol + 62).Opacite(0);
             var cg = Chiffre(d, m, 92).Au(360, Sol + 62).Opacite(0);
@@ -643,13 +665,15 @@ namespace MesPremiersJeux.Learning
         private static Demo EcartLignes()
         {
             var d = new Demo("table");
-            var o = Visuels.Objet(); var o2 = Visuels.AutreObjet(o);
+            var o = ObjetCourant(); var o2 = Courant?.O2 ?? Visuels.AutreObjet(o);
             int a = Visuels.Entre(3, 7), b = Visuels.Entre(Math.Max(1, a - 4), a - 1), plus = a - b;
-            double X(int i) => 250 + i * 130;
+            if (Courant?.N is int sa && Courant?.N2 is int sb && sa >= 2 && sa <= 10 && sb >= 1 && sb < sa) { a = sa; b = sb; plus = a - b; }
+            double pasE = Math.Min(130, 880.0 / Math.Max(1, a - 1)), tE = Math.Min(100, pasE - 12);
+            double X(int i) => 220 + i * pasE;
             const double YH = 300, YB = 510;
             var h = new Acteur[a]; var bas = new Acteur[b]; var p = new Acteur[plus]; var extra = new Acteur[plus];
-            for (int i = 0; i < a; i++) h[i] = Obj(d, o.Nom, o.Emoji, 100, 116).En(X(i), YH).Opacite(0);
-            for (int i = 0; i < b; i++) bas[i] = Obj(d, o2.Nom, o2.Emoji, 100, 116).En(X(i), YB).Opacite(0);
+            for (int i = 0; i < a; i++) h[i] = Obj(d, o.Nom, o.Emoji, tE, pasE - 8).En(X(i), YH).Opacite(0);
+            for (int i = 0; i < b; i++) bas[i] = Obj(d, o2.Nom, o2.Emoji, tE, pasE - 8).En(X(i), YB).Opacite(0);
             var liens = new Line[b];
             for (int i = 0; i < b; i++) liens[i] = d.Trait(X(i), YH + 8, X(i), YB - 110, Demo.Encre, 6, true);
             for (int i = 0; i < plus; i++) { extra[i] = h[b + i]; p[i] = Pastille(d, i + 1).En(X(b + i), YH - h[b + i].H - 12).Opacite(0); }
@@ -668,10 +692,12 @@ namespace MesPremiersJeux.Learning
         {
             var d = new Demo("piece");
             int total = Visuels.Entre(3, 6), a = Visuels.Entre(Math.Max(1, total - 4), total - 1), m = total - a;
-            var xs = Rang(total, 180);
+            if (Courant?.N is int st && Courant?.N2 is int sa && st >= 2 && st <= 10 && sa >= 1 && sa < st) { total = st; a = sa; m = total - a; }
+            double pasA = Math.Min(180, 1060.0 / total), tA = Math.Min(140, pasA - 14);
+            var xs = Rang(total, pasA);
             var ass = new Acteur[total]; var pom = new Acteur[total]; var vides = new Acteur[m]; var p = new Acteur[m];
-            for (int i = 0; i < total; i++) ass[i] = d.Image("assiette", "🍽️", 140).En(xs[i], Sol - 40).Opacite(0);
-            for (int i = 0; i < total; i++) pom[i] = d.Image("pomme", "🍎", 84).En(i < a ? xs[i] : 1420, Sol - 68).Opacite(i < a ? 0 : 1);
+            for (int i = 0; i < total; i++) ass[i] = d.Image("assiette", "🍽️", tA).En(xs[i], Sol - 40).Opacite(0);
+            for (int i = 0; i < total; i++) pom[i] = d.Image("pomme", "🍎", tA * 0.6).En(i < a ? xs[i] : 1420, Sol - 40 - tA * 0.2).Opacite(i < a ? 0 : 1);
             for (int i = 0; i < m; i++) { vides[i] = ass[a + i]; p[i] = Pastille(d, i + 1).En(xs[a + i], Sol - 200).Opacite(0); }
             d.Dire(Maj(Dit(total)) + " assiettes. Il faut une pomme par assiette.", () => { for (int i = 0; i < total; i++) ass[i].Pop(i * 110); }, 2500);
             d.Dire("Il y a " + (a == 1 ? "une pomme." : Dit(a) + " pommes."), () => { for (int i = 0; i < a; i++) pom[i].Pop(i * 150); }, 1700);
@@ -680,7 +706,7 @@ namespace MesPremiersJeux.Learning
             d.Dire("Il en manque " + Dit(m) + ".", null, 1500);
             d.Toi("À toi ! Regarde une assiette vide pour apporter les pommes.", ass[total - 1], () =>
             {
-                for (int i = a; i < total; i++) { pom[i].Devant(); pom[i].Bond(xs[i], Sol - 68, 90, 900, (i - a) * 400); }
+                for (int i = a; i < total; i++) { pom[i].Devant(); pom[i].Bond(xs[i], Sol - 40 - tA * 0.2, 90, 900, (i - a) * 400); }
             }, 1100 + m * 400);
             d.Dire("Voilà : une pomme par assiette.", () => { for (int i = 0; i < total; i++) pom[i].Sauter(12, 360, i * 70); }, 1900);
             return d;

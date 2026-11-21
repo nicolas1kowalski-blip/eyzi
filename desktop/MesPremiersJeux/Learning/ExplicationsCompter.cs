@@ -117,7 +117,7 @@ namespace MesPremiersJeux.Learning
         private static Demo CompterUnParUn(int max)
         {
             var d = new Demo();
-            var o = Visuels.Objet(); int n = Combien(max);
+            var o = ObjetCourant(); int n = NombreCourant(1, 10, () => Combien(max));
             double pas = Math.Min(170, 1040.0 / n), t = Math.Min(130, pas - 24);
             var xs = Rang(n, pas);
             var a = new Acteur[n]; var p = new Acteur[n];
@@ -129,7 +129,7 @@ namespace MesPremiersJeux.Learning
             var total = Chiffre(d, n, 150).En(640, 190).Opacite(0);
             d.Dire("Combien de " + o.Plur + " ? On compte, " + (o.Fem ? "une par une." : "un par un."), () => { for (int i = 0; i < n; i++) a[i].Pop(i * 120); }, 1900);
             Compter(d, a, p, 0, n - 1);
-            d.Toi("À toi ! Regarde " + (o.Fem ? "la dernière" : "le dernier") + " pour finir de compter.", a[n - 1], () => { a[n - 1].Sauter(22, 400); p[n - 1].Pop(); }, 700);
+            d.Toi(n == 1 ? "À toi ! Regarde-" + (o.Fem ? "la" : "le") + " pour compter." : "À toi ! Regarde " + (o.Fem ? "la dernière" : "le dernier") + " pour finir de compter.", a[n - 1], () => { a[n - 1].Sauter(22, 400); p[n - 1].Pop(); }, 700);
             d.Dire(Maj(Dit(n)) + " !", () => total.Pop(), 1100);
             d.Dire("Le dernier nombre dit combien il y en a : " + o.N(n) + ".", () => { for (int i = 0; i < n; i++) a[i].Sauter(16, 380, i * 70); }, 1800);
             return d;
@@ -139,7 +139,7 @@ namespace MesPremiersJeux.Learning
         private static Demo RangerEnComptant(int max, bool boite)
         {
             var d = new Demo("table");
-            var o = Visuels.Objet(); int n = boite ? (max <= 6 ? Visuels.Entre(3, 6) : Visuels.Entre(6, 10)) : Combien(max);
+            var o = ObjetCourant(); int n = NombreCourant(2, 10, () => boite ? (max <= 6 ? Visuels.Entre(3, 6) : Visuels.Entre(6, 10)) : Combien(max));
             const double C = 104;
             double x0 = 640 - 2.5 * C, y0 = 330;
             if (boite)
@@ -183,7 +183,7 @@ namespace MesPremiersJeux.Learning
         private static Demo DeuxSens(int max)
         {
             var d = new Demo();
-            var o = Visuels.Objet(); int n = max <= 3 ? 3 : Visuels.Entre(3, 5);
+            var o = ObjetCourant(); int n = max <= 3 ? 3 : Visuels.Entre(3, 5);
             double pas = 180;
             var xs = Rang(n, pas);
             var a = new Acteur[n]; var p = new Acteur[n]; var q = new Acteur[n];
@@ -218,7 +218,7 @@ namespace MesPremiersJeux.Learning
         private static Demo NombreVersCollection(int max)
         {
             var d = new Demo();
-            var o = Visuels.Objet(); int n = Combien(max);
+            var o = ObjetCourant(); int n = NombreCourant(1, 10, () => Combien(max));
             var c = Chiffre(d, n, 230).En(230, Sol - 70).Opacite(0);
             (double x, double y) Place(int i) => (520 + (i % 5) * 150, Sol - 40 - (n > 5 ? (1 - i / 5) * 170 : 60));
             var a = new Acteur[n];
@@ -226,7 +226,7 @@ namespace MesPremiersJeux.Learning
             d.Dire("Voici le " + Dit(n) + ".", () => c.Pop(), 1200);
             d.Dire(Maj(Dit(n)) + ", c'est combien de " + o.Plur + " ?", () => c.Sauter(16), 1600);
             for (int i = 0; i < n - 1; i++) { int k = i; d.Dire(Maj(Dit(k + 1)) + ".", () => a[k].Aller(Place(k).x, Place(k).y, 650, 0, Acteur.Sortie), 900); }
-            d.Toi("À toi ! Regarde le chiffre pour faire venir " + (o.Fem ? "la dernière." : "le dernier."), c, () => a[n - 1].Aller(Place(n - 1).x, Place(n - 1).y, 650, 0, Acteur.Sortie), 800);
+            d.Toi(n == 1 ? "À toi ! Regarde le chiffre pour " + (o.Fem ? "la" : "le") + " faire venir." : "À toi ! Regarde le chiffre pour faire venir " + (o.Fem ? "la dernière." : "le dernier."), c, () => a[n - 1].Aller(Place(n - 1).x, Place(n - 1).y, 650, 0, Acteur.Sortie), 800);
             d.Dire(Maj(Dit(n)) + " !", () => { for (int i = 0; i < n; i++) a[i].Sauter(16, 380, i * 70); }, 1200);
             d.Dire("Le chiffre " + Dit(n) + ", et " + o.N(n) + " : c'est pareil.", () => c.Briller(), 2000);
             return d;
@@ -246,7 +246,7 @@ namespace MesPremiersJeux.Learning
         private static Demo CommeLeDe(int max)
         {
             var d = new Demo("table");
-            var o = Visuels.Objet(); int n = max <= 3 ? Visuels.Entre(2, 3) : Visuels.Entre(3, 6);
+            var o = ObjetCourant(); int n = NombreCourant(1, 6, () => max <= 3 ? Visuels.Entre(2, 3) : Visuels.Entre(3, 6));
             const double K = 1.7, X0 = 220, Y0 = 170;                    // le cadre : 340 × 340
             var cadre = d.Rect(200 * K, 200 * K, Colors.White, 50).En(X0 + 100 * K, Y0 + 200 * K).Opacite(0);
             var a = new Acteur[n];
@@ -325,10 +325,11 @@ namespace MesPremiersJeux.Learning
         private static Demo Trace(int max)
         {
             var d = new Demo("table");
-            var o = Visuels.Objet(); int n = max <= 3 ? Visuels.Entre(1, 3) : max <= 6 ? Visuels.Entre(1, 6) : Visuels.Entre(1, 9);
+            var o = ObjetCourant(); int n = NombreCourant(1, 10, () => max <= 3 ? Visuels.Entre(1, 3) : max <= 6 ? Visuels.Entre(1, 6) : Visuels.Entre(1, 9));
+            int col = n > 9 ? 4 : 3;
             var c = ChiffreTrace(d, n, 2.5, out var tracer).En(340, Sol - 30);
             var a = new Acteur[n];
-            for (int i = 0; i < n; i++) a[i] = Obj(d, o.Nom, o.Emoji, 110, 130).En(760 + (i % 3) * 160, Sol - 50 - (i / 3) * 140).Opacite(0);
+            for (int i = 0; i < n; i++) a[i] = Obj(d, o.Nom, o.Emoji, 110, col == 4 ? 112 : 130).En((col == 4 ? 740 : 760) + (i % col) * (col == 4 ? 126 : 160), Sol - 50 - (i / col) * 140).Opacite(0);
             d.Dire("Voici le " + Dit(n) + ".", null, 1200);
             d.Dire("Il s'écrit comme ça.", () => tracer(2400, 300), 3000);
             d.Dire(Maj(Dit(n)) + ", c'est ça :", () => { for (int i = 0; i < n; i++) a[i].Pop(i * 260); }, 900 + n * 260);
@@ -342,8 +343,8 @@ namespace MesPremiersJeux.Learning
         private static Demo Representations(int max, string accent)
         {
             var d = new Demo("piece");
-            var o = Visuels.Objet();
-            int n = accent == "de" ? Visuels.Entre(1, Math.Min(6, max)) : max <= 3 ? Visuels.Entre(1, 3) : max <= 6 ? Visuels.Entre(2, 6) : Visuels.Entre(3, 10);
+            var o = ObjetCourant();
+            int n = NombreCourant(1, accent == "de" ? 6 : 10, () => accent == "de" ? Visuels.Entre(1, Math.Min(6, max)) : max <= 3 ? Visuels.Entre(1, 3) : max <= 6 ? Visuels.Entre(2, 6) : Visuels.Entre(3, 10));
             var c = Chiffre(d, n, 200).En(640, 240).Opacite(0);
             var cartes = new List<(string Cle, Acteur A, string Dit, string Cible)>();
             Acteur Carte(FrameworkElement v, double w, double h)
@@ -378,7 +379,7 @@ namespace MesPremiersJeux.Learning
         private static Demo SurLaBande(int max)
         {
             var d = new Demo();
-            int fin = max <= 3 ? 5 : max <= 6 ? 6 : 10, n = Visuels.Entre(2, fin - 1);
+            int fin = max <= 3 ? 5 : max <= 6 ? 6 : 10, n = NombreCourant(1, fin, () => Visuels.Entre(2, fin - 1));
             var X = PoserBande(d, 1, fin, fin <= 6 ? 130 : 96);
             double y = Sol - 12;
             var gre = d.Image("grenouille", "🐸", 110).En(X(1), y).Opacite(0);
@@ -387,7 +388,7 @@ namespace MesPremiersJeux.Learning
             d.Dire("Un.", () => gre.Sauter(16, 360), 700);
             for (int k = 2; k <= n; k++) { int kk = k; d.Dire(Maj(Dit(kk)) + ".", () => gre.Bond(X(kk), y, 60, 420), 750); }
             d.Dire("La grenouille s'arrête sur le " + Dit(n) + ".", () => grand.Pop(), 1600);
-            d.Dire("Le " + Dit(n) + " vient après le " + Dit(n - 1) + ", et avant le " + Dit(n + 1) + ".", () => gre.Sauter(16, 360, 0, 2), 2400);
+            d.Dire(n == 1 ? "Le un est le premier, juste avant le deux." : "Le " + Dit(n) + " vient après le " + Dit(n - 1) + ", et avant le " + Dit(n + 1) + ".", () => gre.Sauter(16, 360, 0, 2), 2400);
             d.Toi("À toi ! Regarde le grand " + Dit(n) + ".", grand, () => grand.Sauter(22, 460, 0, 2), 1100);
             d.Dire("Oui ! Le " + Dit(n) + " !", () => grand.Briller(), 1300);
             return d;
@@ -398,7 +399,7 @@ namespace MesPremiersJeux.Learning
         {
             var d = new Demo("piece");
             const double T = 52;
-            var v = Visuels.Nombres(Visuels.Entre(1, 8), 3, 1, 8).OrderBy(x => x).ToArray();
+            var v = ListeCourante(3, 9) ?? Visuels.Nombres(Visuels.Entre(1, 8), 3, 1, 8).OrderBy(x => x).ToArray();
             double[] xs = { 380, 640, 900 }; int[] dep = { 1, 2, 0 };          // le plus petit part au milieu, le moyen à droite, le plus grand à gauche
             var cols = new[] { Bleu, Vert, Orange };
             var tours = new Acteur[3][]; var ch = new Acteur[3];

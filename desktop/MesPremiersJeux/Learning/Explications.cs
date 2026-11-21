@@ -27,6 +27,26 @@ namespace MesPremiersJeux.Learning
         private static readonly string[] Mots = { "zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix" };
 
         // ------------------------------------------------------------------
+        //  LE SUJET DE L'EXERCICE : posé par la leçon juste avant de fabriquer l'explication.
+        //  S'il est là, l'animation prend le même nombre, le même objet, la même forme que
+        //  l'exercice qui suit ; sinon elle choisit au hasard comme avant.
+        // ------------------------------------------------------------------
+        internal static Sujet Courant;
+        private static ObjetDef ObjetCourant() => Courant?.O ?? Visuels.Objet();
+        private static int NombreCourant(int min, int max, Func<int> sinon)
+        {
+            int? n = Courant?.N;
+            return n.HasValue && n.Value >= min && n.Value <= max ? n.Value : sinon();
+        }
+        private static int[] ListeCourante(int combien, int max)
+        {
+            var l = Courant?.Liste;
+            if (l == null) return null;
+            var v = l.Distinct().OrderBy(x => x).ToArray();
+            return v.Length == combien && v[0] >= 1 && v[combien - 1] <= max ? v : null;
+        }
+
+        // ------------------------------------------------------------------
         //  Les familles (une notion, plusieurs angles)
         // ------------------------------------------------------------------
         public static readonly Famille GrandPetit = new Famille("grand-petit", ("ballon", Gonfle), ("animaux", ElephantSouris), ("ours", OursEtBols));
@@ -50,17 +70,19 @@ namespace MesPremiersJeux.Learning
         private static Demo Gonfle()
         {
             var d = new Demo("ciel");
-            var b = d.Image("ballon", "🎈", 230).En(640, Sol - 30).Echelle(0.9).Opacite(0);
-            var p = d.Image("ballon", "🎈", 230).En(960, Sol - 30).Echelle(0.5).Opacite(0);
-            d.Dire("Regarde le ballon.", () => b.Pop(), 900);
-            d.Dire("Il gonfle, il gonfle…", () => b.Grandir(1.8, 2400), 2500);
-            d.Dire("Il est grand !", () => b.Sauter(34), 800);
-            d.Dire("Il se dégonfle…", () => b.Grandir(0.5, 2200), 2300);
-            d.Dire("Il est petit.", () => b.Secouer(0, 2, 5), 800);
-            d.Toi("À toi ! Regarde le ballon pour le faire grandir.", b, () => b.Grandir(1.8, 1800), 1900);
+            var o = Courant?.O;                                   // l'objet de l'exercice, s'il y en a un
+            string nom = o?.Nom ?? "ballon", emoji = o?.Emoji ?? "🎈";
+            var b = Obj(d, nom, emoji, 230, 300).En(640, Sol - 30).Echelle(0.9).Opacite(0);
+            var p = Obj(d, nom, emoji, 230, 300).En(960, Sol - 30).Echelle(0.5).Opacite(0);
+            d.Dire(o == null ? "Regarde le ballon." : "Regarde bien.", () => b.Pop(), 900);
+            d.Dire(o == null ? "Il gonfle, il gonfle…" : "Ça grandit, ça grandit…", () => b.Grandir(1.8, 2400), 2500);
+            d.Dire(o == null ? "Il est grand !" : "C'est grand !", () => b.Sauter(34), 800);
+            d.Dire(o == null ? "Il se dégonfle…" : "Ça rapetisse…", () => b.Grandir(0.5, 2200), 2300);
+            d.Dire(o == null ? "Il est petit." : "C'est petit.", () => b.Secouer(0, 2, 5), 800);
+            d.Toi(o == null ? "À toi ! Regarde le ballon pour le faire grandir." : "À toi ! Regarde pour faire grandir.", b, () => b.Grandir(1.8, 1800), 1900);
             d.Dire("Grand !", () => b.Sauter(34), 800);
-            d.Dire("Un grand ballon…", () => { b.Aller(430, Sol - 30, 900); b.Briller(900); }, 1900);
-            d.Dire("et un petit ballon.", () => { p.Pop(); p.Briller(300); }, 1600);
+            d.Dire(o == null ? "Un grand ballon…" : o.Fem ? "Une grande…" : "Un grand…", () => { b.Aller(430, Sol - 30, 900); b.Briller(900); }, 1900);
+            d.Dire(o == null ? "et un petit ballon." : o.Fem ? "et une petite." : "et un petit.", () => { p.Pop(); p.Briller(300); }, 1600);
             return d;
         }
 
@@ -432,13 +454,18 @@ namespace MesPremiersJeux.Learning
         private static Demo Escalier(int n)
         {
             var d = new Demo();
-            var (nom, emoji) = Visuels.Un(new[] { ("arbre", "🌳"), ("ours", "🐻"), ("lapin", "🐰") });
+            var so = Courant?.O; bool fem = so != null && so.Fem;      // l'objet de l'exercice, s'il y en a un
+            var (nom, emoji) = so != null ? (so.Nom, so.Emoji) : Visuels.Un(new[] { ("arbre", "🌳"), ("ours", "🐻"), ("lapin", "🐰") });
             var xs = Places(n); var dep = Depart(n);
             var a = new Acteur[n]; var h = new double[n];
-            for (int r = 0; r < n; r++) { h[r] = n == 3 ? 110 + 90 * r : 90 + 52 * r; a[r] = d.Image(nom, emoji, h[r]).En(xs[dep[r]], Sol).Opacite(0); }
-            d.Dire("Regarde : ils n'ont pas tous la même taille.", () => { for (int r = 0; r < n; r++) a[r].Pop(dep[r] * 180); }, 1800);
-            d.Dire("On les range, du plus petit au plus grand.", null, 1200);
-            Trier(d, a, dep, xs, r => r == 0 ? "D'abord le plus petit." : r == n - 1 ? "Et le plus grand, au bout !" : r == 1 ? "Ensuite, un peu plus grand." : r == 2 ? "Puis celui-là." : "Et celui-là.");
+            // Un dessin large ne doit pas déborder sur son voisin : on réduit toutes les tailles ensemble.
+            var essai = d.Image(nom, emoji, 100); double forme = essai.W / 100; d.Scene.Children.Remove(essai.Boite);
+            double k = Math.Min(1, (xs[1] - xs[0] - 20) / (298 * forme));
+            for (int r = 0; r < n; r++) { h[r] = (n == 3 ? 110 + 90 * r : 90 + 52 * r) * k; a[r] = d.Image(nom, emoji, h[r]).En(xs[dep[r]], Sol).Opacite(0); }
+            d.Dire(fem ? "Regarde : elles n'ont pas toutes la même taille." : "Regarde : ils n'ont pas tous la même taille.", () => { for (int r = 0; r < n; r++) a[r].Pop(dep[r] * 180); }, 1800);
+            d.Dire(fem ? "On les range, de la plus petite à la plus grande." : "On les range, du plus petit au plus grand.", null, 1200);
+            Trier(d, a, dep, xs, r => r == 0 ? (fem ? "D'abord la plus petite." : "D'abord le plus petit.") : r == n - 1 ? (fem ? "Et la plus grande, au bout !" : "Et le plus grand, au bout !")
+                : r == 1 ? (fem ? "Ensuite, un peu plus grande." : "Ensuite, un peu plus grand.") : r == 2 ? (fem ? "Puis celle-là." : "Puis celui-là.") : (fem ? "Et celle-là." : "Et celui-là."));
             // L'escalier : une marche au-dessus de chaque tête.
             var marches = new List<Line>();
             for (int r = 0; r < n; r++)
@@ -448,9 +475,9 @@ namespace MesPremiersJeux.Learning
                 if (r < n - 1) marches.Add(d.Trait(dr, y, dr, Sol - h[r + 1] - 18, Demo.Or, 8));
             }
             d.Dire("Ça monte, comme un escalier !", () => { for (int i = 0; i < marches.Count; i++) Demo.Voir(marches[i], 300, i * 260); for (int r = 0; r < n; r++) a[r].Sauter(20, 400, r * 520); }, 600 + n * 520);
-            d.Toi("À toi ! Regarde le plus grand.", a[n - 1], () => a[n - 1].Sauter(30, 460, 0, 2), 1100);
-            d.Dire("Oui ! Du plus petit…", () => a[0].Briller(), 1400);
-            d.Dire("au plus grand.", () => a[n - 1].Briller(), 1400);
+            d.Toi(fem ? "À toi ! Regarde la plus grande." : "À toi ! Regarde le plus grand.", a[n - 1], () => a[n - 1].Sauter(30, 460, 0, 2), 1100);
+            d.Dire(fem ? "Oui ! De la plus petite…" : "Oui ! Du plus petit…", () => a[0].Briller(), 1400);
+            d.Dire(fem ? "à la plus grande." : "au plus grand.", () => a[n - 1].Briller(), 1400);
             return d;
         }
 

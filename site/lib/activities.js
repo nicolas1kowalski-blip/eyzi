@@ -29,6 +29,7 @@ export default {
  "ShapesGame": "Formes",
  "CountGame": "Compter",
  "ShadowGame": "Les ombres",
+ "SameGame": "Le même",
  "SeekFindGame": "Cherche et trouve",
  "StringsGame": "Les ficelles",
  "CupsGame": "Les gobelets",

@@ -783,6 +783,7 @@ namespace MesPremiersJeux.Games
             { "PuzzleGame", ("decor-montagnes", 0) },
             { "ShadowGame", ("decor-neige", 0) },
             { "MemoryGame", ("decor-bonbons", 0x50) },
+            { "SameGame", ("decor-bonbons", 0x50) },
             { "ColorsGame", ("decor-bonbons", 0x50) },
             { "NecklaceGame", ("decor-bonbons", 0x50) },
             { "NumberPartyGame", ("decor-montgolfieres", 0x20) },

@@ -61,6 +61,7 @@ namespace MesPremiersJeux.Views
                     ("🔍", "Cherche et trouve", c => new SeekFindGame(c)),
                     ("🧩", "Puzzle", c => new PuzzleGame(c)),
                     ("🗂️", "Les familles", c => new FamiliesGame(c)),
+                    ("🎴", "Le même", c => new SameGame(c)),
                     ("🃏", "Les paires", c => new MemoryGame(c)),
                     ("👧👨", "Les paires à deux", c => new MemoryGame(c, duo: true)),
                 },

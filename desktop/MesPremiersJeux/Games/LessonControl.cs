@@ -216,8 +216,11 @@ namespace MesPremiersJeux.Games
         private void JouerDemo(Explication e, string annonce, Action apres)
         {
             Demo d;
+            // L'explication reprend le sujet de l'exercice (le même nombre, le même objet…) : elle « suit ».
+            Explications.Courant = Pas?.Exercice?.Sujet;
             try { d = e.Make(); }
-            catch (Exception err) { Log.Write("lecons", "Explication " + e.Id + " : " + err); apres(); return; }
+            catch (Exception err) { Log.Write("lecons", "Explication " + e.Id + " : " + err); Explications.Courant = null; apres(); return; }
+            Explications.Courant = null;
 
             int gen = ++_gen;
             Locked = true;

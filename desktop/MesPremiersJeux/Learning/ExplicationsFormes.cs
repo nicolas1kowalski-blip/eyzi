@@ -93,7 +93,7 @@ namespace MesPremiersJeux.Learning
                     () => { for (int i = 0; i < points[kk].Count; i++) points[kk][i].Pop(i * 380); }, 600 + points[kk].Count * 380);
                 d.Faire(() => { foreach (var p in points[kk]) p.Fondu(0, 300); a[kk].Grandir(0.36, 800); a[kk].Aller(xs[kk], 200, 800); }, 950);
             }
-            int c2 = Visuels.Rng.Next(n);
+            int c2 = Courant?.Forme != null && kinds.Contains(Courant.Forme) ? kinds.IndexOf(Courant.Forme) : Visuels.Rng.Next(n);   // la forme de l'exercice
             d.Toi("À toi ! Regarde " + Visuels.NomForme(kinds[c2]) + ".", a[c2], () => a[c2].Sauter(22, 460, 0, 2), 1100);
             d.Dire("Oui ! " + Maj(Visuels.NomForme(kinds[c2])) + " !", () => a[c2].Briller(), 1400);
             return d;
@@ -103,7 +103,7 @@ namespace MesPremiersJeux.Learning
         private static Demo FormeInvariante()
         {
             var d = new Demo("table");
-            string f = Visuels.Un(new[] { "carre", "triangle", "rectangle" }); string un = UneForme(f);
+            string f = Courant?.Forme == "carre" || Courant?.Forme == "triangle" || Courant?.Forme == "rectangle" ? Courant.Forme : Visuels.Un(new[] { "carre", "triangle", "rectangle" }); string un = UneForme(f);
             var cols = Visuels.Melange(Visuels.Couleurs).Take(2).ToList();
             var a = Forme(d, f, cols[0].C, 270).Origine(0.5, 0.5).En(640, Sol - 70).Opacite(0);
             var b = Forme(d, f, cols[1].C, 270).Origine(0.5, 0.5).En(640, Sol - 70).Opacite(0);
@@ -337,7 +337,7 @@ namespace MesPremiersJeux.Learning
                 d.Dire(PhraseSolide[s], () => { a[kk].Pop(); if (s == "boule") { a[kk].Aller(860, y, 1300, 600); a[kk].Tourner(300, 1300, 600); } else a[kk].Sauter(22, 460, 700); }, 2600);
                 d.Faire(() => { a[kk].Grandir(0.38, 800); a[kk].Aller(xs[kk], 210, 800); }, 950);
             }
-            int c = Visuels.Rng.Next(n);
+            int c = Courant?.Forme != null && kinds.Contains(Courant.Forme) ? kinds.IndexOf(Courant.Forme) : Visuels.Rng.Next(n);   // le solide de l'exercice
             d.Toi("À toi ! Regarde " + Visuels.NomSolide(kinds[c]) + ".", a[c], () => a[c].Sauter(22, 460, 0, 2), 1100);
             d.Dire("Oui ! " + Maj(Visuels.NomSolide(kinds[c])) + " !", () => a[c].Briller(), 1400);
             return d;
@@ -597,7 +597,7 @@ namespace MesPremiersJeux.Learning
             /// <summary>L'image découpée en cols × rows morceaux, posés à leur place (invisibles).</summary>
             public Planche(Demo d, int cols, int rows, double largeur, double x0, double y0, bool fond = false)
             {
-                var src = Visuels.Photo();
+                var src = Courant?.Image ?? Visuels.Photo();        // l'image du puzzle de l'exercice
                 if (src == null) throw new InvalidOperationException("pas d'image pour le puzzle");
                 Cols = cols; Rows = rows; X0 = x0; Y0 = y0; Pw = largeur / cols; Ph = largeur * 0.75 / rows;
                 if (fond) d.Rect(largeur + 16, largeur * 0.75 + 16, Color.FromRgb(0xFF, 0xF3, 0xC4), 10).En(x0 + largeur / 2, y0 + largeur * 0.75 + 8);

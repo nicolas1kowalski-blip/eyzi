@@ -104,13 +104,14 @@ namespace MesPremiersJeux.Learning
             var v = varies ? V.Melange(V.Objets).Take(3).ToArray() : null;
             var ex = ChoixChiffres(varies ? "Combien d'objets ?" : "Combien de " + o.Plur + " ?", () => V.Collection(o, n, 110, desordre, v), n, count, Math.Max(0, min - 1), max, true);
             ex.Bravo = n <= 1 ? "Oui ! Un !" : "Oui ! " + n + " !";
+            ex.Sujet = new Sujet { O = o, N = n };
             return ex;
         }
 
         private static ExerciceChoix Montrer(int min, int max, int count)
         {
             var o = V.Objet(); int n = V.Entre(min, max);
-            var ex = new ExerciceChoix { Consigne = "Montre " + o.N(n) + ".", Modele = () => V.Chiffre(n, 70), Taille = 300 };
+            var ex = new ExerciceChoix { Consigne = "Montre " + o.N(n) + ".", Modele = () => V.Chiffre(n, 70), Taille = 300, Sujet = new Sujet { O = o, N = n } };
             foreach (var k in V.Nombres(n, count, Math.Max(1, min), max, true))
             {
                 int kk = k;
@@ -122,7 +123,7 @@ namespace MesPremiersJeux.Learning
         private static ExerciceChoix DeAutant(int min, int max, int count)
         {
             var o = V.Objet(); int n = V.Entre(min, Math.Min(6, max));
-            var ex = new ExerciceChoix { Consigne = "Quel dé montre autant que les " + o.Plur + " ?", Scene = () => V.Collection(o, n, 100) };
+            var ex = new ExerciceChoix { Consigne = "Quel dé montre autant que les " + o.Plur + " ?", Scene = () => V.Collection(o, n, 100), Sujet = new Sujet { O = o, N = n } };
             foreach (var k in V.Nombres(n, count, 1, 6, true))
             {
                 int kk = k;
@@ -134,7 +135,7 @@ namespace MesPremiersJeux.Learning
         private static ExerciceChoix Boite10Autant(int min, int max, int count)
         {
             var o = V.Objet(); int n = V.Entre(min, max);
-            var ex = new ExerciceChoix { Consigne = "Quelle boîte montre autant que les " + o.Plur + " ?", Scene = () => V.Collection(o, n, 90, true), Taille = 280 };
+            var ex = new ExerciceChoix { Consigne = "Quelle boîte montre autant que les " + o.Plur + " ?", Scene = () => V.Collection(o, n, 90, true), Taille = 280, Sujet = new Sujet { O = o, N = n } };
             foreach (var k in V.Nombres(n, count, 1, 10, true))
             {
                 int kk = k;
@@ -161,13 +162,14 @@ namespace MesPremiersJeux.Learning
             int n = V.Entre(min, max);
             var ex = ChoixChiffres("Où est le " + n + " ?", null, n, count, min, max, proches);
             ex.Bravo = "Oui, c'est le " + n + " !";
+            ex.Sujet = new Sujet { N = n };
             return ex;
         }
 
         private static ExerciceChoix ChiffreVersDe(int min, int max, int count)
         {
             int n = V.Entre(Math.Max(1, min), Math.Min(6, max));
-            var ex = new ExerciceChoix { Consigne = "Quel dé montre " + n + " ?", Scene = () => V.Chiffre(n, 220) };
+            var ex = new ExerciceChoix { Consigne = "Quel dé montre " + n + " ?", Scene = () => V.Chiffre(n, 220), Sujet = new Sujet { N = n } };
             foreach (var k in V.Nombres(n, count, 1, 6, true)) { int kk = k; ex.Reponses.Add(new Carte { Visuel = () => V.De(kk), Bonne = kk == n, Dit = kk.ToString() }); }
             return ex;
         }
@@ -175,7 +177,7 @@ namespace MesPremiersJeux.Learning
         private static ExerciceChoix ChiffreVersBoite(int min, int max, int count)
         {
             int n = V.Entre(min, max);
-            var ex = new ExerciceChoix { Consigne = "Quelle boîte montre " + n + " ?", Scene = () => V.Chiffre(n, 220), Taille = 280 };
+            var ex = new ExerciceChoix { Consigne = "Quelle boîte montre " + n + " ?", Scene = () => V.Chiffre(n, 220), Taille = 280, Sujet = new Sujet { N = n } };
             foreach (var k in V.Nombres(n, count, 0, 10, true)) { int kk = k; ex.Reponses.Add(new Carte { Visuel = () => V.Boite10(kk, 220), Bonne = kk == n, Dit = kk.ToString() }); }
             return ex;
         }
@@ -183,7 +185,7 @@ namespace MesPremiersJeux.Learning
         private static ExerciceOrdre OrdonnerNombres(int min, int max, int count)
         {
             var nums = V.Nombres(V.Entre(min, max), count, min, max).OrderBy(x => x).ToList();
-            var ex = new ExerciceOrdre { Consigne = "Range les nombres du plus petit au plus grand. Lequel est le plus petit ?", ConsigneSuite = "Et après, le plus petit qui reste ?" };
+            var ex = new ExerciceOrdre { Consigne = "Range les nombres du plus petit au plus grand. Lequel est le plus petit ?", ConsigneSuite = "Et après, le plus petit qui reste ?", Sujet = new Sujet { Liste = nums } };
             foreach (var n in nums) { int k = n; ex.Cartes.Add(new Carte { Visuel = () => V.Chiffre(k), Dit = k.ToString() }); }
             return ex;
         }
@@ -276,6 +278,7 @@ namespace MesPremiersJeux.Learning
                 Consigne = total + ", c'est " + a + " et combien ?",
                 Scene = () => V.CoteACote(V.Collection(o, a, 90), V.Signe("+"), V.Trou(110)),
                 Modele = () => V.Chiffre(total, 70),
+                Sujet = new Sujet { O = o, N = total, N2 = a },
             };
             foreach (var k in V.Nombres(b, 3, 1, Math.Max(3, total), true)) { int kk = k; ex.Reponses.Add(new Carte { Visuel = () => V.Collection(o, kk, 60), Bonne = kk == b, Dit = o.N(kk) }); }
             ex.Bravo = total + ", c'est " + a + " et " + b + " !";
@@ -287,6 +290,7 @@ namespace MesPremiersJeux.Learning
             var o = V.Objet(); int a = V.Entre(1, 5);
             var ex = ChoixChiffres(a + " et " + a + ", ça fait combien ?", () => V.DeuxGroupes(o, a, a, "+"), 2 * a, 3, 1, 10, true);
             ex.Bravo = a + " et " + a + ", ça fait " + (2 * a) + " !";
+            ex.Sujet = new Sujet { O = o, N = a };
             return ex;
         }
 
@@ -295,6 +299,7 @@ namespace MesPremiersJeux.Learning
             int a = V.Entre(1, 9), b = 10 - a;
             var ex = ChoixChiffres("Il y a " + a + " jetons. Combien de cases vides pour faire 10 ?", () => V.Boite10(a, 420), b, 3, 1, 9, true);
             ex.Bravo = a + " et " + b + ", ça fait 10 !";
+            ex.Sujet = new Sujet { N = a };
             return ex;
         }
 
@@ -303,6 +308,7 @@ namespace MesPremiersJeux.Learning
             var o = V.Objet(); int n = plus ? V.Entre(1, max - 1) : V.Entre(2, max); int bon = plus ? n + 1 : n - 1;
             var ex = ChoixChiffres("Il y a " + o.N(n) + ". " + (plus ? "J'en ajoute une. " : "J'en enlève une. ") + "Combien maintenant ?",
                 () => plus ? V.DeuxGroupes(o, n, 1, "+") : V.DeuxGroupes(o, n - 1, 1, " ", true), bon, 3, 0, max, true);
+            ex.Sujet = new Sujet { O = o, N = n };
             return ex;
         }
 
@@ -325,6 +331,7 @@ namespace MesPremiersJeux.Learning
         {
             int n = V.Entre(min, max); int bon = apres ? n + 1 : n - 1;
             var ex = ChoixChiffres(apres ? "Quel nombre vient juste après " + n + " ?" : "Quel nombre vient juste avant " + n + " ?", () => V.Chiffre(n, 220), bon, 3, Math.Max(1, bon - 3), bon + 3, true);
+            ex.Sujet = new Sujet { N = n };
             return ex;
         }
 
@@ -341,6 +348,7 @@ namespace MesPremiersJeux.Learning
         {
             int span = 5; int a = V.Entre(min, Math.Max(min, max - span + 1)); int trou = V.Entre(a + 1, a + span - 2);
             var ex = ChoixChiffres("Quel nombre manque sur la bande ?", () => V.Bande(a, a + span - 1, trou), trou, 3, Math.Max(1, trou - 3), trou + 3, true);
+            ex.Sujet = new Sujet { N = trou, N2 = a };
             return ex;
         }
 
@@ -383,6 +391,7 @@ namespace MesPremiersJeux.Learning
             var ex = new ExerciceChoix { Consigne = "Dans quelle case de la bande va ce dé ?", Scene = () => V.CoteACote(V.De(n, 160), V.Bande(1, max, -1, 80)), Taille = 230 };
             foreach (var k in V.Nombres(n, 3, 1, max, true)) { int kk = k; ex.Reponses.Add(new Carte { Visuel = () => V.Chiffre(kk), Bonne = kk == n, Dit = "la case " + kk }); }
             ex.Bravo = "Oui ! Le dé qui montre " + n + " va dans la case " + n + " !";
+            ex.Sujet = new Sujet { N = n };
             return ex;
         }
 
@@ -393,6 +402,7 @@ namespace MesPremiersJeux.Learning
             var ex = ChoixChiffres("La grenouille est sur la case " + k + ". Elle " + (avance ? "avance" : "recule") + " de " + d + (d == 1 ? " case" : " cases") + ". Sur quelle case arrive-t-elle ?",
                 () => V.Piste(n, k, n <= 6 ? 110 : 84), bon, 3, 1, n, true);
             ex.Bravo = "Oui ! Elle arrive sur la case " + bon + " !";
+            ex.Sujet = new Sujet { N = k, N2 = d };
             return ex;
         }
 
@@ -415,6 +425,7 @@ namespace MesPremiersJeux.Learning
         {
             var o = V.Objet(); int a = V.Entre(1, max - 1), b = V.Entre(1, max - a);
             var ex = ChoixChiffres("Il y a " + o.N(a) + ". J'en ajoute " + b + ". Combien de " + o.Plur + " en tout ?", () => V.DeuxGroupes(o, a, b, "+"), a + b, 3, 1, max, true);
+            ex.Sujet = new Sujet { O = o, N = a, N2 = b };
             return ex;
         }
 
@@ -422,6 +433,7 @@ namespace MesPremiersJeux.Learning
         {
             var o = V.Objet(); int a = V.Entre(2, max), b = V.Entre(1, a - 1);
             var ex = ChoixChiffres("Il y a " + o.N(a) + ". J'en enlève " + b + ". Combien en reste-t-il ?", () => V.DeuxGroupes(o, a - b, b, " ", true), a - b, 3, 1, max, true);
+            ex.Sujet = new Sujet { O = o, N = a, N2 = b };
             return ex;
         }
 
@@ -429,6 +441,7 @@ namespace MesPremiersJeux.Learning
         {
             var o = V.Objet(); int moitie = V.Entre(1, maxMoitie), total = moitie * 2;
             var ex = ChoixChiffres("Il y a " + o.N(total) + " pour deux enfants. Combien chacun ?", () => V.Collection(o, total, 90), moitie, 3, 1, Math.Max(3, maxMoitie + 1), true);
+            ex.Sujet = new Sujet { O = o, N = moitie };
             return ex;
         }
 
@@ -437,6 +450,7 @@ namespace MesPremiersJeux.Learning
             var o = V.Objet(); var o2 = V.AutreObjet(o); int a = V.Entre(3, 10), b = V.Entre(1, a - 1);
             var ex = ChoixChiffres("Il y a " + o.N(a) + " et " + o2.N(b) + ". Combien de " + o.Plur + " en plus ?", () => V.CoteACote(V.Collection(o, a, 70), V.Collection(o2, b, 70)), a - b, 3, 1, 10, true);
             ex.Bravo = "Oui ! " + (a - b) + " de plus !";
+            ex.Sujet = new Sujet { O = o, O2 = o2, N = a, N2 = b };
             return ex;
         }
 
@@ -445,6 +459,7 @@ namespace MesPremiersJeux.Learning
             var o = V.Objet(); int total = V.Entre(3, 10), a = V.Entre(1, total - 1);
             var ex = ChoixChiffres("Il faut " + o.N(total) + ". Il y en a " + a + ". Combien en manque-t-il ?", () => V.CoteACote(V.Collection(o, a, 80), V.Signe("→"), V.Chiffre(total, 160)), total - a, 3, 1, 10, true);
             ex.Bravo = "Oui ! Il en manque " + (total - a) + " !";
+            ex.Sujet = new Sujet { N = total, N2 = a };
             return ex;
         }
 
@@ -473,7 +488,7 @@ namespace MesPremiersJeux.Learning
         {
             var formes = V.Formes.Take(nFormes).ToList(); string bon = V.Un(formes);
             var c1 = V.Un(V.Couleurs); var c2 = V.Un(V.Couleurs.Where(c => c.Nom != c1.Nom).ToList());
-            var ex = new ExerciceChoix { Consigne = "Regarde bien le modèle. Montre la même forme.", Scene = () => V.Forme(bon, c1.C, 220), Bravo = "Oui, c'est la même forme !" };
+            var ex = new ExerciceChoix { Consigne = "Regarde bien le modèle. Montre la même forme.", Scene = () => V.Forme(bon, c1.C, 220), Bravo = "Oui, c'est la même forme !", Sujet = new Sujet { Forme = bon } };
             foreach (var f in V.Melange(formes)) { string ff = f; ex.Reponses.Add(new Carte { Visuel = () => V.Forme(ff, c2.C, 150), Bonne = ff == bon, Dit = V.NomForme(ff) }); }
             return ex;
         }
@@ -493,6 +508,7 @@ namespace MesPremiersJeux.Learning
                 ex.Reponses.Add(new Carte { Visuel = () => V.Forme(ff, col, size, rot), Bonne = ff == bon, Dit = V.NomForme(ff) });
             }
             ex.Bravo = "Oui, c'est " + V.NomForme(bon) + " !";
+            ex.Sujet = new Sujet { Forme = bon };
             return ex;
         }
 
@@ -551,7 +567,7 @@ namespace MesPremiersJeux.Learning
         private static ExerciceChoix OuEstSolide(int nSolides)
         {
             var sol = V.Solides.Take(nSolides).Select(s => s.Cle).ToList(); string bon = V.Un(sol);
-            var ex = new ExerciceChoix { Consigne = "Où est " + V.NomSolide(bon) + " ?", Bravo = "Oui, c'est " + V.NomSolide(bon) + " !" };
+            var ex = new ExerciceChoix { Consigne = "Où est " + V.NomSolide(bon) + " ?", Bravo = "Oui, c'est " + V.NomSolide(bon) + " !", Sujet = new Sujet { Forme = bon } };
             foreach (var s in V.Melange(sol).Take(4)) { string ss = s; var col = V.Un(V.Couleurs).C; ex.Reponses.Add(new Carte { Visuel = () => V.Solide(ss, col, 160), Bonne = ss == bon, Dit = V.NomSolide(ss) }); }
             if (!ex.Reponses.Any(r => r.Bonne)) { var col = V.Un(V.Couleurs).C; ex.Reponses[0] = new Carte { Visuel = () => V.Solide(bon, col, 160), Bonne = true, Dit = V.NomSolide(bon) }; }
             return ex;
@@ -654,6 +670,7 @@ namespace MesPremiersJeux.Learning
             ex.Reponses.Add(new Carte { Visuel = () => V.Taille(o, 170, 200), Bonne = grand, Dit = "grand" });
             ex.Reponses.Add(new Carte { Visuel = () => V.Taille(o, 70, 200), Bonne = !grand, Dit = "petit" });
             ex.Pourquoi = () => E.PourquoiTailles(o);
+            ex.Sujet = new Sujet { O = o };
             if (V.Rng.Next(2) == 0) ex.Reponses.Reverse();
             return ex;
         }
@@ -683,7 +700,7 @@ namespace MesPremiersJeux.Learning
         private static ExerciceOrdre OrdonnerTailles(int n)
         {
             var o = V.Objet();
-            var ex = new ExerciceOrdre { Consigne = "Range du plus petit au plus grand. Lequel est le plus petit ?", ConsigneSuite = "Et après, le plus petit qui reste ?" };
+            var ex = new ExerciceOrdre { Consigne = "Range du plus petit au plus grand. Lequel est le plus petit ?", ConsigneSuite = "Et après, le plus petit qui reste ?", Sujet = new Sujet { O = o } };
             for (int i = 0; i < n; i++) { double s = 60 + i * (120.0 / Math.Max(1, n - 1)); ex.Cartes.Add(new Carte { Visuel = () => V.Taille(o, s, 190), Dit = "" }); }
             return ex;
         }
@@ -854,7 +871,7 @@ namespace MesPremiersJeux.Learning
         private static ExerciceChoix PieceManquante(int cols, int rows, int count, string distracteurs)
         {
             var src = V.Photo(); int n = cols * rows; int trou = V.Rng.Next(n);
-            var ex = new ExerciceChoix { Consigne = "Quelle pièce manque au puzzle ?", Scene = () => V.Puzzle(src, cols, rows, new Dictionary<int, FrameworkElement> { [trou] = null }), Bravo = "Oui ! Le puzzle est fini !" };
+            var ex = new ExerciceChoix { Consigne = "Quelle pièce manque au puzzle ?", Scene = () => V.Puzzle(src, cols, rows, new Dictionary<int, FrameworkElement> { [trou] = null }), Bravo = "Oui ! Le puzzle est fini !", Sujet = new Sujet { Image = src } };
             ex.Reponses.Add(new Carte { Visuel = () => V.Piece(src, cols, rows, trou), Bonne = true, Dit = "" });
             if (distracteurs == "autre")
             {
@@ -891,6 +908,7 @@ namespace MesPremiersJeux.Learning
                     return V.CoteACote(V.Piece(src, cols, rows, bon, 230), V.Puzzle(src, cols, rows, dict, 640));
                 },
                 Bravo = "Oui ! C'est là !",
+                Sujet = new Sujet { Image = src },
             };
             foreach (var t in V.Melange(trous)) { var m = attrib[t]; ex.Reponses.Add(new Carte { Visuel = () => V.Forme(m.F, m.C, 150), Bonne = t == bon, Dit = m.Nom }); }
             return ex;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Media.Imaging;
 
 namespace MesPremiersJeux.Learning
 {
@@ -77,8 +78,24 @@ namespace MesPremiersJeux.Learning
         public int Cible;          // pour l'attribution : l'index de la bonne cible
     }
 
+    /// <summary>
+    /// Ce sur quoi porte l'exercice (le nombre, l'objet, la forme, l'image du puzzle…) :
+    /// l'explication animée jouée juste avant le reprend, pour que l'enfant retrouve dans
+    /// l'exercice exactement ce qu'on vient de lui montrer.
+    /// </summary>
+    public sealed class Sujet
+    {
+        public int? N, N2;
+        public ObjetDef O, O2;
+        public string Forme;
+        public IList<int> Liste;
+        public BitmapSource Image;
+    }
+
     public abstract class Exercice
     {
+        /// <summary>Le sujet de l'exercice, repris par l'explication qui le précède (facultatif).</summary>
+        public Sujet Sujet;
         /// <summary>La consigne dite à voix haute (et redite par 🔊).</summary>
         public string Consigne;
         /// <summary>Le modèle montré dans la bulle de consigne (facultatif).</summary>

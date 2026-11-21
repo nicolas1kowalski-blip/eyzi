@@ -19,9 +19,12 @@ namespace MesPremiersJeux.Views
     /// envies, où j'ai mal, les gens et les mots gentils. Chaque case est dite
     /// à voix haute (ou avec la voix de papa/maman : Contenu\Voix\comm-clé-1.wav)
     /// et reste affichée en grand en haut, pour l'adulte qui arrive.
-    /// Couleurs par famille de mots, comme dans les tableaux de communication
-    /// (code de Fitzgerald) : besoins orange, émotions bleu, envies vert,
-    /// gens jaune, mots sociaux rose.
+    /// CODE COULEUR par nature du mot, celui des classeurs de communication
+    /// (Fitzgerald modifié, comme les pictogrammes ARASAAC) : les personnes en
+    /// jaune, les verbes en vert, les noms en orange, les mots qui décrivent
+    /// (émotions, états) en bleu, les mots sociaux en rose, les questions en
+    /// violet ; « oui » en vert franc, « non » en rouge franc, la douleur en
+    /// rouge clair. La couleur suit le mot, quelle que soit la page.
     /// </summary>
     public sealed class CommBoard : UserControl
     {
@@ -56,7 +59,7 @@ namespace MesPremiersJeux.Views
         public static List<Mot> Vocabulaire()
         {
             var res = new List<Mot>(); var vus = new HashSet<string>();
-            IEnumerable<Item> all = Essentials.Concat(Feelings).Concat(Wants).Concat(Body).Concat(Social).Concat(DayItems);
+            IEnumerable<Item> all = Essentials.Concat(Feelings).Concat(Wants).Concat(Verbs).Concat(Body).Concat(Social).Concat(DayItems);
             try { all = all.Concat(People()); } catch { }
             foreach (var it in all)
             {
@@ -82,6 +85,46 @@ namespace MesPremiersJeux.Views
         private static readonly Color Yellow = Color.FromRgb(0xFF, 0xF0, 0xA8);
         private static readonly Color Pink = Color.FromRgb(0xFF, 0xD3, 0xE6);
         private static readonly Color Red = Color.FromRgb(0xFF, 0xC4, 0xC4);
+        private static readonly Color Violet = Color.FromRgb(0xE3, 0xD4, 0xFF);
+        private static readonly Color Oui = Color.FromRgb(0x8F, 0xE0, 0x9B);
+        private static readonly Color Non = Color.FromRgb(0xFF, 0xA3, 0xA3);
+
+        // La nature de chaque mot : v = verbe, n = nom, d = mot qui décrit, s = social, q = question, o = oui, x = non.
+        // (Les personnes « pers-… », les actions « v-… », les mots de phrase « w-… » et la douleur « mal… » se reconnaissent à leur clé.)
+        private static readonly Dictionary<string, char> Nature = new Dictionary<string, char>
+        {
+            ["oui"] = 'o', ["non"] = 'x',
+            ["aide"] = 'v', ["viens"] = 'v', ["manger"] = 'v', ["boire"] = 'v', ["dormir"] = 'v', ["jouer"] = 'v', ["bouger"] = 'v', ["pause"] = 'v', ["raconte"] = 'v',
+            ["s-veux"] = 'v', ["s-aime"] = 'v', ["s-pasaime"] = 'v', ["s-donne"] = 'v', ["s-vois"] = 'v', ["s-fini"] = 'v', ["w-dodo"] = 'v',
+            ["toilettes"] = 'n', ["calin"] = 'n', ["musique"] = 'n', ["histoire"] = 'n', ["dehors"] = 'n', ["bain"] = 'n', ["doudou"] = 'n', ["tele"] = 'n', ["ballon"] = 'n',
+            ["ecole"] = 'n', ["cantine"] = 'n', ["copains"] = 'n', ["promenade"] = 'n', ["piscine"] = 'n', ["bain2"] = 'n', ["tele2"] = 'n', ["musique2"] = 'n', ["jeux"] = 'n', ["docteur"] = 'n',
+            ["encore"] = 'd', ["fini"] = 'd', ["faim"] = 'd', ["soif"] = 'd', ["bien"] = 'd', ["rigolo"] = 'd', ["triste"] = 'd', ["colere"] = 'd', ["peur"] = 'd', ["pasbien"] = 'd',
+            ["sommeil"] = 'd', ["chaud"] = 'd', ["froid"] = 'd', ["ennui"] = 'd', ["bruit"] = 'd', ["s-encore"] = 'd',
+            ["jetaime"] = 's', ["bonjour"] = 's', ["aurevoir"] = 's', ["merci"] = 's', ["stp"] = 's', ["bisou"] = 's', ["bravo"] = 's',
+            ["pardon"] = 's', ["coucou"] = 's', ["abientot"] = 's', ["bonnenuit"] = 's', ["bonappetit"] = 's',
+            ["s-ou"] = 'q', ["cava"] = 'q',
+        };
+
+        /// <summary>La couleur du mot selon sa nature (null : la couleur de la page).</summary>
+        private static Color? Couleur(Item it)
+        {
+            string k = it?.Key ?? "";
+            if (k.StartsWith("pers-")) return Yellow;
+            if (k.StartsWith("v-")) return Green;
+            if (k.StartsWith("mal")) return Red;
+            if (!Nature.TryGetValue(k, out var t)) return k.StartsWith("w-") ? Orange : (Color?)null;
+            switch (t)
+            {
+                case 'o': return Oui;
+                case 'x': return Non;
+                case 'v': return Green;
+                case 'n': return Orange;
+                case 'd': return Blue;
+                case 's': return Pink;
+                case 'q': return Violet;
+                default: return null;
+            }
+        }
 
         private static readonly List<Item> Essentials = new List<Item>
         {
@@ -155,6 +198,30 @@ namespace MesPremiersJeux.Views
             I("stp", "S'il te plaît", "S'il te plaît !", "comm-stp", "🙏"),
             I("bisou", "Bisou", "Un bisou !", "comm-bisou", "😘"),
             I("bravo", "Bravo", "Bravo !", "comm-bravo", "👏"),
+            I("coucou", "Coucou", "Coucou !", "comm-bonjour", "🤗"),
+            I("cava", "Ça va ?", "Ça va ?", "comm-content", "🙂"),
+            I("pardon", "Pardon", "Pardon !", "comm-stp", "🙇"),
+            I("abientot", "À bientôt", "À bientôt !", "comm-aurevoir", "👋"),
+            I("bonappetit", "Bon appétit", "Bon appétit !", "assiette", "🍽"),
+            I("bonnenuit", "Bonne nuit", "Bonne nuit !", "lune", "🌙"),
+        };
+
+        // Les ACTIONS : des verbes seuls, pour répondre quand on lui demande ce qu'elle veut faire
+        // (« Tu veux regarder ? écouter ? »), et pour que l'adulte les montre en parlant.
+        private static readonly List<Item> Verbs = new List<Item>
+        {
+            I("v-regarder", "Regarder", "Regarder.", "comm-vois", "👀"),
+            I("v-ecouter", "Écouter", "Écouter.", "comm-oreille", "👂"),
+            I("v-manger", "Manger", "Manger.", "assiette", "🍽"),
+            I("v-boire", "Boire", "Boire.", "verre", "🥛"),
+            I("v-jouer", "Jouer", "Jouer.", "cubes", "🧸"),
+            I("v-dormir", "Dormir", "Dormir.", "comm-dormir", "🛏"),
+            I("v-venir", "Venir", "Venir.", "comm-viens", "👉"),
+            I("v-aller", "Aller", "Aller.", "velo", "🚶"),
+            I("v-donner", "Donner", "Donner.", "comm-donne", "🤲"),
+            I("v-prendre", "Prendre", "Prendre.", "comm-main", "✊"),
+            I("v-ouvrir", "Ouvrir", "Ouvrir.", "cadeau", "📂"),
+            I("v-arreter", "Arrêter", "Arrêter.", "comm-fini", "✋"),
         };
 
         // Les gens : les PHOTOS de la famille d'abord (Contenu\Famille), puis
@@ -200,7 +267,7 @@ namespace MesPremiersJeux.Views
                 if (list.Any(x => string.Equals(x.Label, d.Label, StringComparison.OrdinalIgnoreCase))) continue;
                 list.Add(d);
             }
-            return list.Take(6).Concat(Social).ToList();
+            return list.Take(6).Concat(Social.Take(6)).ToList();
         }
 
         private static readonly Category[] Cats =
@@ -208,8 +275,10 @@ namespace MesPremiersJeux.Views
             new Category { Icon = "⭐", Name = "L'essentiel", Tint = Orange, Items = () => Essentials },
             new Category { Icon = "😊", Name = "Je ressens", Tint = Blue, Items = () => Feelings },
             new Category { Icon = "🙌", Name = "Je veux", Tint = Green, Items = () => Wants },
+            new Category { Icon = "🏃", Name = "Les actions", Tint = Green, Items = () => Verbs },
             new Category { Icon = "🤕", Name = "J'ai mal où ?", Tint = Red, Items = () => Body },
             new Category { Icon = "👪", Name = "Les gens", Tint = Yellow, Items = People },
+            new Category { Icon = "👋", Name = "Bonjour, merci", Tint = Pink, Items = () => Social },
             new Category { Key = "jour", Icon = "📅", Name = "Ma journée", Tint = Pink, Items = () => DayItems },
             new Category { Key = "phrase", Icon = "🧩", Name = "Je fais une phrase", Tint = Color.FromRgb(0xE0, 0xE8, 0xFF), Items = () => Starters, MinLevel = 2 },
         };
@@ -251,6 +320,7 @@ namespace MesPremiersJeux.Views
         private readonly List<Button> _tabs = new List<Button>();
         private readonly UniformGrid _tabsPanel = new UniformGrid { Columns = 1, Margin = new Thickness(0, 0, 8, 0) };
         private int _tabCount;
+        private ColumnDefinition _colTabs;
 
         private void BuildTabs()
         {
@@ -259,11 +329,15 @@ namespace MesPremiersJeux.Views
             _tabCount = visible.Count;
             _tabsPanel.Children.Clear();
             _tabs.Clear();
-            _tabsPanel.Rows = visible.Count;
+            // Plus de sept pages : deux colonnes, pour que chaque onglet reste une grande cible.
+            bool deux = visible.Count > 7;
+            _tabsPanel.Columns = deux ? 2 : 1;
+            _tabsPanel.Rows = deux ? (visible.Count + 1) / 2 : visible.Count;
+            if (_colTabs != null) _colTabs.Width = new GridLength(deux ? 330 : 250);
             for (int i = 0; i < visible.Count; i++)
             {
                 int idx = Array.IndexOf(Cats, visible[i]);
-                var t = BigButton(Cats[idx].Icon, Cats[idx].Name, Cats[idx].Tint);
+                var t = deux ? TabButton(Cats[idx].Icon, Cats[idx].Name, Cats[idx].Tint) : BigButton(Cats[idx].Icon, Cats[idx].Name, Cats[idx].Tint);
                 t.Width = double.NaN;
                 t.Height = double.NaN;
                 t.Click += (s, e) => { ShowCategory(idx); Speech.SayAlways(Cats[idx].Name + " !"); };
@@ -291,7 +365,8 @@ namespace MesPremiersJeux.Views
             var root = new Grid { Margin = new Thickness(14) };
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(150) });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(250) });
+            _colTabs = new ColumnDefinition { Width = new GridLength(250) };
+            root.ColumnDefinitions.Add(_colTabs);
             root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             // --- En haut : le message dit (en grand), Redire, Retour au jeu ---
@@ -325,6 +400,7 @@ namespace MesPremiersJeux.Views
             // --- À gauche : les pages (celles du niveau de l'enfant) ---
             Grid.SetRow(_tabsPanel, 1);
             root.Children.Add(_tabsPanel);
+            _tabCount = 0;
             BuildTabs();
 
             // --- Au centre : les 12 cases ---
@@ -452,7 +528,7 @@ namespace MesPremiersJeux.Views
             foreach (var it in items.Take(12))
             {
                 var item = it;
-                var cell = Cell(item, item.Key.StartsWith("pers-") ? Yellow : SocialTint(item) ?? cat.Tint);
+                var cell = Cell(item, Couleur(item) ?? cat.Tint);
                 cell.Click += (s, e) => SayItem(item, record: true, btn: cell);
                 _grid.Children.Add(cell);
             }
@@ -467,7 +543,7 @@ namespace MesPremiersJeux.Views
                 foreach (var it in Starters.Take(12))
                 {
                     var item = it;
-                    var cell = Cell(item, cat.Tint);
+                    var cell = Cell(item, Couleur(item) ?? cat.Tint);
                     cell.Click += (s, e) =>
                     {
                         _starter = item;
@@ -492,7 +568,7 @@ namespace MesPremiersJeux.Views
             foreach (var it in words.Take(12))
             {
                 var item = it;
-                var cell = Cell(item, item.Key.StartsWith("pers-") ? Yellow : Green);
+                var cell = Cell(item, Couleur(item) ?? Orange);
                 cell.Click += (s, e) =>
                 {
                     string obj = item.Key.StartsWith("pers-") ? item.Label : item.Say;
@@ -516,8 +592,14 @@ namespace MesPremiersJeux.Views
             {
                 var item = it;
                 bool done = _day.Contains(item);
-                var cell = Cell(item, item.Key == "raconte" ? Orange : done ? Color.FromRgb(0xB8, 0xF0, 0xC0) : cat.Tint);
-                if (done) cell.Effect = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 0, Color = Color.FromRgb(0x4C, 0xC2, 0x6B), Opacity = 0.9 };
+                var cell = Cell(item, Couleur(item) ?? cat.Tint);
+                if (done)
+                {
+                    // Déjà raconté : la case garde sa couleur (c'est toujours un nom) et s'entoure de vert.
+                    cell.BorderBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x9E, 0x4F));
+                    cell.BorderThickness = new Thickness(9);
+                    cell.Effect = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 0, Color = Color.FromRgb(0x4C, 0xC2, 0x6B), Opacity = 0.9 };
+                }
                 cell.Click += (s, e) =>
                 {
                     if (item.Key == "raconte") { TellDay(cell); return; }
@@ -537,7 +619,7 @@ namespace MesPremiersJeux.Views
             SayItem(new Item { Key = "raconte", Label = "Ma journée", Say = story, Img = "livre", Emoji = "📣" }, record: true, btn: btn);
         }
 
-        private static Color? SocialTint(Item it) => Social.Contains(it) ? Pink : (Color?)null;
+        private static Color Fonce(Color c) => Color.FromRgb((byte)(c.R * 0.72), (byte)(c.G * 0.72), (byte)(c.B * 0.72));
 
         private static Button Cell(Item it, Color tint)
         {
@@ -563,10 +645,44 @@ namespace MesPremiersJeux.Views
                 Style = (Style)Application.Current.Resources["AnswerButton"],
                 Margin = new Thickness(8),
                 Background = new SolidColorBrush(tint),
+                BorderBrush = new SolidColorBrush(Fonce(tint)),     // le bord reprend la couleur, en plus soutenu : le code se lit de loin
+                BorderThickness = new Thickness(5),
                 RenderTransformOrigin = new Point(0.5, 0.5),
                 Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = content },
             };
         }
+
+        /// <summary>Un onglet de page pour l'affichage sur deux colonnes : l'icône au-dessus du nom.</summary>
+        private static Button TabButton(string icon, string label, Color bg) => new Button
+        {
+            Style = (Style)Application.Current.Resources["AnswerButton"],
+            Margin = new Thickness(5, 0, 5, 10),
+            Background = new SolidColorBrush(bg),
+            Content = new Viewbox
+            {
+                Stretch = Stretch.Uniform,
+                StretchDirection = StretchDirection.DownOnly,
+                Margin = new Thickness(4),
+                Child = new StackPanel
+                {
+                    Children =
+                    {
+                        new TextBlock { Text = icon, FontSize = 44, HorizontalAlignment = HorizontalAlignment.Center },
+                        new TextBlock
+                        {
+                            Text = label,
+                            FontSize = 24,
+                            FontWeight = FontWeights.Bold,
+                            Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)),
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            TextAlignment = TextAlignment.Center,
+                            TextWrapping = TextWrapping.Wrap,
+                            MaxWidth = 150,
+                        },
+                    },
+                },
+            },
+        };
 
         private static Button BigButton(string icon, string label, Color bg) => new Button
         {
