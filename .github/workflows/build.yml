@@ -198,6 +198,10 @@ jobs:
           $cfg = Join-Path $PWD "store-priconfig.xml"
           & $makepri createconfig /cf $cfg /dq fr-FR /o
           if ($LASTEXITCODE -ne 0) { Write-Error "makepri createconfig"; exit 1 }
+          # Un seul index pour tout le paquet : sans cela makepri range les tailles 200 % et 400 % dans des index à part.
+          [xml]$c = Get-Content $cfg
+          $c.SelectNodes('//packaging') | ForEach-Object { [void]$_.ParentNode.RemoveChild($_) }
+          $c.Save($cfg)
           & $makepri new /pr $pri /cf $cfg /mn "$pri\AppxManifest.xml" /of "$pri\resources.pri" /o
           if ($LASTEXITCODE -ne 0) { Write-Error "makepri new"; exit 1 }
 
@@ -208,11 +212,11 @@ jobs:
           Get-ChildItem $src -Recurse -File | ForEach-Object {
             $rel = $_.FullName.Substring($src.Length + 1)
             if ($rel -like '*.pdb' -or $rel -like '*.xml' -or $rel -like 'Contenu\*' -or $rel -like 'MiseAJour\*' -or $rel -eq 'resources.pri') { return }
-            $lines.Add('"{0}" "{1}"' -f $_.FullName, $rel)
+            $lines.Add(('"{0}" "{1}"' -f $_.FullName, $rel))
           }
-          $lines.Add('"{0}" "AppxManifest.xml"' -f "$pri\AppxManifest.xml")
-          $lines.Add('"{0}" "resources.pri"' -f "$pri\resources.pri")
-          Get-ChildItem "$pri\Assets" -File | ForEach-Object { $lines.Add('"{0}" "Assets\{1}"' -f $_.FullName, $_.Name) }
+          $lines.Add(('"{0}" "AppxManifest.xml"' -f "$pri\AppxManifest.xml"))
+          $lines.Add(('"{0}" "resources.pri"' -f "$pri\resources.pri"))
+          Get-ChildItem "$pri\Assets" -File | ForEach-Object { $lines.Add(('"{0}" "Assets\{1}"' -f $_.FullName, $_.Name)) }
           $map = Join-Path $PWD "store-fichiers.txt"
           [System.IO.File]::WriteAllLines($map, $lines, (New-Object System.Text.UTF8Encoding($true)))
           Write-Host ("{0:N0} fichiers dans le paquet" -f ($lines.Count - 1))
