@@ -12,7 +12,8 @@ namespace MesPremiersJeux.Lib
     /// 📈 CE QUI EST UTILISÉ, ET COMBIEN : par jour et par activité (un jeu, un
     /// onglet), le nombre d'ouvertures, de réussites et de secondes passées.
     /// Compté sur la tablette (usage.ini), envoyé au serveur de l'application
-    /// une fois par jour et à la fermeture, pour que l'éditeur voie, PAR
+    /// au démarrage, toutes les demi-heures, au réveil de la veille et à la
+    /// fermeture, pour que l'éditeur voie, PAR
     /// FAMILLE, ce qui sert le plus et le moins. Il ne part que des compteurs :
     /// ni prénom, ni photos, ni voix, ni ce qui a été dit.
     /// </summary>
@@ -69,6 +70,12 @@ namespace MesPremiersJeux.Lib
             _since = DateTime.Now;
             if (sec > 0 && sec < 6 * 3600) { Get(_current).Seconds += sec; _dirty = true; }
         }
+
+        /// <summary>La tablette se met en veille : on solde le temps et on arrête l'horloge (la veille n'est pas de l'usage).</summary>
+        public static void Suspend() { lock (Rows) { Flush(); _since = DateTime.MinValue; } Save(); }
+
+        /// <summary>La tablette se réveille : l'horloge repart pour l'activité en cours.</summary>
+        public static void Wake() { lock (Rows) { if (_current.Length > 0) _since = DateTime.Now; } }
 
         private static Row Get(string activity)
         {
@@ -183,7 +190,9 @@ namespace MesPremiersJeux.Lib
         {
             lock (Rows) { Flush(); _dirty = true; }
             Save();
-            try { SendAsync(s).Wait(TimeSpan.FromSeconds(maxSeconds)); } catch { }
+            // Sur un autre fil : attendre ici, sur le fil de l'écran, la suite d'un envoi commencé sur ce même fil
+            // faisait patienter jusqu'au bout du délai, sans jamais noter l'envoi comme fait.
+            try { Task.Run(() => SendAsync(s)).Wait(TimeSpan.FromSeconds(maxSeconds)); } catch { }
         }
 
         private static string Esc(string v) => (v ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");

@@ -290,6 +290,50 @@ namespace MesPremiersJeux
             if (!CommBoard.IsOpen) { Speech.Hold = false; SoundFx.Hold = false; Games.GameControl.Paused = false; }
         }
 
+        // 📈 L'ENVOI DE L'USAGE (et la revérification de la licence) ne tient plus au seul démarrage : une tablette
+        // qu'on met en veille sans jamais fermer Eyzi, ou qui démarre avant que le Wi-Fi soit là, n'envoyait rien.
+        // Une minuterie réessaie deux minutes après le démarrage, puis toutes les demi-heures, et au réveil de la veille.
+        private System.Windows.Threading.DispatcherTimer _usageTimer;
+        private bool _usageBusy;
+
+        private void SuivreUsage()
+        {
+            _usageTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
+            _usageTimer.Tick += (s, e) => { _usageTimer.Interval = TimeSpan.FromMinutes(30); EnvoyerUsage("minuterie"); };
+            _usageTimer.Start();
+            try { Microsoft.Win32.SystemEvents.PowerModeChanged += VeilleOuReveil; } catch { }
+        }
+
+        private void VeilleOuReveil(object sender, Microsoft.Win32.PowerModeChangedEventArgs e)
+        {
+            try
+            {
+                if (e.Mode == Microsoft.Win32.PowerModes.Suspend) Usage.Suspend();
+                else if (e.Mode == Microsoft.Win32.PowerModes.Resume)
+                {
+                    Usage.Wake();
+                    // Le Wi-Fi met quelques secondes à revenir : on envoie dans trois quarts de minute.
+                    Dispatcher.BeginInvoke(new Action(() => { if (_usageTimer == null) return; _usageTimer.Stop(); _usageTimer.Interval = TimeSpan.FromSeconds(45); _usageTimer.Start(); }));
+                }
+            }
+            catch { }
+        }
+
+        private async void EnvoyerUsage(string pourquoi)
+        {
+            if (_usageBusy || _settings == null) return;
+            _usageBusy = true;
+            try
+            {
+                await Licence.RecheckAsync(_settings);
+                RefreshLicenceText();
+                var err = await Usage.SendAsync(_settings);
+                if (err != null) Lib.Log.Write("usage", "Envoi (" + pourquoi + ") : " + err);
+            }
+            catch (Exception ex) { Lib.Log.Write("usage", "Envoi (" + pourquoi + ") : " + ex.Message); }
+            finally { _usageBusy = false; }
+        }
+
         private void Ear_Click(object sender, RoutedEventArgs e)
         {
             OuvrirEcoute();
@@ -352,6 +396,13 @@ namespace MesPremiersJeux
             if (!string.IsNullOrWhiteSpace(_settings.SupabaseUrl)) Cloud.Url = _settings.SupabaseUrl;
             if (!string.IsNullOrWhiteSpace(_settings.SupabaseKey)) Cloud.AnonKey = _settings.SupabaseKey;
 
+            // Une licence déjà activée mais plus vérifiée depuis 30 jours (tablette restée éteinte un mois, ou toujours
+            // ouverte sans réseau) : on la revérifie en silence, avant de redemander le numéro à la famille.
+            if (!Licence.IsValid(_settings) && _settings.LicenceOk && !string.IsNullOrWhiteSpace(_settings.LicenceKey))
+            {
+                try { System.Threading.Tasks.Task.Run(() => Licence.ActivateAsync(_settings, _settings.LicenceKey)).Wait(TimeSpan.FromSeconds(8)); }
+                catch (Exception ex) { Lib.Log.Write("licence", "Revérification au démarrage : " + ex.Message); }
+            }
             // 🔑 LA LICENCE, avant tout le reste : sans licence valide, on s'arrête là.
             if (!Licence.IsValid(_settings))
             {
@@ -370,6 +421,7 @@ namespace MesPremiersJeux
             if (Licence.HasModule(_settings, "parler") && _settings.LieuAuto) Lieux.Demarrer();
             _ = Licence.RecheckAsync(_settings).ContinueWith(t => Dispatcher.Invoke(RefreshLicenceText));
             _ = Usage.SendDailyAsync(_settings).ContinueWith(t => { if (t.Result != null) Lib.Log.Write("usage", "Envoi : " + t.Result); });
+            SuivreUsage();
             Updater.Cleanup();
             CheckUpdatesAtStartup();
             RefreshCloudStatus();

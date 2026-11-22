@@ -92,7 +92,9 @@ namespace MesPremiersJeux.Views
         {
             int left = Licence.TrialDaysLeft(s);
             string lic = "Entrez le numéro de licence qui vous a été donné (forme EYZ-XXXX-XXXX-XXXX-XXXX). Toutes les tablettes activées avec le même numéro forment une même famille. Pendant la bêta, la licence est gratuite : eyzi.fr/licence.html · contact@eyzi.fr";
-            if (s.LicenceOk && !string.IsNullOrWhiteSpace(s.LicenceKey)) return lic;
+            // Une licence déjà activée, à revérifier (30 jours sans connexion) : le numéro est déjà rempli, il suffit d'un appui.
+            if (s.LicenceOk && !string.IsNullOrWhiteSpace(s.LicenceKey))
+                return "Votre licence doit être vérifiée de nouveau : cela arrive quand la tablette est restée plus de 30 jours sans se connecter. Votre numéro est déjà rempli ci-dessous : connectez la tablette à Internet, puis appuyez sur « Activer ». Rien n'est perdu.";
             string anon = " Pendant l'essai, seuls des compteurs d'usage anonymes sont envoyés (quelles activités, combien de temps), jamais de contenu ni de nom.";
             if (left < 0) return "Vous pouvez essayer Eyzi " + Licence.TrialDays + " jours sans licence, toutes fonctions ouvertes." + anon + " " + lic;
             if (left > 0) return "Essai gratuit : il reste " + left + (left > 1 ? " jours." : " jour.") + anon + " " + lic;

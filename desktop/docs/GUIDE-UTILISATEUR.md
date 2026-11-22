@@ -40,7 +40,7 @@ L'application demande un **numéro de licence** de la forme `EYZ-XXXX-XXXX-XXXX-
 
 Sur le même écran, choisissez un **mot de passe famille** (6 caractères au moins). Tapez le même sur toutes vos tablettes. Il sert à chiffrer vos contenus avant qu'ils ne quittent la tablette : personne d'autre, pas même l'éditeur, ne peut les lire. Notez-le : s'il est perdu, les contenus déjà envoyés ne pourront pas être relus par une nouvelle tablette (ils restent sur les tablettes où ils sont).
 
-La licence est vérifiée en ligne à l'activation, puis au plus une fois par jour. Sans réseau, elle reste valable **30 jours**.
+La licence est vérifiée en ligne à l'activation, puis au plus une fois par jour. Sans réseau, elle reste valable **30 jours**. Après 30 jours sans connexion (une tablette restée éteinte un mois, par exemple), Eyzi la revérifie tout seul au démarrage dès qu'il y a Internet ; s'il n'y en a pas, il affiche la fenêtre de licence avec votre numéro déjà rempli : connectez la tablette et appuyez sur « Activer ».
 
 Elle comprend un ou plusieurs **mondes** : Jouer, Apprendre, Parler. Les licences de la bêta comprennent les trois. Un monde qui n'est pas dans la licence n'apparaît pas (ni sa porte sur l'accueil, ni sa pastille dans le menu du haut) ; les réglages indiquent les mondes compris. Si l'éditeur change les mondes d'une licence, l'application le voit à sa prochaine vérification en ligne (au plus tard le lendemain).
 
@@ -266,7 +266,7 @@ Le canal est porté par la licence. **↩ Version précédente** réinstalle la 
 - Vers le nuage ne partent que des fichiers **chiffrés** (AES-256) avec votre mot de passe famille. Le serveur, et l'éditeur, voient un fichier illisible.
 - Chaque famille a son espace, cloisonné par le serveur : une tablette d'une famille ne peut pas lire une autre famille.
 - Le numéro de licence n'est pas un secret absolu (quelqu'un qui l'a peut activer une tablette de votre famille, dans la limite du nombre autorisé) ; le mot de passe famille, lui, protège vos contenus. Ne les écrivez pas au même endroit.
-- L'application envoie à l'éditeur, une fois par jour, des **compteurs d'usage** : par jour et par activité, le nombre d'ouvertures, de réussites et de minutes, avec le nom de la tablette. Rien d'autre : ni le prénom, ni les photos, ni les voix, ni ce qui a été dit. Ils servent à savoir ce qui est utilisé et ce qui ne l'est pas, pour améliorer l'application.
+- L'application envoie à l'éditeur (au démarrage, puis de temps en temps tant qu'elle est ouverte, et à la fermeture) des **compteurs d'usage** : par jour et par activité, le nombre d'ouvertures, de réussites et de minutes, avec le nom de la tablette. Rien d'autre : ni le prénom, ni les photos, ni les voix, ni ce qui a été dit. Ils servent à savoir ce qui est utilisé et ce qui ne l'est pas, pour améliorer l'application.
 - Le journal (`%LocalAppData%\MesPremiersJeux\journal.txt`) note ce qui se passe (jeux, erreurs). En cas de plantage, un fichier `plantage-<tablette>.txt` est écrit dans le dossier du contenu : envoyez-le à contact@eyzi.fr.
 
 ## 8. Problèmes fréquents
