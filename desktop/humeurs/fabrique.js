@@ -25,8 +25,8 @@ const ORDRE_CAT=['joie','tendre','rigolo','pasbien','actions'];
   const b=await chromium.launch(); const p=await b.newPage({viewport:{width:1280,height:720}}); let err=0; p.on('pageerror',e=>{ if(err++<8) console.log('  ERREUR JS :',e.message); });
   await p.addInitScript(()=>{window.__capture=true});
   fs.mkdirSync(TMP,{recursive:true}); const charger=async html=>{ const f=path.join(TMP,'page.html'); fs.writeFileSync(f,html); await p.goto('file://'+f); };   // une page neuve à chaque scène
-  const moteur=lire('scene.js')+'\n'+lire('scenes.js');
-  await charger(PAGE(moteur)); const infos=await p.evaluate(()=>Object.values(SCENES).map(s=>({cle:s.cle,titre:s.titre,dit:s.dit,cat:s.cat,duree:s.duree,vignette:s.vignette,x:s.x??600})));
+  const moteur=['scene.js','scenes.js','scenes2.js','scenes3.js'].filter(f=>fs.existsSync(path.join(ICI,f))).map(lire).join('\n');
+  await charger(PAGE(moteur)); const infos=await p.evaluate(()=>Object.values(SCENES).map(s=>({cle:s.cle,titre:s.titre,dit:s.dit,cat:s.cat,duree:s.duree,vignette:s.vignette,x:s.x??600,cadre:s.cadre})));
   const toutes=[...LIBRES,...infos].sort((a,b)=>ORDRE_CAT.indexOf(a.cat)-ORDRE_CAT.indexOf(b.cat));
   fs.mkdirSync(SORTIE,{recursive:true}); if(apercu) fs.mkdirSync(path.join(ICI,'apercu'),{recursive:true});
   for(const s of toutes){ if(choix.length&&!choix.includes(s.cle)) continue;

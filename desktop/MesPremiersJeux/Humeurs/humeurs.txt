@@ -3,20 +3,53 @@ tropcool|joie|Trop cool !|Trop cool !|5.6
 youpi|joie|Youpi !|Youpi !|5
 rigole|joie|Je rigole !|Ha ha ha ! Je rigole !|6
 bravo|joie|Bravo !|Bravo !|5.2
+super|joie|Super !|Super !|5.2
+danse|joie|Je danse !|Je danse !|6
+chante|joie|Je chante !|La la la ! Je chante !|5.8
+fete|joie|C'est la fête !|C'est la fête !|6
+fier|joie|Je suis fier|Je suis fier de moi !|5.6
+gagne|joie|J'ai gagné !|J'ai gagné !|6
+surprise|joie|Surprise !|Oh ! Une surprise !|6
 jetaime|tendre|Je t'aime|Je t'aime !|6.4
 coucou|tendre|Coucou !|Coucou !|5.2
 merci|tendre|Merci !|Merci beaucoup !|5.8
+bisou|tendre|Bisou !|Je t'envoie un bisou !|5.6
+calin|tendre|Câlin|Je veux un câlin.|6.2
+aurevoir|tendre|Au revoir !|Au revoir ! À bientôt !|5.6
+silteplait|tendre|S'il te plaît|S'il te plaît !|5.4
+pardon|tendre|Pardon|Pardon. Je suis désolé.|6
+manque|tendre|Tu me manques|Tu me manques.|6.2
+bonjour|tendre|Bonjour !|Bonjour !|5.6
 beurk|rigolo|Beurk !|Beurk !|6.4
 prout|rigolo|Prout !|Prout !|6
 nananere|rigolo|Nananère !|Nananère !|5.2
 chut|rigolo|Chut…|Chut !|5.6
+clown|rigolo|Je fais le clown|Je fais le clown !|6.2
+chatouilles|rigolo|Ça chatouille !|Hi hi hi ! Ça chatouille !|5.8
+oups|rigolo|Oups !|Oups !|6
+cachecache|rigolo|Caché… coucou !|Caché ! Coucou !|5.6
+hoquet|rigolo|J'ai le hoquet|Hic ! J'ai le hoquet !|6
+grimace|rigolo|Grimace !|Je fais des grimaces !|6
 triste|pasbien|Je suis triste|Je suis triste.|6.2
 colere|pasbien|Grrr !|Grrr ! Je suis en colère !|5.8
 peur|pasbien|J'ai peur !|J'ai peur !|6
 boude|pasbien|Je boude|Je boude.|5.8
 malade|pasbien|Je suis malade|Je suis malade.|6.2
 dodo|pasbien|Dodo…|J'ai sommeil. Je veux faire dodo.|6.6
+mal|pasbien|J'ai mal|Aïe ! J'ai mal !|6.2
+chaud|pasbien|J'ai chaud|J'ai chaud !|6
+froid|pasbien|J'ai froid|Brrr ! J'ai froid !|6.2
+ennui|pasbien|Je m'ennuie|Je m'ennuie.|6.4
+bruit|pasbien|Trop de bruit !|Il y a trop de bruit !|6.4
+non|pasbien|Non !|Non !|5.2
 miam|actions|Miam !|Miam ! C'est bon !|6.4
 soif|actions|J'ai soif|J'ai soif !|6.4
 musique|actions|Musique !|J'écoute de la musique !|5.6
 nesaispas|actions|Je ne sais pas|Je ne sais pas.|5.4
+ballon|actions|Je joue au ballon|Je joue au ballon !|6
+lis|actions|Je lis|Je lis un livre.|6.4
+bain|actions|Le bain|Je prends mon bain !|6.2
+dents|actions|Je me brosse les dents|Je me brosse les dents.|5.8
+idee|actions|J'ai une idée !|J'ai une idée !|5.6
+encore|actions|Encore !|Encore ! Encore !|5
+oui|actions|Oui !|Oui !|4.8
