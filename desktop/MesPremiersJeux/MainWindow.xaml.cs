@@ -86,7 +86,6 @@ namespace MesPremiersJeux
             _views["edu"] = edu;
             var parler = new ParlerView();
             parler.BackRequested += () => Select("accueil");
-            parler.SpontaneRequested += () => { OuvrirEcoute(); if (EcouteHost.Visibility == Visibility.Visible) _ecoute.ShowSpontane(); };
             _views["parler"] = parler;
             _views["coloring"] = coloring;
             _views["music"] = new MusicView();

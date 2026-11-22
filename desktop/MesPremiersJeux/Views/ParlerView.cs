@@ -12,8 +12,8 @@ namespace MesPremiersJeux.Views
     /// 💬 Le monde « Parler » : le tableau de communication, sur toute la page.
     /// Rien au-dessus, pour que les cases soient les plus grandes possible :
     /// l'écoute s'ouvre avec l'oreille 👂 en haut à droite de la fenêtre, le lieu
-    /// se règle dans l'administration, et « Je veux dire… » tient dans la rangée
-    /// du message. Seule exception : quand un Wi-Fi inconnu apparaît, la question
+    /// se règle dans l'administration, et « Je veux dire… » se trouve dans l'écran
+    /// d'écoute. Seule exception : quand un Wi-Fi inconnu apparaît, la question
     /// « on est où ? » se pose en haut, pour l'accompagnant, le temps d'y répondre.
     /// </summary>
     public sealed class ParlerView : UserControl
@@ -24,8 +24,6 @@ namespace MesPremiersJeux.Views
         private string _reseauInconnu = "";
         private Settings _settings;
         public event Action BackRequested;
-        /// <summary>« Je veux dire… » : ce que l'enfant pourrait vouloir dire maintenant, sans question.</summary>
-        public event Action SpontaneRequested;
 
         private static readonly Brush Dark = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A));
 
@@ -67,7 +65,7 @@ namespace MesPremiersJeux.Views
             // --- Le tableau, sur toute la page ---
             _board = new CommBoard();
             _board.CloseRequested += () => BackRequested?.Invoke();
-            _board.AjouterAction("💬", "Je veux dire…", Color.FromRgb(0xFF, 0xE4, 0xF0), () => SpontaneRequested?.Invoke());
+            _board.AvecRetour = false; // la barre du haut suffit pour changer de monde
             Grid.SetRow(_board, 1);
             root.Children.Add(_board);
             Content = root;

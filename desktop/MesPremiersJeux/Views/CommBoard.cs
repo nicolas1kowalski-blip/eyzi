@@ -456,7 +456,7 @@ namespace MesPremiersJeux.Views
         };
         private Item _starter; // le début de phrase choisi (null = on choisit le début)
 
-        private readonly UniformGrid _grid = new UniformGrid { Columns = 4, Rows = 3, Margin = new Thickness(6) };
+        private readonly UniformGrid _grid = new UniformGrid { Columns = 4, Rows = 3, Margin = new Thickness(2, 0, 0, 0) };
         private readonly List<Button> _tabs = new List<Button>();
         private readonly UniformGrid _tabsPanel = new UniformGrid { Columns = 1, Margin = new Thickness(0, 0, 8, 0) };
         private int _tabCount;
@@ -473,7 +473,7 @@ namespace MesPremiersJeux.Views
             bool deux = visible.Count > 7;
             _tabsPanel.Columns = deux ? 2 : 1;
             _tabsPanel.Rows = deux ? (visible.Count + 1) / 2 : visible.Count;
-            if (_colTabs != null) _colTabs.Width = new GridLength(deux ? 330 : 250);
+            if (_colTabs != null) _colTabs.Width = new GridLength(deux ? 310 : 240);
             for (int i = 0; i < visible.Count; i++)
             {
                 int idx = Array.IndexOf(Cats, visible[i]);
@@ -485,10 +485,10 @@ namespace MesPremiersJeux.Views
                 _tabs.Add(t);
             }
         }
-        private readonly ContentControl _msgPic = new ContentControl { Width = 110, Height = 110 };
+        private readonly ContentControl _msgPic = new ContentControl();
         private readonly TextBlock _msgText = new TextBlock
         {
-            FontSize = 46,
+            FontSize = 40,
             FontWeight = FontWeights.Bold,
             Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)),
             VerticalAlignment = VerticalAlignment.Center,
@@ -502,27 +502,54 @@ namespace MesPremiersJeux.Views
         {
             Background = new LinearGradientBrush(Color.FromRgb(0xF6, 0xF0, 0xFF), Color.FromRgb(0xFF, 0xF6, 0xEC), 90);
 
-            var root = new Grid { Margin = new Thickness(14) };
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(150) });
+            // Trois zones, pas plus : en haut la bande du message ; à gauche les pages ; les douze cases,
+            // avec la flèche « Suivant » sur leur bord droit quand la page a une suite.
+            var root = new Grid { Margin = new Thickness(10) };
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(104) });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             _colTabs = new ColumnDefinition { Width = new GridLength(250) };
             root.ColumnDefinitions.Add(_colTabs);
             root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            // --- En haut : le message dit (en grand), Redire, Retour au jeu ---
+            // --- En haut : ce qui vient d'être dit, sur toute la largeur. Un appui (doigt ou souris) le redit ;
+            //     ce n'est pas une cible du regard, pour que l'enfant puisse le relire sans le relancer.
             var top = new Grid();
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // « Suivant », quand la page a une suite
-            top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); // les actions ajoutées par la page (« Je veux dire… »)
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            // ➡ Suivant : toujours au même endroit, hors des cases (aucun mot ne perd sa place) ; il n'apparaît
-            // que si la page a une suite, et après la dernière page il revient à la première.
+            var msg = new Border
+            {
+                Background = Brushes.White,
+                CornerRadius = new CornerRadius(28),
+                Padding = new Thickness(18, 6, 18, 6),
+                Margin = new Thickness(0, 0, 0, 8),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                ToolTip = "Appuyer pour redire",
+                Effect = new DropShadowEffect { BlurRadius = 14, ShadowDepth = 2, Opacity = 0.18 },
+                // L'image du mot, ramenée à 80 quelle que soit sa taille (une photo de famille en fait 170).
+                Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { new Viewbox { Width = 80, Height = 80, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center, Child = _msgPic }, _msgText } },
+            };
+            msg.MouseLeftButtonUp += (s, e) => { if (_last != null) SayItem(_last, record: false); };
+            top.Children.Add(msg);
+
+            // « Retour au jeu » : seulement quand le tableau est ouvert par-dessus une activité (voir AvecRetour).
+            _back = BigButton("🎮", "Retour au jeu", Color.FromRgb(0xB8, 0xF0, 0xC0));
+            _back.Margin = new Thickness(12, 0, 0, 8);
+            _back.Click += (s, e) => CloseRequested?.Invoke();
+            Grid.SetColumn(_back, 1);
+            top.Children.Add(_back);
+            Grid.SetColumnSpan(top, 3);
+            root.Children.Add(top);
+
+            // --- À droite des cases : ➡ Suivant, comme le bord d'une page qu'on tourne. Toujours au même
+            //     endroit, hors des cases (aucun mot ne perd sa place) ; après la dernière page, retour à la première.
             _next = new Button
             {
                 Style = (Style)Application.Current.Resources["AnswerButton"],
-                Margin = new Thickness(6, 0, 6, 10), MinWidth = 190,
-                Background = new SolidColorBrush(Color.FromRgb(0xFF, 0xE9, 0xA8)),
+                Width = 104, Margin = new Thickness(12, 6, 0, 6),
+                Background = new SolidColorBrush(Color.FromRgb(0xF6, 0xF2, 0xFF)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0x7E, 0x3F, 0xF2)),
+                BorderThickness = new Thickness(3),
                 Visibility = Visibility.Collapsed,
                 Content = new Viewbox
                 {
@@ -531,47 +558,17 @@ namespace MesPremiersJeux.Views
                     {
                         Children =
                         {
-                            new StackPanel
-                            {
-                                Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
-                                Children =
-                                {
-                                    new TextBlock { Text = "➡", FontSize = 40, VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)) },
-                                    new TextBlock { Text = "Suivant", FontSize = 30, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) },
-                                },
-                            },
+                            new TextBlock { Text = "➜", FontSize = 58, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, Foreground = new SolidColorBrush(Color.FromRgb(0x7E, 0x3F, 0xF2)) },
+                            new TextBlock { Text = "Suivant", FontSize = 22, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, Foreground = new SolidColorBrush(Color.FromRgb(0x3B, 0x2A, 0x5A)), Margin = new Thickness(0, 4, 0, 4) },
                             _nextInfo,
                         },
                     },
                 },
             };
             _next.Click += (s, e) => _suivant?.Invoke();
-            Grid.SetColumn(_next, 1);
-            top.Children.Add(_next);
-            Grid.SetColumn(_actions, 2);
-            top.Children.Add(_actions);
-            var msg = new Border
-            {
-                Background = Brushes.White,
-                CornerRadius = new CornerRadius(34),
-                Padding = new Thickness(20, 10, 20, 10),
-                Margin = new Thickness(0, 0, 12, 10),
-                Effect = new DropShadowEffect { BlurRadius = 14, ShadowDepth = 2, Opacity = 0.18 },
-                Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { _msgPic, _msgText } },
-            };
-            top.Children.Add(msg);
-
-            var again = BigButton("🔁", "Redire", Color.FromRgb(0xDC, 0xD6, 0xFF));
-            again.Click += (s, e) => { if (_last != null) SayItem(_last, record: false); };
-            Grid.SetColumn(again, 3);
-            top.Children.Add(again);
-
-            var back = BigButton("🎮", "Retour au jeu", Color.FromRgb(0xB8, 0xF0, 0xC0));
-            back.Click += (s, e) => CloseRequested?.Invoke();
-            Grid.SetColumn(back, 4);
-            top.Children.Add(back);
-            Grid.SetColumnSpan(top, 2);
-            root.Children.Add(top);
+            Grid.SetRow(_next, 1);
+            Grid.SetColumn(_next, 2);
+            root.Children.Add(_next);
 
             // --- À gauche : les pages (celles du niveau de l'enfant) ---
             Grid.SetRow(_tabsPanel, 1);
@@ -588,9 +585,17 @@ namespace MesPremiersJeux.Views
             ShowCategory(0);
         }
 
-        private readonly StackPanel _actions = new StackPanel { Orientation = Orientation.Horizontal };
+        private Button _back;
+
+        /// <summary>Le bouton « Retour au jeu » : utile quand le tableau s'ouvre par-dessus une activité,
+        /// inutile dans le monde Parler (la barre du haut est là).</summary>
+        public bool AvecRetour
+        {
+            get => _back != null && _back.Visibility == Visibility.Visible;
+            set { if (_back != null) _back.Visibility = value ? Visibility.Visible : Visibility.Collapsed; }
+        }
         private Button _next;
-        private readonly TextBlock _nextInfo = new TextBlock { FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x6E, 0x65, 0x87)), HorizontalAlignment = HorizontalAlignment.Center };
+        private readonly TextBlock _nextInfo = new TextBlock { FontSize = 22, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x6E, 0x65, 0x87)), HorizontalAlignment = HorizontalAlignment.Center };
         private Action _suivant;
         private const int ParPage = 12;
 
@@ -600,7 +605,7 @@ namespace MesPremiersJeux.Views
             if (_next == null) return;
             bool suite = n > 1 && aller != null;
             _next.Visibility = suite ? Visibility.Visible : Visibility.Collapsed;
-            _nextInfo.Text = suite ? "page " + (page + 1) + " sur " + n : "";
+            _nextInfo.Text = suite ? (page + 1) + " / " + n : "";
             _suivant = !suite ? (Action)null : () =>
             {
                 bool fin = page + 1 >= n;
@@ -705,18 +710,8 @@ namespace MesPremiersJeux.Views
         private void ShowTheme(Category cat, Themes.Theme t, int page)
         {
             _msgText.Text = t.Nom + "...";
-            _msgPic.Content = Pic(CaseTheme(t), 110);
+            _msgPic.Content = Pic(CaseTheme(t), 80);
             Remplir(MotsDuTheme(t), cat.Tint, page, p => ShowTheme(cat, t, p), (item, cell) => SayItem(item, record: true, btn: cell));
-        }
-
-        /// <summary>Un bouton de plus dans la rangée du message (à gauche de « Redire ») :
-        /// il ne prend rien aux cases. Le monde Parler y pose « Je veux dire… ».</summary>
-        public void AjouterAction(string icon, string label, Color bg, Action action)
-        {
-            var b = BigButton(icon, label, bg);
-            b.Click += (s, e) => action?.Invoke();
-            _actions.Children.Add(b);
-            Emoji.FixTree(b);
         }
 
         /// <summary>Le bouton « Parler », toujours accessible (posé par la fenêtre).</summary>
@@ -854,7 +849,7 @@ namespace MesPremiersJeux.Views
                     {
                         _starter = item;
                         _msgText.Text = item.Say + "...";
-                        _msgPic.Content = Pic(item, 110);
+                        _msgPic.Content = Pic(item, 80);
                         Speech.SayAlways(item.Say + "...");
                         ShowSentence(cat);
                     };
@@ -946,7 +941,7 @@ namespace MesPremiersJeux.Views
             return new Button
             {
                 Style = (Style)Application.Current.Resources["AnswerButton"],
-                Margin = new Thickness(8),
+                Margin = new Thickness(6),
                 Background = new SolidColorBrush(tint),
                 BorderBrush = new SolidColorBrush(Fonce(tint)),     // le bord reprend la couleur, en plus soutenu : le code se lit de loin
                 BorderThickness = new Thickness(5),
@@ -1021,7 +1016,7 @@ namespace MesPremiersJeux.Views
         {
             _last = it;
             _msgText.Text = it.Say;
-            _msgPic.Content = Pic(it, 110);
+            _msgPic.Content = Pic(it, 80);
             if (record) GazeStats.RecordComm(it.Key);
 
             // Appel, douleur, peur : une petite sonnerie d'abord, pour que
