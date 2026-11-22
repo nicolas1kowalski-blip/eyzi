@@ -16,7 +16,8 @@
   <Identity Name="__NAME__" Publisher="__PUBLISHER__" Version="__VERSION__" ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>Eyzi</DisplayName>
+    <!-- Le nom réservé dans l'espace partenaires, à l'identique (« EYZI ») ; le nom affiché dans le menu Démarrer est plus bas. -->
+    <DisplayName>EYZI</DisplayName>
     <PublisherDisplayName>__PUBLISHER_DISPLAY__</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>

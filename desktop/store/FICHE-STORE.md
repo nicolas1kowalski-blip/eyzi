@@ -3,18 +3,20 @@
 Brouillon à relire avant de le copier dans l'espace partenaires Microsoft. Les lignes
 marquées **À CONFIRMER** attendent une réponse de l'éditeur.
 
-## 1. L'identité du paquet (à me transmettre)
+## 1. L'identité du paquet (réglée)
 
-Espace partenaires → l'application → *Gestion du produit* → *Identité du produit*. Trois valeurs :
+Produit « EYZI » dans l'espace partenaires Microsoft, type « Application MSIX ou PWA ».
 
-| Dans l'espace partenaires | Variable GitHub |
+| | |
 |---|---|
-| `Package/Identity/Name` | `STORE_NAME` |
-| `Package/Identity/Publisher` (commence par `CN=`) | `STORE_PUBLISHER` |
-| `Package/Properties/PublisherDisplayName` | `STORE_PUBLISHER_DISPLAY` |
+| `Package/Identity/Name` | `EyziNicolas.EYZI` |
+| `Package/Identity/Publisher` | `CN=B18DAB22-112D-434B-846E-A74DBE2B760E` |
+| `Package/Properties/PublisherDisplayName` | `EyziNicolas` |
+| Package Family Name | `EyziNicolas.EYZI_c1hrq7b9m0bs8` |
+| ID Store | `9N0PL01VFJLG` |
 
-Elles ne sont pas secrètes. Elles se règlent dans GitHub → Settings → Secrets and variables →
-Actions → onglet *Variables*. Sans elles, le paquet porte une identité provisoire que le Store refuse.
+Ces valeurs sont dans `.github/workflows/build.yml`. Une fois le produit en ligne, l'adresse de la
+fiche sera `https://apps.microsoft.com/detail/9N0PL01VFJLG`.
 
 ## 2. La fiche (français)
 

@@ -159,10 +159,9 @@ jobs:
       # lui-même (pas de certificat à acheter). Il ne sert qu'à la prod : on dépose ce fichier dans
       # l'espace partenaires Microsoft quand on promeut une version. Étape encore jeune : un échec ici
       # n'empêche pas la version test de sortir.
-      # L'identité du paquet vient de l'espace partenaires (Identité du produit) ; à régler dans
-      # GitHub → Settings → Secrets and variables → Actions → Variables : STORE_NAME, STORE_PUBLISHER,
-      # STORE_PUBLISHER_DISPLAY. Sans elles, le paquet est fabriqué avec une identité provisoire
-      # (bon pour vérifier la fabrication, pas pour le Store).
+      # L'identité du paquet est celle de l'espace partenaires Microsoft (produit « EYZI », ID Store
+      # 9N0PL01VFJLG, page Identité du produit) ; elle n'est pas secrète. Les variables GitHub
+      # STORE_NAME, STORE_PUBLISHER et STORE_PUBLISHER_DISPLAY permettent de la remplacer sans toucher ce fichier.
       - name: Paquet Microsoft Store (MSIX)
         continue-on-error: true
         shell: pwsh
@@ -175,9 +174,9 @@ jobs:
           $p = $v.Split('.')
           # Le Store exige un quatrième nombre à 0 : 2026.11.22.245 devient 2026.1122.245.0 (toujours croissant).
           $sv = "{0}.{1}{2:00}.{3}.0" -f $p[0], [int]$p[1], [int]$p[2], $p[3]
-          $name = if ($env:STORE_NAME) { $env:STORE_NAME } else { "Eyzi.Provisoire" }
-          $pub  = if ($env:STORE_PUBLISHER) { $env:STORE_PUBLISHER } else { "CN=Eyzi-Provisoire" }
-          $disp = if ($env:STORE_PUBLISHER_DISPLAY) { $env:STORE_PUBLISHER_DISPLAY } else { "Eyzi" }
+          $name = if ($env:STORE_NAME) { $env:STORE_NAME } else { "EyziNicolas.EYZI" }
+          $pub  = if ($env:STORE_PUBLISHER) { $env:STORE_PUBLISHER } else { "CN=B18DAB22-112D-434B-846E-A74DBE2B760E" }
+          $disp = if ($env:STORE_PUBLISHER_DISPLAY) { $env:STORE_PUBLISHER_DISPLAY } else { "EyziNicolas" }
           Write-Host "Paquet Store $sv — identité $name / $pub"
 
           $kits = "${env:ProgramFiles(x86)}\Windows Kits\10\bin"
