@@ -71,32 +71,9 @@ Les pictogrammes sont ceux d'ARASAAC (auteur : Sergio Palao, origine : ARASAAC, 
 
 **Visibilité de la première publication** : cachée, accessible seulement par lien direct, le temps de l'essayer sur une tablette.
 
-## 4. La politique de confidentialité (obligatoire : il faut une adresse publique)
+## 4. La politique de confidentialité
 
-À publier sur https://eyzi.fr/confidentialite.html une fois les trois points ci-dessous confirmés.
-Tout le reste vient du guide utilisateur (partie « Les données et la sécurité »).
-
-**À CONFIRMER avant publication :**
-1. Qui est nommé comme responsable des données : votre nom, ou seulement « Eyzi » avec contact@eyzi.fr ?
-2. Dans quel pays sont les serveurs (région du projet Supabase) ?
-3. Combien de temps sont gardés les compteurs d'usage et les demandes de licence ?
-
-**Texte proposé :**
-
-### Ce qui reste sur la tablette
-Les réglages, les photos de famille, les voix enregistrées, les livres, le journal et les progrès de l'enfant restent sur la tablette.
-
-### Ce qui part, et vers qui
-- **La licence** : le numéro de licence, le nom de la tablette et la version de l'application sont envoyés au serveur d'Eyzi pour vérifier la licence.
-- **Les compteurs d'usage** : par jour et par activité, le nombre d'ouvertures, de réussites et de minutes, avec le nom de la tablette. Ni prénom, ni photo, ni voix, ni ce qui a été dit. Pendant l'essai de 10 jours sans licence, ces compteurs partent sous un identifiant de tablette haché, sans nom de machine ni de famille.
-- **Le nuage de la famille** (facultatif) : les contenus partagés entre les tablettes d'une même famille sont chiffrés (AES-256) avec le mot de passe famille avant de partir. Le serveur et l'éditeur ne voient qu'un fichier illisible.
-- **L'écoute** (facultative, éteinte au départ) : la voix est transcrite par le service Azure Speech de Microsoft, avec la clé que la famille a créée elle-même ; l'éditeur ne connaît pas cette clé. Le son ne va jamais à eyzi.fr.
-- **Les réponses proposées par l'intelligence artificielle** (facultatives) : pour proposer des réponses, la tablette envoie à eyzi.fr le texte de la question, le prénom, l'âge et le profil de l'enfant saisis par la famille, son vocabulaire, le contexte (lieu, heure, jour, activités, habitudes) et les derniers échanges de la journée. eyzi.fr les transmet à un prestataire d'intelligence artificielle (Anthropic) pour obtenir les réponses. Ces éléments ne sont pas enregistrés par eyzi.fr ; seul un compteur d'usage est tenu. **À CONFIRMER** : la durée de conservation chez le prestataire, d'après votre contrat avec lui.
-- **La caméra** (facultative, éteinte au départ) : une photo peut être envoyée à eyzi.fr avec la question, et transmise au même prestataire. Elle n'est jamais enregistrée, ni sur la tablette, ni sur le site, ni dans les journaux.
-- **Les demandes de licence et les retours** envoyés depuis eyzi.fr : le nom, l'adresse e-mail et le message saisis dans le formulaire.
-
-### Ce que l'application ne fait pas
-Pas de publicité, pas de revente de données, pas de suivi publicitaire.
-
-### Vos droits
-Pour consulter, corriger ou faire supprimer vos données : contact@eyzi.fr.
+Publiée : **https://eyzi.fr/confidentialite.html** (c'est l'adresse à saisir dans l'espace partenaires).
+Le responsable nommé est « Eyzi » avec contact@eyzi.fr ; les hébergeurs sont cités sans pays
+(Supabase, Vercel, OVH) ; la durée est « tant que la licence est utilisée, suppression sur demande ».
+À préciser plus tard si besoin : le pays des serveurs et une durée chiffrée.
