@@ -4,6 +4,7 @@
 //   SMTP_PASS  = mot de passe de la boîte   (secret, uniquement dans Vercel)
 //   SMTP_HOST  = ssl0.ovh.net (défaut)      SMTP_PORT = 465 (défaut)
 //   NOTIFY_TO  = adresse qui reçoit les demandes (défaut : SMTP_USER)
+//   MAIL_COPY  = adresse qui reçoit en copie cachée les mails de licence et de refus (défaut : SMTP_USER)
 // Sans SMTP_USER/SMTP_PASS, aucun e-mail n'est envoyé (la demande reste
 // enregistrée dans Supabase, et la réponse du formulaire le signale).
 import nodemailer from 'nodemailer';
@@ -23,6 +24,16 @@ function transport() {
     greetingTimeout: 8000,
     socketTimeout: 12000,
   });
+}
+
+// Un envoi par SMTP ne laisse AUCUNE trace dans le dossier « Envoyés » de la boîte : seul un
+// logiciel de messagerie y range ses copies. Pour garder la preuve de ce qui est parti aux
+// familles (numéro de licence, refus), chaque mail est envoyé en copie cachée à la boîte
+// elle-même (ou à MAIL_COPY si la variable est réglée ; MAIL_COPY=non pour ne rien copier).
+function copyTo() {
+  const c = String(process.env.MAIL_COPY || '').trim();
+  if (/^(non|no|0|off)$/i.test(c)) return undefined;
+  return c || process.env.SMTP_USER;
 }
 
 const esc = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -122,7 +133,7 @@ export async function sendLicence(r, mail) {
   const m = mail && mail.text ? { subject: String(mail.subject || ''), text: String(mail.text) } : licenceMail(r);
   m.subject = (m.subject || 'Votre licence Eyzi : ' + r.licenceKey).split(KEY_PLACEHOLDER).join(r.licenceKey);
   m.text = m.text.split(KEY_PLACEHOLDER).join(r.licenceKey);
-  await transport().sendMail({ from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: m.subject, text: m.text });
+  await transport().sendMail({ from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, bcc: copyTo(), subject: m.subject, text: m.text });
 }
 
 /// Le texte du refus poli (relu et modifiable dans la page admin).
@@ -145,5 +156,5 @@ contact@eyzi.fr`;
 export async function refuse(r, note, mail) {
   if (!r.email) return;
   const m = mail && mail.text ? { subject: String(mail.subject || 'Votre demande de licence Eyzi'), text: String(mail.text) } : refuseMail(r, note);
-  await transport().sendMail({ from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, subject: m.subject, text: m.text });
+  await transport().sendMail({ from: `"Eyzi" <${process.env.SMTP_USER}>`, to: r.email, bcc: copyTo(), subject: m.subject, text: m.text });
 }
