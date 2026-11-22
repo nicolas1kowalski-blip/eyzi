@@ -38,6 +38,8 @@
     <None Update="Voix\**" CopyToOutputDirectory="PreserveNewest" />
     <!-- Histoires livrées avec l'application (un dossier par livre : livre.json + images). -->
     <None Update="Histoires\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Humeurs animées (vidéos, vignettes et catalogue fabriqués par desktop/humeurs/fabrique.js). -->
+    <None Update="Humeurs\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

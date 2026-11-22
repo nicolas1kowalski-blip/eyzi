@@ -224,7 +224,7 @@ namespace MesPremiersJeux.Lib
             ["TidyHouseGame"] = "Range la maison",
             ["onglet:accueil"] = "Accueil", ["onglet:stories"] = "Histoires", ["onglet:games"] = "Jeux (menu)",
             ["onglet:edu"] = "Éducatif (menu)", ["onglet:coloring"] = "Coloriage", ["onglet:music"] = "Musique",
-            ["onglet:parcours"] = "Parcours", ["parler"] = "Parler (messages dits)", ["onglet:creer"] = "Créer (menu)",
+            ["onglet:parcours"] = "Parcours", ["onglet:humeurs"] = "Humeurs animées", ["parler"] = "Parler (messages dits)", ["onglet:creer"] = "Créer (menu)",
             ["creer:peinture"] = "Créer · peintures gardées", ["creer:collage"] = "Créer · collages gardés", ["creer:sculpture"] = "Créer · vases cuits", ["creer:statue"] = "Créer · statues sculptées", ["creer:totem"] = "Créer · totems finis", ["creer:gravure"] = "Créer · gravures gardées",
             ["creer:potier:ouvert"] = "Créer · tour de potier (ouvert)", ["creer:statue:ouvert"] = "Créer · statue (ouvert)", ["creer:totem:ouvert"] = "Créer · totem (ouvert)", ["creer:gravure:ouvert"] = "Créer · gravure (ouvert)", ["creer:musique"] = "Créer · musiques gardées",
             ["creer:peinture:ouvert"] = "Créer · peindre (ouvert)", ["creer:collage:ouvert"] = "Créer · collage (ouvert)", ["creer:sculpture:ouvert"] = "Créer · sculpture (ouvert)", ["creer:fabrique:ouvert"] = "Créer · fabrique de musique (ouvert)", ["creer:galerie:ouvert"] = "Créer · galerie (ouvert)",

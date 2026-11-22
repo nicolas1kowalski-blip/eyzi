@@ -1,0 +1,22 @@
+# clé|page|titre|ce que la tablette dit|durée (s) — fabriqué par desktop/humeurs/fabrique.js
+tropcool|joie|Trop cool !|Trop cool !|5.6
+youpi|joie|Youpi !|Youpi !|5
+rigole|joie|Je rigole !|Ha ha ha ! Je rigole !|6
+bravo|joie|Bravo !|Bravo !|5.2
+jetaime|tendre|Je t'aime|Je t'aime !|6.4
+coucou|tendre|Coucou !|Coucou !|5.2
+merci|tendre|Merci !|Merci beaucoup !|5.8
+beurk|rigolo|Beurk !|Beurk !|6.4
+prout|rigolo|Prout !|Prout !|6
+nananere|rigolo|Nananère !|Nananère !|5.2
+chut|rigolo|Chut…|Chut !|5.6
+triste|pasbien|Je suis triste|Je suis triste.|6.2
+colere|pasbien|Grrr !|Grrr ! Je suis en colère !|5.8
+peur|pasbien|J'ai peur !|J'ai peur !|6
+boude|pasbien|Je boude|Je boude.|5.8
+malade|pasbien|Je suis malade|Je suis malade.|6.2
+dodo|pasbien|Dodo…|J'ai sommeil. Je veux faire dodo.|6.6
+miam|actions|Miam !|Miam ! C'est bon !|6.4
+soif|actions|J'ai soif|J'ai soif !|6.4
+musique|actions|Musique !|J'écoute de la musique !|5.6
+nesaispas|actions|Je ne sais pas|Je ne sais pas.|5.4

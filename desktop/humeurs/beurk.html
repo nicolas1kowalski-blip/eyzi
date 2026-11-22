@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1280px;height:720px;overflow:hidden;background:linear-gradient(#F6F0FF,#FFF3E4);font-family:"Nunito","Segoe UI",system-ui,sans-serif}
+  svg{position:absolute;left:0;top:0}
+  #titre{position:absolute;left:0;right:0;bottom:26px;text-align:center;font-size:58px;font-weight:900;color:#2A1C4E;letter-spacing:.5px}
+</style></head><body>
+<div id="titre">Beurk !</div>
+<svg id="s" width="1280" height="720" viewBox="96 148 1010 568">
+  <defs>
+    <radialGradient id="gTete" cx="38%" cy="30%" r="80%"><stop id="t0" offset="0" stop-color="#FFE27A"/><stop id="t1" offset=".62" stop-color="#FFD24A"/><stop id="t2" offset="1" stop-color="#F0A81C"/></radialGradient>
+    <linearGradient id="gCorps" x1="0" x2="1"><stop offset="0" stop-color="#FFDF6E"/><stop offset=".6" stop-color="#FFD24A"/><stop offset="1" stop-color="#EFA51A"/></linearGradient>
+    <linearGradient id="gJet" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#C8EC5A"/><stop offset="1" stop-color="#86C22B"/></linearGradient>
+    <radialGradient id="gFlaque" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#CDEE66"/><stop offset="1" stop-color="#86C22B"/></radialGradient>
+  </defs>
+  <line x1="120" y1="610" x2="1160" y2="610" stroke="#E3D6F7" stroke-width="6" stroke-linecap="round"/>
+  <g id="flaqueG"></g>
+  <ellipse id="ombre" cx="760" cy="612" rx="110" ry="16" fill="#2A1C4E" opacity=".13"/>
+  <g id="perso"></g>
+  <g id="jetG"></g>
+  <g id="devant"></g>
+</svg>
+<script>
+const N="#2A1C4E", SVG="http://www.w3.org/2000/svg";
+const el=(n,a,p)=>{const e=document.createElementNS(SVG,n);for(const k in a)e.setAttribute(k,a[k]);(p||document.getElementById('s')).appendChild(e);return e;};
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));                 // 0→1 entre a et b
+const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+const out=x=>1-Math.pow(1-x,3);
+const back=x=>{const c=1.70158;return 1+ (c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2);};
+const lerp=(a,b,x)=>a+(b-a)*x;
+const mix=(c1,c2,x)=>{const p=c=>[1,3,5].map(i=>parseInt(c.substr(i,2),16));const a=p(c1),b=p(c2);return '#'+a.map((v,i)=>Math.round(lerp(v,b[i],x)).toString(16).padStart(2,'0')).join('');};
+const rnd=(i)=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x);};
+
+// ---- Le personnage (repère local : pieds en 0,0 ; il regarde vers la gauche) ----
+const P=document.getElementById('perso');
+const G=el('g',{},P);                                   // tout le personnage (penché autour des pieds)
+const brasDos=el('g',{},G);
+const corps=el('g',{},G);
+const tete=el('g',{},G);
+const brasFace=el('g',{},G);
+// bras : un trait épais articulé (épaule → coude → main)
+function bras(g){ return {c:el('path',{fill:'none',stroke:N,'stroke-width':40,'stroke-linecap':'round','stroke-linejoin':'round'},g), f:el('path',{fill:'none',stroke:'#FFD24A','stroke-width':27,'stroke-linecap':'round','stroke-linejoin':'round'},g), m:el('circle',{r:23,fill:'#FFD24A',stroke:N,'stroke-width':7},g), d:el('g',{},g)}; }
+const bD=bras(brasDos), bF=bras(brasFace);
+function poserBras(b,ex,ey,mx,my,plie){ const cx=(ex+mx)/2+plie*(my-ey)*.5, cy=(ey+my)/2-plie*(mx-ex)*.5; const d=`M${ex},${ey} Q${cx},${cy} ${mx},${my}`; b.c.setAttribute('d',d); b.f.setAttribute('d',d); b.m.setAttribute('cx',mx); b.m.setAttribute('cy',my); }
+// corps : une gélule, avec le ventre qui gonfle
+const corpsF=el('path',{fill:'url(#gCorps)',stroke:N,'stroke-width':9,'stroke-linejoin':'round'},corps);
+const corpsReflet=el('path',{fill:'none',stroke:'#fff','stroke-width':9,'stroke-linecap':'round',opacity:.5},corps);
+const ventre=el('path',{fill:'none',stroke:N,'stroke-width':5,'stroke-linecap':'round',opacity:.55},corps);
+// tête
+const teteF=el('circle',{cx:0,cy:0,r:92,fill:'url(#gTete)',stroke:N,'stroke-width':9},tete);
+const teint=el('circle',{cx:0,cy:0,r:88,fill:'#9CCB3A',opacity:0},tete);      // le vert qui monte
+const clipId='ct'; const cp=el('clipPath',{id:clipId},document.querySelector('defs')); el('circle',{cx:0,cy:0,r:88},cp);
+const vague=el('path',{fill:'#8FC436',opacity:0,'clip-path':`url(#${clipId})`},tete);
+const reflet=el('path',{d:'M-62,-40 q14,-34 52,-44',fill:'none',stroke:'#fff','stroke-width':12,'stroke-linecap':'round',opacity:.6},tete);
+const joueG=el('ellipse',{cx:-50,cy:36,rx:0,ry:0,fill:'url(#gTete)',stroke:N,'stroke-width':8},tete);
+const joueGv=el('ellipse',{cx:-50,cy:36,rx:0,ry:0,fill:'#9CCB3A',opacity:0},tete);
+const rougeur=el('circle',{cx:26,cy:34,r:17,fill:'#FF7A7A',opacity:.0},tete);
+// œil unique
+const oeilG=el('g',{},tete);
+const blanc=el('ellipse',{cx:-18,cy:-22,rx:38,ry:38,fill:'#fff',stroke:N,'stroke-width':8},oeilG);
+const pupille=el('circle',{cx:-30,cy:-18,r:17,fill:N},oeilG);
+const eclat=el('circle',{cx:-24,cy:-25,r:6,fill:'#fff'},oeilG);
+const veines=el('path',{fill:'none',stroke:'#E85B6B','stroke-width':3,'stroke-linecap':'round',opacity:0,d:'M12,-30 q-10,2 -14,10 M10,-10 q-9,-2 -15,3 M-50,-40 q8,2 10,10'},oeilG);
+const paupiere=el('path',{fill:'#F0B62A',stroke:N,'stroke-width':8,'stroke-linejoin':'round'},oeilG);
+const serre=el('path',{fill:'none',stroke:N,'stroke-width':11,'stroke-linecap':'round','stroke-linejoin':'round',opacity:0,d:'M-64,-48 L-36,-22 L-64,4 M22,-48 L-6,-22 L22,4'},tete);
+const spirale=el('path',{fill:'none',stroke:N,'stroke-width':6,'stroke-linecap':'round',opacity:0},oeilG);
+const sourcil=el('path',{fill:'none',stroke:N,'stroke-width':11,'stroke-linecap':'round'},tete);
+// bouche
+const bouche=el('path',{fill:'#5B1230',stroke:N,'stroke-width':8,'stroke-linejoin':'round'},tete);
+const langue=el('path',{fill:'#FF6F91',stroke:N,'stroke-width':6,opacity:0},tete);
+const dents=el('path',{fill:'#fff',stroke:N,'stroke-width':5,opacity:0},tete);
+// effets
+const jetG=document.getElementById('jetG'), flaqueG=document.getElementById('flaqueG'), devant=document.getElementById('devant');
+const jetC=el('path',{fill:'url(#gJet)',stroke:N,'stroke-width':8,'stroke-linejoin':'round',opacity:0},jetG);
+const jetR=el('path',{fill:'none',stroke:'#E6F8A0','stroke-width':6,'stroke-linecap':'round',opacity:0},jetG);
+const morceaux=[...Array(9)].map((_,i)=>el('ellipse',{rx:6+rnd(i)*6,ry:5+rnd(i+9)*4,fill:i%3?'#6FA524':'#F2C14E',stroke:N,'stroke-width':3,opacity:0},jetG));
+const flaque=el('path',{fill:'url(#gFlaque)',stroke:N,'stroke-width':8,'stroke-linejoin':'round',opacity:0},flaqueG);
+const flaqueR=el('path',{fill:'none',stroke:'#EAFAB0','stroke-width':6,'stroke-linecap':'round',opacity:0},flaqueG);
+const bulles=[...Array(6)].map(()=>el('circle',{fill:'#D9F27E',stroke:N,'stroke-width':4,opacity:0},flaqueG));
+const gouttes=[...Array(26)].map(()=>el('path',{fill:'#A6D83C',stroke:N,'stroke-width':4,opacity:0},devant));
+const sueur=[...Array(4)].map(()=>el('path',{fill:'#7FD3FF',stroke:N,'stroke-width':4,opacity:0},devant));
+const odeurs=[...Array(3)].map(()=>el('path',{fill:'none',stroke:'#8FB93A','stroke-width':7,'stroke-linecap':'round',opacity:0},devant));
+const mouches=[...Array(2)].map(()=>{const g=el('g',{opacity:0},devant);el('ellipse',{cx:-8,cy:-8,rx:10,ry:5.5,fill:'#fff',stroke:N,'stroke-width':2.5,opacity:.9},g);el('ellipse',{cx:8,cy:-8,rx:10,ry:5.5,fill:'#fff',stroke:N,'stroke-width':2.5,opacity:.9},g);el('circle',{r:8,fill:N},g);return g;});
+const bruit=el('text',{'font-size':54,'font-weight':900,fill:'#86C22B',stroke:N,'stroke-width':3,'font-family':'Arial Black,Arial',opacity:0},devant);
+
+const SOL=610, PX=760;          // les pieds
+const DUREE=6.4;
+function rendu(T){
+  const t=((T%DUREE)+DUREE)%DUREE;
+  // ---------- les temps ----------
+  const malaise=ease(seg(t,0.2,1.5));                 // le vert monte, les joues gonflent
+  const hoquet1=Math.sin(Math.PI*seg(t,0.75,1.0)), hoquet2=Math.sin(Math.PI*seg(t,1.25,1.5));
+  const recul=ease(seg(t,1.55,1.85));                 // il se redresse en arrière (élan)
+  const plonge=back(seg(t,1.85,2.15));                // il se penche en avant
+  const jet1=seg(t,2.12,3.05), pause=seg(t,3.05,3.35), jet2=seg(t,3.35,4.05);
+  const debit= t<2.12?0 : t<3.05? Math.min(1,jet1*5)*(1-Math.pow(jet1,6)) : t<3.35?0 : t<4.05? Math.min(1,jet2*5)*(1-Math.pow(jet2,5))*0.85 : 0;
+  const haletement= t>3.05&&t<3.35 ? Math.sin(Math.PI*pause) : 0;
+  const releve=ease(seg(t,4.15,4.9));                 // il se relève
+  const soulage=ease(seg(t,4.9,5.4));                 // pfiou
+  const fin=seg(t,5.9,6.4);                           // la flaque s'efface pour la boucle
+  const vomit= debit>0.02;
+  // ---------- la pose ----------
+  let angle = -3*Math.sin(t*3.2)*(1-recul)                       // il tangue
+            + 12*recul*(1-clamp(plonge)) - 30*clamp(plonge,0,1.2)*(1-releve)
+            - 4*Math.sin(t*38)*debit                              // les secousses
+            + 6*haletement
+            + 2*Math.sin(t*2.4)*soulage;
+  const squash = 1 - 0.07*hoquet1 - 0.09*hoquet2 + 0.05*recul*(1-clamp(plonge)) - 0.05*debit*Math.abs(Math.sin(t*19));
+  const saut = -14*hoquet1 - 20*hoquet2;
+  G.setAttribute('transform',`translate(${PX},${SOL+saut}) rotate(${angle}) scale(${1+ (1-squash)*.6},${squash})`);
+  document.getElementById('ombre').setAttribute('rx',110+ (1-squash)*120 + 30*clamp(plonge)*(1-releve));
+  // corps (gélule de -52..52 en x, de -210 à 0 en y), ventre gonflé pendant le malaise
+  const gonfle=10*malaise*(1-clamp(plonge))+8*hoquet2;
+  corpsF.setAttribute('d',`M-52,-52 C-52,-110 ${-56-gonfle},-150 -52,-176 A52,52 0 0 1 52,-176 L52,-52 A52,52 0 0 1 -52,-52 Z`);
+  corpsReflet.setAttribute('d','M-28,-168 q-8,40 -4,84');
+  ventre.setAttribute('d',`M${-34-gonfle*.6},-96 q10,10 22,2`); ventre.setAttribute('opacity',.55*malaise*(1-clamp(plonge)));
+  // tête : au bout du cou, elle part un peu plus en avant que le corps
+  const tAngle = -8*malaise*(1-recul) + 10*recul*(1-clamp(plonge)) - 14*clamp(plonge)*(1-releve) + 5*Math.sin(t*38)*debit + 10*soulage*Math.sin(t*2.4);
+  const tx=-6, ty=-262 + 8*hoquet2;
+  tete.setAttribute('transform',`translate(${tx},${ty}) rotate(${tAngle}) scale(${1+0.04*debit},${1-0.04*debit})`);
+  // le vert : une vague qui monte depuis le bas du visage
+  const niveau=lerp(100,-100,malaise)*(1-releve)+ (releve>0?lerp(-100,110,releve):0);
+  const w=6*Math.sin(t*5);
+  vague.setAttribute('d',`M-100,${niveau+w} q25,${-14} 50,0 t50,0 t50,0 t50,0 L100,110 L-100,110 Z`);
+  vague.setAttribute('opacity', (malaise>0.02? .92:0) * (1-seg(t,4.9,5.3)));
+  teint.setAttribute('opacity', 0.0);
+  const vertFin = malaise*(1-releve);
+  document.getElementById('t0').setAttribute('stop-color',mix('#FFE27A','#E9F08A',vertFin*.5));
+  // joues gonflées, qui battent
+  const jg=(malaise*(1-clamp(plonge)*1.2))*(1+0.18*Math.sin(t*16)*malaise)+0.5*haletement;
+  const jv=clamp(jg);
+  joueG.setAttribute('rx',34*jv); joueG.setAttribute('ry',30*jv); joueG.setAttribute('cx',-62-10*jv);
+  joueGv.setAttribute('rx',30*jv); joueGv.setAttribute('ry',26*jv); joueGv.setAttribute('cx',-62-10*jv); joueGv.setAttribute('opacity',.85*jv*malaise);
+  rougeur.setAttribute('opacity',.55*soulage);
+  // l'œil
+  const ferme = vomit||haletement>0.3 ? 1 : clamp(plonge)*(1-releve)>0.5? .9 : 0;
+  serre.setAttribute('opacity',ferme>0.5?1:0); oeilG.setAttribute('opacity',ferme>0.5?0:1);
+  const grand = 1+0.22*recul*(1-clamp(plonge))+0.10*hoquet2;
+  blanc.setAttribute('rx',38*grand); blanc.setAttribute('ry',38*grand);
+  const tourne = releve>0.05 && soulage<0.6;      // tout tourne quand il se relève
+  spirale.setAttribute('opacity',tourne?1:0); pupille.setAttribute('opacity',tourne?0:1); eclat.setAttribute('opacity',tourne?0:1);
+  if(tourne){ let d='M-18,-22'; for(let a=0;a<14;a+=0.35){const r=2.2*a; d+=` L${-18+Math.cos(a+t*9)*r},${-22+Math.sin(a+t*9)*r}`;} spirale.setAttribute('d',d); }
+  const px=-30+10*Math.sin(t*7)*malaise*(1-recul)+16*soulage, py=-18+7*Math.cos(t*9)*malaise*(1-recul)+16*malaise*(1-recul)-10*recul-6*soulage;
+  pupille.setAttribute('cx',px); pupille.setAttribute('cy',py); pupille.setAttribute('r',17*(1-0.3*recul*(1-clamp(plonge))));
+  eclat.setAttribute('cx',px+6); eclat.setAttribute('cy',py-7);
+  veines.setAttribute('opacity',.8*malaise*(1-releve));
+  const lid = clamp(0.55*malaise*(1-recul) + 0.35*soulage);      // la paupière lourde
+  const ly=-22-38*grand+ (76*grand)*lid;
+  paupiere.setAttribute('d',`M${-18-38*grand},${-22} A${38*grand},${38*grand} 0 0 1 ${-18+38*grand},-22 L${-18+38*grand},${ly} Q-18,${ly+10*lid} ${-18-38*grand},${ly} Z`);
+  paupiere.setAttribute('opacity',lid>0.03?1:0);
+  const sb= -8*malaise*(1-recul) + 14*recul*(1-clamp(plonge)) ;
+  sourcil.setAttribute('d',`M-66,${-78-sb} Q-30,${-92-sb*1.5+10*soulage} 14,${-76+ sb*.6 -8*soulage}`);
+  // la bouche : serrée et ondulée → grande ouverte → sourire soulagé
+  const ouvre = vomit? 1 : haletement>0? .55*haletement : recul*(1-clamp(plonge))*.25;
+  const bx=-56, by=44;
+  if(ouvre>0.08){
+    const rx=10+22*ouvre, ry=8+30*ouvre;
+    bouche.setAttribute('d',`M${bx-rx},${by} a${rx},${ry} 0 1 0 ${2*rx},0 a${rx},${ry} 0 1 0 ${-2*rx},0 Z`); bouche.setAttribute('fill','#5B1230');
+    langue.setAttribute('opacity',0); dents.setAttribute('opacity',0);
+  } else if(soulage>0.2){
+    bouche.setAttribute('d',`M${bx-26},${by-6} Q${bx},${by+26*soulage} ${bx+30},${by-8} Q${bx},${by+4} ${bx-26},${by-6} Z`); bouche.setAttribute('fill','#5B1230');
+    langue.setAttribute('opacity',0); dents.setAttribute('opacity',0);
+  } else if(releve>0.05){
+    bouche.setAttribute('d',`M${bx-22},${by} q22,${10} 44,0 q-22,6 -44,0 Z`); bouche.setAttribute('fill','#5B1230');
+    langue.setAttribute('d',`M${bx-10},${by+4} q-4,${34} 10,${36} q16,0 12,-36 Z`); langue.setAttribute('opacity',1);
+  } else {
+    const k=6+5*malaise;
+    bouche.setAttribute('d',`M${bx-26},${by} q7,${-k} 13,0 t13,0 t13,0 t13,0 q-26,${3} -52,0 Z`); bouche.setAttribute('fill',N);
+    langue.setAttribute('opacity',0);
+  }
+  // les bras : l'un sur le ventre puis sur la bouche, l'autre qui bat l'air
+  const ep={x:-40,y:-172}, ep2={x:40,y:-172};
+  let mF={x:lerp(-66,-30,malaise), y:lerp(-70,-92,malaise)}, plF=.5;
+  const versBouche=ease(seg(t,1.15,1.55));
+  mF={x:lerp(mF.x,-88,versBouche), y:lerp(mF.y,-214,versBouche)};
+  const lache=clamp(plonge);
+  mF={x:lerp(mF.x,-104,lache), y:lerp(mF.y,-96,lache)}; plF=lerp(.5,-.3,lache);
+  const essuie=Math.sin(Math.PI*seg(t,4.5,5.2));
+  mF={x:lerp(mF.x,-70,releve), y:lerp(mF.y,-70,releve)};
+  mF={x:lerp(mF.x,-92,essuie), y:lerp(mF.y,-218+10*Math.sin(t*22),essuie)};
+  poserBras(bF,ep.x,ep.y,mF.x,mF.y,plF);
+  let mD={x:70,y:-72+6*Math.sin(t*3)};
+  mD={x:lerp(mD.x,104,recul), y:lerp(mD.y,-250,recul)};
+  mD={x:lerp(mD.x,118+10*Math.sin(t*30)*debit,lache*(1-releve)), y:lerp(mD.y,-206,lache*(1-releve))};
+  mD={x:lerp(mD.x,72,releve), y:lerp(mD.y,-74,releve)};
+  poserBras(bD,ep2.x,ep2.y,mD.x,mD.y,-.4);
+  // ---------- le jet : une vraie trajectoire, de la bouche au sol ----------
+  const rad=a=>a*Math.PI/180;
+  const rot=(x,y,a)=>[x*Math.cos(rad(a))-y*Math.sin(rad(a)), x*Math.sin(rad(a))+y*Math.cos(rad(a))];
+  let [mx,my]=rot(bx-10,by+4,tAngle); mx+=tx; my+=ty; my*=squash; [mx,my]=rot(mx,my,angle); mx+=PX; my+=SOL+saut;
+  const dir=rad(angle+tAngle+212);                       // la direction de la bouche (vers l'avant, un peu vers le bas)
+  const v0=300+90*debit, vx=Math.cos(dir)*v0, vy=Math.sin(dir)*v0, g=1500;
+  const tSol=(-vy+Math.sqrt(vy*vy+2*g*(SOL-6-my)))/g;
+  const impactX=mx+vx*tSol;
+  if(vomit){
+    const n=18, haut=[], bas=[], milieu=[];
+    for(let i=0;i<=n;i++){ const s=tSol*i/n, x=mx+vx*s, y=my+vy*s+.5*g*s*s; const dx=vx, dy=vy+g*s, L=Math.hypot(dx,dy), nx=-dy/L, ny=dx/L;
+      const larg=(15+22*i/n)*debit*(1+0.16*Math.sin(i*1.3-t*26))+3; haut.push([x+nx*larg,y+ny*larg]); bas.push([x-nx*larg,y-ny*larg]); milieu.push([x+nx*larg*.45,y+ny*larg*.45]); }
+    jetC.setAttribute('d','M'+haut.map(p=>p.join(',')).join(' L')+' L'+bas.reverse().map(p=>p.join(',')).join(' L')+' Z'); jetC.setAttribute('opacity',1);
+    jetR.setAttribute('d','M'+milieu.slice(1,-3).map(p=>p.join(',')).join(' L')); jetR.setAttribute('opacity',.8);
+    morceaux.forEach((m,i)=>{ const s=tSol*(((t*1.9+rnd(i)*3)%1)); const x=mx+vx*s, y=my+vy*s+.5*g*s*s; m.setAttribute('cx',x+ (rnd(i+3)-.5)*14); m.setAttribute('cy',y+(rnd(i+5)-.5)*10); m.setAttribute('opacity',debit>.25?1:0); });
+  } else { jetC.setAttribute('opacity',0); jetR.setAttribute('opacity',0); morceaux.forEach(m=>m.setAttribute('opacity',0)); }
+  // ---------- la flaque : elle grandit avec ce qui tombe, puis fait des bulles ----------
+  const quantite = clamp( (t<2.2?0: seg(t,2.2,3.05)*.6) + (t<3.4?0: seg(t,3.4,4.05)*.4) );
+  if(vomit&&debit>.5) window.__fx = window.__fx? lerp(window.__fx,impactX,.2):impactX;
+  if(t<0.1) window.__fx=0;
+  const fx=(window.__fx||PX-330)-20, R=40+150*out(quantite);
+  if(quantite>0.01){
+    const k=1-fin; let d=''; const pts=14;
+    const pt=[]; for(let i=0;i<pts;i++){ const a=i/pts*Math.PI*2, r=R*(1+0.10*Math.sin(i*2.7)+0.05*Math.sin(t*3+i)); pt.push([fx+Math.cos(a)*r, SOL+2+Math.sin(a)*r*0.17]); }
+    const mi=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2]; let m0=mi(pt[pts-1],pt[0]); d='M'+m0.join(',');
+    for(let i=0;i<pts;i++){ const m=mi(pt[i],pt[(i+1)%pts]); d+=` Q${pt[i].join(',')} ${m.join(',')}`; }
+    flaque.setAttribute('d',d+' Z'); flaque.setAttribute('opacity',k); flaque.setAttribute('stroke-linejoin','round');
+    flaqueR.setAttribute('d',`M${fx-R*.55},${SOL-2} q${R*.25},-7 ${R*.5},-3`); flaqueR.setAttribute('opacity',.8*k);
+    bulles.forEach((b,i)=>{ const ph=((t*0.9+rnd(i+20))%1), on=t>3.0; b.setAttribute('cx',fx+(rnd(i+30)-.5)*R*1.3); b.setAttribute('cy',SOL-2-8*ph); b.setAttribute('r',3+9*ph); b.setAttribute('opacity',on? (ph<.85? .9*k:0):0); });
+  } else { flaque.setAttribute('opacity',0); flaqueR.setAttribute('opacity',0); bulles.forEach(b=>b.setAttribute('opacity',0)); }
+  // ---------- les éclaboussures ----------
+  gouttes.forEach((gt,i)=>{ const naiss=2.2+ (i%13)*0.068 + (i>=13?1.22:0); const age=t-naiss; if(age<0||age>0.75||(i>=13&&t<3.4)){gt.setAttribute('opacity',0);return;}
+    const a=rad(-150+rnd(i)*120), v=260+rnd(i+7)*260, x=impactX+Math.cos(a)*v*age*.55, y=SOL-8+Math.sin(a)*v*age+ .5*1500*age*age; const r=5+rnd(i+11)*7;
+    if(y>SOL){gt.setAttribute('opacity',0);return;}
+    gt.setAttribute('d',`M${x},${y-r*1.5} q${-r},${r*1.5} 0,${r*2.2} q${r},${-r*.7} 0,${-r*2.2} Z`); gt.setAttribute('opacity',1); });
+  // ---------- la sueur du malaise ----------
+  sueur.forEach((s,i)=>{ const ph=((t*1.3+i*.27)%1); const on=t>0.4&&t<1.9; const [hx,hy]=[PX-6+ (i%2?60:-10)+ph*(i%2?46:-30), SOL-262-70+ph*ph*90- (i%2?10:30)]; s.setAttribute('d',`M${hx},${hy} q-8,13 0,19 q8,-6 0,-19 Z`); s.setAttribute('opacity',on? 1-ph:0); });
+  // ---------- l'odeur et les mouches, après ----------
+  odeurs.forEach((o,i)=>{ const on=t>4.0&&t<5.95; const ph=((t*.55+i*.33)%1); const x=fx-R*.5+i*R*.5, y=SOL-26-ph*110; o.setAttribute('d',`M${x},${y} q14,-12 0,-26 q-14,-14 0,-28`); o.setAttribute('opacity',on? .75*(1-ph)*(1-fin):0); });
+  mouches.forEach((m,i)=>{ const on=t>4.2&&t<5.95; const a=t*(5+i*1.7)+i*2; m.setAttribute('transform',`translate(${fx+Math.cos(a)*(70+i*30)},${SOL-70-i*26+Math.sin(a*1.6)*24})`); m.setAttribute('opacity',on?(1-fin):0); });
+  // ---------- les bruits écrits ----------
+  let txt='', bxp=0, byp=0, op=0, sz=54;
+  if(t>0.75&&t<1.05){txt='gloups'; bxp=PX+70; byp=SOL-330; op=Math.sin(Math.PI*seg(t,0.75,1.05));}
+  else if(t>1.25&&t<1.55){txt='GLOUPS'; bxp=PX+60; byp=SOL-350; op=Math.sin(Math.PI*seg(t,1.25,1.55)); sz=66;}
+  else if(t>2.15&&t<3.0){txt='BLEUAARGH'; bxp=PX-610; byp=SOL-330-14*Math.sin(t*20); op=1; sz=70;}
+  else if(t>3.4&&t<4.0){txt='BLEURP'; bxp=PX-560; byp=SOL-320-12*Math.sin(t*20); op=1; sz=62;}
+  else if(t>5.0&&t<5.8){txt='pfiou…'; bxp=PX+90; byp=SOL-340; op=Math.sin(Math.PI*seg(t,5.0,5.8)); sz=58;}
+  bruit.textContent=txt; bruit.setAttribute('x',bxp); bruit.setAttribute('y',byp); bruit.setAttribute('opacity',op); bruit.setAttribute('font-size',sz);
+  bruit.setAttribute('fill', txt.startsWith('pfiou')?'#7FD3FF':'#86C22B');
+}
+window.rendu=rendu; rendu(0);
+if(!window.__capture){ const t0=performance.now(); (function b(){ rendu((performance.now()-t0)/1000); requestAnimationFrame(b); })(); }
+</script></body></html>

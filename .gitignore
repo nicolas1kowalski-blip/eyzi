@@ -8,3 +8,6 @@ node_modules/
 *.user
 .vs/
 desktop/installer/Output/
+
+# Humeurs animées : planches de relecture
+desktop/humeurs/apercu/

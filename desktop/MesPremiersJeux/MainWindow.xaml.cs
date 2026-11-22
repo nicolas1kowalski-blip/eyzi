@@ -95,6 +95,7 @@ namespace MesPremiersJeux
             var tv = new TvView();
             tv.BackRequested += () => { (_views["games"] as GamesView)?.ShowRoot(); Select("games"); };
             _views["tv"] = tv;
+            _views["humeurs"] = new HumeursView();            // les humeurs animées, ouvertes par le logo
 
             foreach (var v in _views.Values)
             {
@@ -2502,6 +2503,15 @@ namespace MesPremiersJeux
             _envoiReglages.Stop(); _envoiReglages.Start();
         }
 
+        /// <summary>Le logo, en haut à gauche : la page des humeurs animées.</summary>
+        private void Humeurs_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(_views.TryGetValue("humeurs", out var v) && v is HumeursView h) || !h.Disponible) return;
+            h.Debut();
+            Select("humeurs");
+            Speech.Say("Les humeurs !");
+        }
+
         private void Tab_Click(object sender, RoutedEventArgs e)
         {
             if (!(sender is FrameworkElement fe) || !(fe.Tag is string id)) return;
@@ -2559,6 +2569,7 @@ namespace MesPremiersJeux
             Games.GameControl.Paused = CommBoard.IsOpen || EcouteHost.Visibility == Visibility.Visible
                 || !(id == "games" || id == "edu" || id == "parcours" || id == "stories" || id == "coloring" || id == "music" || id == "creer");
             HighlightWorld(WorldOf(id));
+            if (HumeursBtn != null) HumeursBtn.Background = new SolidColorBrush(id == "humeurs" ? Color.FromRgb(0xFF, 0xF3, 0xC4) : Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF));
             ApplyTiles();
             if (_monde != WorldOf(id)) { _monde = WorldOf(id); if (_settings != null && _settings.PointerWorldColors) ApplyPointerStyle(); }
             Usage.Screen(id);
