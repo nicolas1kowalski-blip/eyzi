@@ -422,7 +422,8 @@ namespace MesPremiersJeux
             _ = Licence.RecheckAsync(_settings).ContinueWith(t => Dispatcher.Invoke(RefreshLicenceText));
             _ = Usage.SendDailyAsync(_settings).ContinueWith(t => { if (t.Result != null) Lib.Log.Write("usage", "Envoi : " + t.Result); });
             SuivreUsage();
-            Updater.Cleanup();
+            if (!Lib.Paquet.EstStore) Updater.Cleanup();
+            if (Lib.Paquet.EstStore) Lib.Log.Write("app", "Version du Microsoft Store (" + Lib.Paquet.Famille + ")");
             CheckUpdatesAtStartup();
             RefreshCloudStatus();
             CloudSyncAtStartup();
@@ -1361,7 +1362,7 @@ namespace MesPremiersJeux
             try
             {
                 LicenceText.Text = "Licence : " + Licence.Describe(_settings) + " · mondes : " + Licence.ModulesText(_settings);
-                VersionText.Text = "Eyzi bêta · version " + Updater.Current + (Updater.IsDevBuild ? " (compilée à la main : pas de mise à jour automatique)" : " · canal " + (Licence.IsTest(_settings) ? "TEST" : "prod"));
+                VersionText.Text = "Eyzi bêta · version " + Updater.Current + (Lib.Paquet.EstStore ? " · Microsoft Store (mises à jour par le Store)" : Updater.IsDevBuild ? " (compilée à la main : pas de mise à jour automatique)" : " · canal " + (Licence.IsTest(_settings) ? "TEST" : "prod"));
             }
             catch { }
         }
@@ -1399,6 +1400,11 @@ namespace MesPremiersJeux
         private async void CheckUpdate_Click(object sender, RoutedEventArgs e)
         {
             CloseAdmin();
+            if (Lib.Paquet.EstStore)
+            {
+                MessageBox.Show(this, "Cette version vient du Microsoft Store : c'est lui qui la met à jour, tout seul. Pour forcer la recherche : ouvrez le Microsoft Store → Bibliothèque (ou Téléchargements) → « Obtenir les mises à jour ».", "Mises à jour");
+                return;
+            }
             if (Updater.IsDevBuild)
             {
                 MessageBox.Show(this, "Cette version a été compilée à la main (Visual Studio) : les mises à jour automatiques ne s'appliquent qu'aux versions installées avec l'installeur.", "Mises à jour");
@@ -1418,7 +1424,7 @@ namespace MesPremiersJeux
 
         private async void CheckUpdatesAtStartup()
         {
-            if (Updater.IsDevBuild) return;
+            if (Updater.IsDevBuild || Lib.Paquet.EstStore) return; // dans le paquet du Store, c'est le Store qui met à jour
             try
             {
                 await System.Threading.Tasks.Task.Delay(4000);
@@ -1476,6 +1482,7 @@ namespace MesPremiersJeux
         private void Rollback_Click(object sender, RoutedEventArgs e)
         {
             CloseAdmin();
+            if (Lib.Paquet.EstStore) { MessageBox.Show(this, "Cette version vient du Microsoft Store : on ne peut pas revenir à la précédente depuis l'application.", "Version précédente"); return; }
             var prev = Updater.PreviousSetup();
             if (prev == null) { MessageBox.Show(this, "Aucune version précédente n'est disponible sur cette tablette.", "Version précédente"); return; }
             GazeGate.Push();
@@ -1877,7 +1884,7 @@ namespace MesPremiersJeux
         private void OpenContent_Click(object sender, RoutedEventArgs e)
         {
             UserContent.EnsureFolders();
-            try { System.Diagnostics.Process.Start("explorer.exe", UserContent.RootDir); } catch { }
+            try { System.Diagnostics.Process.Start("explorer.exe", Lib.Paquet.CheminReel(UserContent.RootDir)); } catch { }
         }
 
         private void ExportContent_Click(object sender, RoutedEventArgs e)

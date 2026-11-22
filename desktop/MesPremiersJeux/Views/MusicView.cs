@@ -381,7 +381,9 @@ namespace MesPremiersJeux.Views
                 // --autoplay-policy : autorise le démarrage audio sans geste direct
                 // dans la page (le clic au regard reste un vrai clic côté app).
                 var opts = new CoreWebView2EnvironmentOptions("--autoplay-policy=no-user-gesture-required");
-                var env = await CoreWebView2Environment.CreateAsync(null, null, opts);
+                // Dans le paquet du Store, le dossier de l'application est en lecture seule : le navigateur caché range ses données dans AppData.
+                string donnees = Lib.Paquet.EstStore ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MesPremiersJeux", "WebView2") : null;
+                var env = await CoreWebView2Environment.CreateAsync(null, donnees, opts);
                 await _web.EnsureCoreWebView2Async(env);
 
                 _web.CoreWebView2.WebMessageReceived += OnWebMessage;
