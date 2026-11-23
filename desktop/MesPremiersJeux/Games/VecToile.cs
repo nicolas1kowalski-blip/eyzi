@@ -165,6 +165,8 @@ namespace MesPremiersJeux.Games
                 try { var p = System.Windows.Input.Mouse.GetPosition(_monde); _moteur.Regard(p.X, p.Y); } catch { }
             }
 
+            // le temps de fixation réglé dans l'application vaut aussi pour les jeux qui attendent le regard eux-mêmes
+            try { if (GazeStats.GetDwell != null) _moteur.Fixation = Math.Max(0.3, Math.Min(2.5, GazeStats.GetDwell() / 1000.0)); } catch { }
             _moteur.Avance(dt);
             Dessine();
         }

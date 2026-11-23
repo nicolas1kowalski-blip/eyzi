@@ -617,7 +617,7 @@ namespace MesPremiersJeux.Games
                 if (p == _candidat)
                 {
                     // il vient poser sa bouche sur le leurre
-                    p.Interet += dt / (_aide > 0 ? 0.85 : 1.1);
+                    p.Interet += dt / (Fixation * (_aide > 0 ? 0.8 : 1));      // le temps de fixation réglé pour l'enfant
                     if (Math.Abs(lx - p.X) > 50 * e) p.Sens = lx >= p.X ? 1 : -1;
                     p.ButX = lx - p.Sens * 70 * e; p.ButY = ly - 10 * e;
                     vitesse = Math.Max(vitesse * 1.3, 170);
@@ -807,7 +807,7 @@ namespace MesPremiersJeux.Games
             bool pres = _etat == Etat.Peche && _mode == Mode.Flotte && Distance(_bx, _by, _cx, _cy - 30 * e) < 125 * e;
             _cPres = pres ? _cPres + dt : 0;
             if (_cRepos > 0) _cRepos -= dt;
-            if (_cPres > 0.6 && _cRepos <= 0)
+            if (_cPres > Math.Min(0.6, Fixation) && _cRepos <= 0)
             {
                 _coin = 1.6; _cRepos = 9; _cPres = 0;
                 Ecris("Coin coin !", _cx, _cy - 190 * e, "#FFE066", 62);

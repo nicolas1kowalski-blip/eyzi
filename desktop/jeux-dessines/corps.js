@@ -1,8 +1,9 @@
 // Les dessins de l'activité « Dans mon corps ». genere.js en tire Games/CorpsArt.cs (pour l'application) ;
 // le banc d'essai s'en sert pour produire de vraies images sans Windows. Les outils de dessin sont dans outils.js.
 //
-// Le bonhomme est dessiné autour de son axe (x = 0), le haut de l'image en y = 0. Chaque organe est dessiné autour
-// de son propre milieu ; la liste « organes » dit où il va dans le corps et ce que la voix en dit.
+// Oscar, le squelette de la classe, est dessiné autour de son axe (x = 0), le haut de l'image en y = 0. Ses bras et
+// ses jambes sont des os séparés (l'origine à l'articulation du haut, l'os vers le bas) : le jeu les articule.
+// Chaque organe est dessiné autour de son propre milieu ; la liste « organes » dit où il va et ce que la voix en dit.
 const { N, P, A, T, TT, GL, GR, GV, GH, r1, ci, el, rr, pol, alea } = require('./outils.js');
 const communs = require('./communs.js');
 
@@ -10,109 +11,121 @@ const S = {};
 
 communs(S);
 
-const PEAU = '#BDE4FF', PEAU_OMBRE = '#8FC4EE';
 const etoileD = (x, y, R, r = R * .45, n = 5, tour = -90) => [...Array(n * 2)].map((_, i) => { const [dx, dy] = pol(tour + i * 180 / n, i % 2 ? r : R); return (i ? 'L' : 'M') + r1(x + dx) + ',' + r1(y + dy); }).join(' ') + ' Z';
-// un petit visage d'organe : deux yeux, un sourire, des joues
-const frimousse = (x, y, k = 1) => [A(ci(x - 11 * k, y, 4.6 * k), N), A(ci(x + 11 * k, y, 4.6 * k), N), A(ci(x - 9.6 * k, y - 1.6 * k, 1.6 * k), '#FFFFFF'), A(ci(x + 12.4 * k, y - 1.6 * k, 1.6 * k), '#FFFFFF'),
-  T(`M${r1(x - 7 * k)},${r1(y + 8 * k)} q${r1(7 * k)},${r1(8 * k)} ${r1(14 * k)},0`, N, 3.2 * k), A(el(x - 20 * k, y + 8 * k, 5.5 * k, 3.5 * k), '#FF6A8A', .5), A(el(x + 20 * k, y + 8 * k, 5.5 * k, 3.5 * k), '#FF6A8A', .5)];
+const OS = '#FFF8E7', OS_OMBRE = '#E3D3AE', CREUX = '#2A1C4E';
+const IVOIRE = (x, y, r) => GR(x, y, r, [0, '#FFFFFF'], [.55, '#FFF6DF'], [1, '#E3D3AE']);
+// un os long : deux têtes rondes, un corps droit, une ombre d'un côté
+const os_long = (l, w, tete = w * .95) => [
+  T(`M0,${r1(tete * .6)} V${r1(l - tete * .6)}`, N, w + 9), P(ci(-tete * .45, tete * .5, tete * .62), OS, 4.5), P(ci(tete * .45, tete * .5, tete * .62), OS, 4.5), P(ci(-tete * .45, l - tete * .5, tete * .62), OS, 4.5), P(ci(tete * .45, l - tete * .5, tete * .62), OS, 4.5),
+  T(`M0,${r1(tete * .6)} V${r1(l - tete * .6)}`, OS, w), T(`M${r1(w * .22)},${r1(tete)} V${r1(l - tete)}`, OS_OMBRE, w * .3, .8), T(`M${r1(-w * .22)},${r1(tete * 1.4)} V${r1(l * .6)}`, '#FFFFFF', w * .18, .9),
+];
 
-// ═════════════ La salle ═════════════
+// ═════════════ La salle de classe ═════════════
 S.c_salle = [
-  A('M-10,-10 H1610 V700 H-10 Z', GV(0, 700, '#E4F8F2', '#C8EEE4')),
-  ...[...Array(40)].map((_, i) => { const x = 60 + (i % 10) * 164 + (Math.floor(i / 10) % 2) * 82, y = 70 + Math.floor(i / 10) * 160; return T(`M${x - 9},${y} h18 M${x},${y - 9} v18`, '#FFFFFF', 6, .55); }),
-  A('M-10,700 H1610 V910 H-10 Z', GV(700, 900, '#A9D8CC', '#8CC6B8')),
-  T('M-10,700 H1610', '#FFFFFF', 10, .8), T('M-10,712 H1610', '#7FB8AA', 4, .6),
-  T('M200,712 L120,900 M520,712 L480,900 M1080,712 L1120,900 M1400,712 L1480,900 M-10,790 H1610', '#7FB8AA', 3, .35),
-  // l'armoire à pharmacie
-  P(rr(60, 40, 150, 120, 14), GV(40, 160, '#FFFFFF', '#E3F0EC'), 5), T('M135,44 V156', '#B9D6CE', 3), P('M112,82 h18 v-18 h20 v18 h18 v20 h-18 v18 h-20 v-18 h-18 Z', '#3CCB6C', 4), A(ci(126, 138, 4), '#8793AD'), A(ci(144, 138, 4), '#8793AD'),
-  // la toise
-  P(rr(1038, 150, 44, 552, 10), GV(150, 702, '#FFF6DC', '#F2E2B8'), 5),
-  T([...Array(13)].map((_, i) => `M1040,${190 + i * 40} h${i % 2 ? 16 : 26}`).join(' '), '#C29258', 4), ...[0, 1, 2].map(i => P(etoileD(1066, 216 + i * 160, 9), ['#FF7AB0', '#48B0F8', '#FFD23D'][i], 2.5)),
-  // la table de l'écran, ses tiroirs, des livres et une pomme
-  P(rr(1130, 520, 440, 30, 10), GV(520, 550, '#FFFFFF', '#DCEAE6'), 5), P(rr(1156, 550, 388, 152, 8), GV(550, 702, '#F4FAF8', '#CFE4DE'), 5),
-  P(rr(1176, 570, 164, 50, 8), '#FFFFFF', 4), P(rr(1360, 570, 164, 50, 8), '#FFFFFF', 4), P(rr(1176, 634, 348, 50, 8), '#FFFFFF', 4), T('M1240,595 h36 M1424,595 h36 M1330,659 h40', '#8793AD', 6),
-  P(rr(1428, 482, 96, 18, 4), '#48B0F8', 4), P(rr(1436, 464, 84, 18, 4), '#FF9A3D', 4), P(rr(1444, 500, 80, 20, 4), '#3CCB6C', 4),
-  // la plante
-  P('M452,700 L466,640 H530 L544,700 Z', GV(640, 700, '#FF9A6A', '#D9623A'), 5), P(rr(458, 628, 80, 18, 8), '#FFB08A', 4.5),
-  P('M498,630 Q450,560 470,500 Q510,560 498,630 Z', GV(500, 630, '#8FD46E', '#4EA84A'), 4.5), P('M498,630 Q560,570 548,510 Q500,560 498,630 Z', GV(510, 630, '#A8E67E', '#5CB850'), 4.5), P('M498,632 Q486,540 500,470 Q520,540 498,632 Z', GV(470, 632, '#B4F08A', '#5CB850'), 4.5),
+  A('M-10,-10 H1610 V700 H-10 Z', GV(0, 700, '#FFF6E2', '#FBE7C2')),
+  A('M-10,560 H1610 V700 H-10 Z', GV(560, 700, '#BFE3D6', '#A6D4C4')), T('M-10,560 H1610', '#FFFFFF', 8, .9),
+  T([...Array(20)].map((_, i) => `M${40 + i * 82},566 V696`).join(' '), '#8FC4B2', 3, .5),
+  // le parquet
+  A('M-10,700 H1610 V910 H-10 Z', GV(700, 900, '#E2B27A', '#C28E52')), T('M-10,700 H1610', '#8A5F36', 6),
+  T('M-10,760 H1610 M-10,832 H1610', '#9A6B3C', 3, .5), T([...Array(11)].map((_, i) => `M${90 + i * 150},${i % 2 ? 700 : 760} v${i % 2 ? 60 : 72}`).join(' ') + [...Array(10)].map((_, i) => ` M${160 + i * 150},832 v70`).join(''), '#9A6B3C', 3, .5),
+  // l'horloge
+  P(ci(150, 104, 62), GV(42, 166, '#FFFFFF', '#E6ECF8'), 7), T(ci(150, 104, 50), '#48B0F8', 5), T('M150,104 V68 M150,104 L176,116', N, 6), A(ci(150, 104, 6), '#F0483E'),
+  T([...Array(12)].map((_, i) => { const [x, y] = pol(i * 30, 42), [x2, y2] = pol(i * 30, 48); return `M${r1(150 + x)},${r1(104 + y)} L${r1(150 + x2)},${r1(104 + y2)}`; }).join(' '), N, 3.5),
+  // le tableau, sa craie, son éponge
+  P(rr(1118, 60, 452, 404, 14), GV(60, 464, '#D9A866', '#A8703C'), 7), P(rr(1136, 78, 416, 368, 6), GV(78, 446, '#3E8E6A', '#2A6E50'), 5),
+  T('M1160,110 q60,-10 120,2 M1400,420 q50,-12 110,-2', '#FFFFFF', 3, .12), P(rr(1118, 458, 452, 16, 6), '#B5844C', 5),
+  P(rr(1160, 446, 44, 12, 4), '#FFFFFF', 3.5), P(rr(1470, 440, 60, 18, 5), '#F2C14E', 3.5), A(rr(1470, 440, 60, 7, 3), '#8A8AA0'),
+  // le bureau, des livres, une pomme
+  P(rr(1150, 560, 400, 26, 8), GV(560, 586, '#EBC08A', '#C29258'), 5.5), P('M1176,586 H1524 V700 H1176 Z', GV(586, 700, '#D9A866', '#B5844C'), 5.5), P(rr(1200, 606, 300, 44, 8), '#EBC08A', 4), T('M1330,628 h40', '#8A5F36', 6),
+  P(rr(1190, 540, 100, 20, 4), '#48B0F8', 4), P(rr(1198, 522, 86, 18, 4), '#FF9A3D', 4), P(rr(1206, 506, 72, 16, 4), '#9A6CF0', 4),
+  P('M1462,538 C1436,526 1432,560 1450,560 C1456,562 1468,562 1474,560 C1492,560 1488,526 1462,538 Z', GR(1454, 542, 30, [0, '#FF9A8A'], [1, '#D9302A']), 4), T('M1462,538 q2,-10 8,-12', '#7A5230', 3.5), P('M1466,530 q10,-10 16,-2 q-8,6 -16,2 Z', '#5CB850', 2.5),
 ];
-// le socle lumineux où se tient le bonhomme (l'origine est en son milieu)
-S.c_socle = [
-  A(el(0, 16, 300, 46), N, .16),
-  P(el(0, 8, 280, 44), GV(-36, 52, '#DDF0FF', '#9AC4EE'), 6), P(el(0, 0, 280, 44), GV(-44, 44, '#FFFFFF', '#CFE6FA'), 6),
-  T(el(0, 0, 216, 32), '#7FD3FF', 6, .9), T(el(0, 0, 150, 21), '#B8E8FF', 5, .9), A(el(0, 0, 90, 12), '#7FD3FF', .5),
-];
-S.c_socle_lueur = [A(el(0, 0, 300, 60), GR(0, 0, 300, [0, '#B8F0FF', .8], [.5, '#7FD3FF', .35], [1, '#7FD3FF', 0]))];
+S.c_coche = [P(ci(0, 0, 15), '#3CCB6C', 4), T('M-7,0 l5,6 l10,-12', '#FFFFFF', 4.5)];
+S.c_rond_craie = [T(ci(0, 0, 40), '#FFFFFF', 3.5, .5)];
 
-// ═════════════ L'écran : trois courbes s'allument quand le cœur, les poumons et le cerveau sont en place ═════════════
-S.c_ecran = [
-  A(rr(8, 14, 380, 330, 30), N, .16),
-  P(rr(0, 0, 380, 330, 30), GV(0, 330, '#F4F8FF', '#C9D3E8'), 6), P(rr(20, 20, 340, 262, 18), GV(20, 282, '#16324F', '#0E2238'), 5),
-  T('M20,108 H360 M20,194 H360', '#2F5F8A', 2.5, .7), T([...Array(8)].map((_, i) => `M${58 + i * 40},22 V280`).join(' '), '#2F5F8A', 1.5, .4),
-  A(ci(40, 306, 8), '#3CCB6C'), A(ci(66, 306, 8), '#FFD23D'), P(rr(250, 296, 96, 20, 10), '#8793AD', 3.5),
-  P('M150,330 h80 l14,40 h-108 Z', GV(330, 370, '#C9D3E8', '#8793AD'), 5),
+// ═════════════ Oscar ═════════════
+// sa potence à roulettes : le pied, le mât derrière lui, le crochet au-dessus du crâne
+S.c_potence = [
+  A(el(0, 884, 250, 22), N, .16),
+  ...TT('M-190,872 H190', '#8793AD', 16), P(ci(-190, 878, 13), '#3A3454', 4.5), P(ci(190, 878, 13), '#3A3454', 4.5), P(ci(0, 882, 13), '#3A3454', 4.5),
+  T('M0,872 V26 Q0,6 22,6', N, 22), T('M0,872 V26 Q0,6 22,6', '#B9C2D6', 13), T('M-3,860 V40', '#FFFFFF', 3, .7),
+  P(ci(0, 44, 9), '#F2C14E', 4),
 ];
-S.c_ic_coeur = [P('M0,12 C-28,-8 -12,-26 0,-12 C12,-26 28,-8 0,12 Z', '#FF5A6E', 3.5)];
-S.c_ic_poumons = [P('M-3,-12 Q-22,-14 -24,8 Q-22,18 -6,16 Z', '#FF9DB0', 3.5), P('M3,-12 Q22,-14 24,8 Q22,18 6,16 Z', '#FF9DB0', 3.5), T('M0,-20 V-6', N, 4)];
-S.c_ic_cerveau = [P('M-22,4 Q-28,-14 -8,-18 Q4,-26 16,-16 Q30,-10 24,6 Q14,18 -6,16 Q-18,16 -22,4 Z', '#FFB0C8', 3.5), T('M-8,-10 q8,6 0,14 M6,-12 q-6,8 4,16', '#D9608A', 2.5)];
-
-// ═════════════ Le bonhomme ═════════════
-const MEMBRES = 'M-140,344 Q-204,430 -214,566 M140,344 Q204,430 214,566', JAMBES = 'M-62,690 L-66,838 M62,690 L66,838';
-const TRONC = 'M-150,326 Q-150,298 -112,296 L112,296 Q150,298 150,326 L140,610 Q138,708 72,716 L-72,716 Q-138,708 -140,610 Z';
-S.c_corps = [
-  // le contour sombre de tout le corps d'abord, puis la couleur par-dessus : une seule silhouette
-  T(MEMBRES, N, 70), T(JAMBES, N, 92), T('M0,286 V322', N, 84), P(TRONC, N, 14), P(el(0, 186, 116, 130), N, 14), P(el(-116, 204, 20, 28), N, 12), P(el(116, 204, 20, 28), N, 12),
-  P(ci(-216, 574, 34), N, 12), P(ci(216, 574, 34), N, 12),
-  T(MEMBRES, PEAU, 56), T(JAMBES, PEAU, 78), T('M0,286 V322', PEAU, 70), A(TRONC, PEAU), A(el(0, 186, 116, 130), PEAU), A(el(-116, 204, 20, 28), PEAU), A(el(116, 204, 20, 28), PEAU),
-  A(ci(-216, 574, 34), PEAU), A(ci(216, 574, 34), PEAU), T('M-116,194 q-8,10 0,22 M116,194 q8,10 0,22', PEAU_OMBRE, 4),
-  // un peu d'ombre du côté droit, un reflet du côté gauche : il a du volume
-  A('M150,326 L140,610 Q138,708 72,716 L40,716 Q110,690 112,600 L118,326 Z', PEAU_OMBRE, .55), T('M158,350 Q214,430 226,548', PEAU_OMBRE, 14, .7), T('M84,700 L88,830 M-40,700 L-44,830', PEAU_OMBRE, 14, .6),
-  A('M60,300 Q112,196 60,70 Q130,110 116,196 Q112,270 60,300 Z', PEAU_OMBRE, .5),
-  T('M-126,350 Q-178,420 -190,520', '#FFFFFF', 12, .6), T('M-132,330 L-126,560', '#FFFFFF', 10, .5), T('M-84,700 L-86,820', '#FFFFFF', 10, .5), T('M-96,150 Q-88,96 -40,72', '#FFFFFF', 12, .6),
-  // les baskets
-  ...[-1, 1].flatMap(k => [P(`M${k * 28},826 Q${k * 24},866 ${k * 50},868 L${k * 130},868 Q${k * 150},864 ${k * 144},846 Q${k * 124},822 ${k * 96},824 Z`, GV(822, 868, '#FF8A7A', '#D9302A'), 6),
-    A(`M${k * 104},836 Q${k * 142},842 ${k * 144},856 L${k * 142},866 L${k * 104},866 Z`, '#FFFFFF'), T(`M${k * 30},866 H${k * 138}`, '#FFFFFF', 6), T(`M${k * 30},868 H${k * 138}`, N, 2.5), T(`M${k * 56},832 l${k * 12},14 M${k * 72},830 l${k * 12},14`, '#FFFFFF', 4.5)]),
+S.os_colonne = [
+  ...[...Array(15)].flatMap((_, i) => { const y = 262 + i * 23, w = 30 + (i > 9 ? (i - 9) * 2.2 : 0); return [T(`M${-w / 2 - 9},${y + 8} h${w + 18}`, N, 12), T(`M${-w / 2 - 9},${y + 8} h${w + 18}`, OS_OMBRE, 6), P(rr(-w / 2, y, w, 17, 6), IVOIRE(-4, y + 4, 30), 4.5)]; }),
 ];
-// l'intérieur : la fenêtre du crâne et celle du tronc, où vont les organes
-S.c_fenetres = [
-  P(el(0, 126, 92, 60), GR(0, 114, 110, [0, '#3A64A8'], [1, '#20386C']), 5, '#5B8FD6'),
-  P('M-104,320 Q-110,302 -84,300 L84,300 Q110,302 104,320 L112,524 Q116,644 60,686 Q0,706 -60,686 Q-116,644 -112,524 Z', GR(0, 440, 300, [0, '#3A64A8'], [1, '#1E3566']), 5, '#5B8FD6'),
-  T('M-106,380 H106 M-110,460 H110 M-112,540 H112 M-104,620 H104 M-56,302 V690 M0,302 V702 M56,302 V690', '#6C9AE0', 1.5, .3),
+S.os_bassin = [
+  P('M-104,528 Q-64,504 -24,548 L24,548 Q64,504 104,528 Q116,582 70,608 Q44,620 24,598 L-24,598 Q-44,620 -70,608 Q-116,582 -104,528 Z', IVOIRE(-30, 540, 150), 7),
+  A(el(-50, 582, 16, 13), CREUX, .85), A(el(50, 582, 16, 13), CREUX, .85), T('M-16,556 q16,10 32,0 M-12,572 q12,8 24,0', OS_OMBRE, 4), T('M-90,534 Q-64,520 -38,544', '#FFFFFF', 6, .8),
+  P(ci(-58, 602, 14), OS, 5), P(ci(58, 602, 14), OS, 5),
 ];
-// la vitre par-dessus les organes : deux reflets
-S.c_vitre = [T('M-86,330 Q-96,420 -94,520', '#FFFFFF', 9, .28), T('M-66,326 Q-72,380 -70,430', '#FFFFFF', 5, .2), T('M-70,112 Q-56,86 -24,78', '#FFFFFF', 7, .3)];
-// le visage : le blanc des yeux, les joues ; la pupille et les bouches sont posées par le jeu
-S.c_visage = [P(el(-42, 232, 22, 25), '#FFFFFF', 5), P(el(42, 232, 22, 25), '#FFFFFF', 5), A(el(-80, 262, 18, 12), '#FF8FA8', .55), A(el(80, 262, 18, 12), '#FF8FA8', .55)];
-S.c_pupille = [A(ci(0, 0, 11), N), A(ci(3.5, -4, 3.8), '#FFFFFF')];
-S.c_bouche = [T('M-26,-4 Q0,20 26,-4', N, 6.5)];
-S.c_bouche_ravi = [P('M-30,-8 Q0,34 30,-8 Q0,4 -30,-8 Z', '#7A1E3A', 5), A('M-12,12 Q0,4 12,12 Q0,22 -12,12 Z', '#FF7A9A')];
-S.c_bouche_oh = [P(el(0, 4, 13, 16), '#7A1E3A', 5)];
+// les côtes et le sternum, devant les poumons et le cœur ; les clavicules et les épaules
+const cote = (k, y, w, courte) => `M${k * 10},${y} Q${k * w},${y - 12} ${k * (w + 4)},${y + 20} Q${k * w},${y + 34} ${k * (w - (courte ? 16 : 40))},${y + 31}`;
+const COTES = [[292, 90], [316, 106], [340, 116], [364, 120], [388, 116], [412, 106, 1], [434, 90, 1]];
+S.os_cotes = [
+  T(COTES.flatMap(([y, w, c]) => [cote(-1, y, w, c), cote(1, y, w, c)]).join(' '), N, 19), T(COTES.flatMap(([y, w, c]) => [cote(-1, y, w, c), cote(1, y, w, c)]).join(' '), OS, 11),
+  T(COTES.map(([y, w]) => `M${-w * .5},${y - 6} q${-w * .3},2 ${-w * .44},14`).join(' '), '#FFFFFF', 3.5, .8), T(COTES.map(([y, w]) => `M${w * .96},${y + 14} q2,10 -6,16`).join(' '), OS_OMBRE, 4, .9),
+  P(rr(-13, 280, 26, 132, 11), IVOIRE(-4, 300, 60), 5.5), T('M-11,312 h22 M-11,338 h22 M-11,364 h22 M-11,388 h22', OS_OMBRE, 3),
+];
+S.os_epaules = [
+  T('M-12,278 Q-70,258 -124,278 M12,278 Q70,258 124,278', N, 21), T('M-12,278 Q-70,258 -124,278 M12,278 Q70,258 124,278', OS, 13), T('M-30,270 Q-70,256 -110,268', '#FFFFFF', 4, .8),
+  P(ci(-128, 286, 17), IVOIRE(-132, 282, 20), 5.5), P(ci(128, 286, 17), IVOIRE(124, 282, 20), 5.5),
+];
+// le crâne (l'origine est en son milieu) : ouvert sur le dessus, pour recevoir le cerveau
+S.os_crane = [
+  P('M-90,-18 Q-94,-94 0,-98 Q94,-94 90,-18 Q90,22 66,36 L60,64 Q40,76 0,76 Q-40,76 -60,64 L-66,36 Q-90,22 -90,-18 Z', IVOIRE(-30, -40, 150), 7),
+  A('M90,-18 Q90,22 66,36 L60,64 Q40,76 20,76 Q52,40 56,-10 Q58,-60 30,-92 Q94,-80 90,-18 Z', OS_OMBRE, .6),
+  P(el(0, -52, 72, 40), GR(0, -60, 80, [0, '#4A3A7A'], [1, '#1E1638']), 5.5), T('M-60,-68 Q-30,-88 10,-88', '#8E7ACF', 4, .6),
+  P(el(-36, 4, 26, 28), CREUX, 4), P(el(36, 4, 26, 28), CREUX, 4), P('M0,26 L-11,46 Q0,52 11,46 Z', CREUX, 3.5),
+  P(rr(-40, 56, 80, 22, 7), '#FFFFFF', 4.5), T('M-24,58 v18 M-8,58 v18 M8,58 v18 M24,58 v18', N, 3),
+  T('M-70,-20 Q-66,6 -56,22', '#FFFFFF', 7, .8), T('M60,-58 l-10,10 l8,6 l-8,10', OS_OMBRE, 3.5),
+];
+S.os_machoire = [
+  P('M-58,-10 Q-60,26 -32,36 Q0,42 32,36 Q60,26 58,-10 L42,-8 Q0,6 -42,-8 Z', IVOIRE(-16, 10, 70), 6.5),
+  P(rr(-34, -14, 68, 18, 6), '#FFFFFF', 4.5), T('M-20,-12 v14 M-7,-12 v14 M7,-12 v14 M20,-12 v14', N, 3), T('M-40,14 Q0,26 40,14', OS_OMBRE, 4, .8),
+];
+S.os_cou = [...[0, 1, 2].flatMap(i => [P(rr(-15, 232 + i * 12, 30, 11, 5), IVOIRE(-3, 236 + i * 12, 20), 4)])];
+S.os_oeil = [P(ci(0, 0, 17), '#FFFFFF', 3.5), A(ci(-5, -6, 4), '#EAF4FF')];
+S.os_pupille = [A(ci(0, 0, 8.5), N), A(ci(2.6, -3, 3), '#FFFFFF')];
+// les os des bras et des jambes (l'origine est à l'articulation du haut)
+S.os_humerus = os_long(128, 15);
+S.os_avantbras = [...os_long(118, 8, 9).map(f => ({ ...f, d: f.d })), ...os_long(118, 8, 9)].map((f, i, t) => ({ ...f, d: f.d.replace(/M(-?[\d.]+),/g, (m, x) => 'M' + r1(parseFloat(x) + (i < t.length / 2 ? -7 : 7)) + ',') }));
+S.os_main = [
+  P(rr(-17, -2, 34, 24, 9), IVOIRE(-6, 6, 26), 5),
+  ...[-12, -4, 4, 12].flatMap((x, i) => [T(`M${x},22 V${44 + (i === 1 || i === 2 ? 8 : 0)}`, N, 11), T(`M${x},22 V${44 + (i === 1 || i === 2 ? 8 : 0)}`, OS, 6), T(`M${x - 3},34 h6`, OS_OMBRE, 2.5)]),
+  T('M-17,8 L-30,24', N, 11), T('M-17,8 L-30,24', OS, 6),
+];
+S.os_femur = os_long(128, 19);
+S.os_tibia = [...os_long(118, 13, 13), T('M12,14 V104', N, 11), T('M12,14 V104', OS, 5)];
+S.os_pied = [
+  P('M-14,-4 Q-16,22 0,24 L52,26 Q66,24 62,14 Q44,2 14,-2 Z', IVOIRE(10, 6, 50), 5.5), T('M30,8 L56,16 M24,16 L58,22', OS_OMBRE, 3), T('M-4,2 Q10,-2 24,4', '#FFFFFF', 4, .8),
+];
 
 // ═════════════ Les organes (chacun autour de son milieu) ═════════════
 S.o_cerveau = [
   P('M-78,14 Q-92,-22 -62,-40 Q-44,-62 -12,-56 Q10,-70 36,-56 Q70,-56 80,-24 Q94,4 70,26 Q56,46 20,44 Q-10,54 -40,42 Q-70,42 -78,14 Z', GR(-20, -24, 110, [0, '#FFD0DE'], [.6, '#FF9DBA'], [1, '#E0688E']), 5.5),
   T('M-2,-56 Q-10,-20 0,44', '#D9608A', 4, .8), T('M-56,-30 q16,6 12,22 q-6,14 10,22 M-30,-46 q10,14 0,26 M28,-48 q-12,14 2,28 M58,-34 q-18,8 -10,24 q10,10 -4,22 M-64,16 q14,-6 26,4 M40,22 q14,-10 26,-2', '#D9608A', 3.5, .8),
-  T('M-58,-32 Q-40,-50 -16,-48', '#FFFFFF', 6, .6), ...frimousse(0, 6, 1.15),
+  T('M-58,-32 Q-40,-50 -16,-48', '#FFFFFF', 6, .6),
 ];
 S.o_poumons = [
   ...TT('M0,-88 V-40 M0,-42 Q-16,-30 -30,-22 M0,-42 Q16,-30 30,-22', '#9AD0F5', 9),
   P('M-12,-46 Q-66,-62 -88,10 Q-98,72 -52,76 Q-10,74 -10,20 Z', GR(-58, -14, 100, [0, '#FFD0D8'], [.6, '#FF9DB0'], [1, '#E0687E']), 5.5), P('M12,-46 Q66,-62 88,10 Q98,72 52,76 Q10,74 10,20 Z', GR(42, -14, 100, [0, '#FFD0D8'], [.6, '#FF9DB0'], [1, '#E0687E']), 5.5),
   T('M-30,-22 q-18,14 -20,40 M-36,-6 q-18,4 -30,22 M-30,10 q-8,16 -4,36 M30,-22 q18,14 20,40 M36,-6 q18,4 30,22 M30,10 q8,16 4,36', '#D9506A', 3.5, .7),
-  T('M-74,-10 Q-62,-40 -34,-46', '#FFFFFF', 6, .6), ...frimousse(-50, 30, .95), ...frimousse(50, 30, .95),
+  T('M-74,-10 Q-62,-40 -34,-46', '#FFFFFF', 6, .6),
 ];
 S.o_coeur = [
   ...TT('M-8,-30 Q-12,-52 -30,-56', '#5B8FE8', 11), ...TT('M12,-30 Q14,-56 34,-60 M8,-34 Q4,-50 14,-64', '#F0483E', 11),
   P('M0,42 C-52,6 -44,-40 -12,-34 C-2,-34 2,-28 4,-24 C10,-40 46,-40 44,-4 C42,18 20,32 0,42 Z', GR(-12, -14, 60, [0, '#FF9A8A'], [.55, '#F0483E'], [1, '#B5261F']), 5.5),
-  T('M-30,-12 Q-28,-26 -14,-28', '#FFFFFF', 6, .7), T('M4,-24 Q0,0 8,22', '#B5261F', 3, .6), ...frimousse(2, 4, .85),
+  T('M-30,-12 Q-28,-26 -14,-28', '#FFFFFF', 6, .7), T('M4,-24 Q0,0 8,22', '#B5261F', 3, .6),
 ];
 S.o_estomac = [
   ...TT('M-22,-62 Q-24,-44 -14,-34', '#FFB08A', 13),
   P('M-22,-36 Q20,-56 44,-22 Q60,12 34,40 Q8,62 -24,48 Q-46,40 -52,56 Q-64,48 -58,30 Q-48,10 -28,16 Q-16,0 -22,-36 Z', GR(6, -10, 80, [0, '#FFD6BE'], [.6, '#FFA47A'], [1, '#E0703E']), 5.5),
-  T('M-8,-34 Q20,-38 34,-14', '#FFFFFF', 6, .6), T('M-10,30 q14,8 30,0', '#D9623A', 3, .6), ...frimousse(10, 6, .95),
+  T('M-8,-34 Q20,-38 34,-14', '#FFFFFF', 6, .6), T('M-10,30 q14,8 30,0', '#D9623A', 3, .6),
 ];
 S.o_foie = [
   P('M-70,-14 Q-66,-40 -26,-38 Q30,-40 64,-22 Q78,-12 66,2 Q30,30 -20,34 Q-64,36 -72,10 Q-74,-2 -70,-14 Z', GR(-20, -16, 100, [0, '#D98A6A'], [.6, '#B0563C'], [1, '#7E3422']), 5.5),
-  T('M-52,-22 Q-30,-32 0,-30', '#FFC2A8', 6, .6), T('M4,-34 Q-2,-6 6,24', '#7E3422', 3, .5), ...frimousse(-22, 0, .95),
+  T('M-52,-22 Q-30,-32 0,-30', '#FFC2A8', 6, .6), T('M4,-34 Q-2,-6 6,24', '#7E3422', 3, .5),
 ];
 S.o_intestins = [
   // le gros intestin fait le tour ; le petit se replie au milieu
@@ -124,7 +137,7 @@ S.o_intestins = [
 S.o_vessie = [
   ...TT('M-30,-34 Q-24,-18 -14,-10 M30,-34 Q24,-18 14,-10', '#FFD98A', 8),
   P('M0,-20 Q-40,-18 -38,8 Q-34,32 0,32 Q34,32 38,8 Q40,-18 0,-20 Z', GR(-10, -4, 46, [0, '#FFF6B8'], [.6, '#FFE066'], [1, '#E8B020']), 5.5),
-  T('M-24,-4 Q-18,-14 -6,-16', '#FFFFFF', 5, .7), ...frimousse(0, 8, .8),
+  T('M-24,-4 Q-18,-14 -6,-16', '#FFFFFF', 5, .7),
 ];
 // l'endroit qui attend un organe : une lueur (le jeu dessine autour un rond de tirets qui tourne)
 S.c_lueur = [A(ci(0, 0, 100), GR(0, 0, 100, [0, '#FFFFFF', 1], [.5, '#FFF6B8', .7], [1, '#FFE066', 0]))];
@@ -141,18 +154,21 @@ S.c_globule = [P(ci(0, 0, 7), GR(-2, -2, 8, [0, '#FF9A8A'], [1, '#D9302A']), 2.5
 
 // Les organes : clé, le nom (avec son article), où il va (x, y), la place qu'il prend (largeur, hauteur), sa profondeur
 // (pour le petit effet de relief quand le bonhomme tourne), ce que la voix dit une fois qu'il est en place, sa couleur.
+// Les organes : clé, le nom (avec son article), où il va (x, y), la place qu'il prend (largeur, hauteur), sa profondeur
+// (les côtes passent devant les poumons et le cœur ; tout glisse un peu quand Oscar tourne), ce que la voix dit une fois
+// qu'il est en place, sa couleur, sa taille dans le corps.
 const LISTES = { organes: [
-  ['cerveau', 'le cerveau', '0', '128', '172', '112', '0.9', "Le cerveau ! C'est lui qui pense, et qui commande tout le corps.", '#FF7AB0'],
-  ['poumons', 'les poumons', '0', '372', '200', '170', '0.3', "Les poumons ! Ils se remplissent d'air quand on respire.", '#48B0F8'],
-  ['coeur', 'le cœur', '14', '388', '100', '104', '0.7', 'Le cœur ! Il bat pour envoyer le sang partout. Boum boum !', '#F0483E'],
-  ['estomac', "l'estomac", '58', '488', '124', '128', '0.5', "L'estomac ! C'est là que va ce qu'on mange.", '#FF9A3D'],
-  ['foie', 'le foie', '-50', '474', '156', '80', '0.45', 'Le foie ! Il nettoie le sang et garde des forces.', '#B0563C'],
-  ['intestins', 'les intestins', '0', '572', '180', '124', '0.35', 'Les intestins ! Ils finissent de digérer le repas.', '#F2A07A'],
-  ['vessie', 'la vessie', '0', '656', '90', '70', '0.4', "La vessie ! Elle garde le pipi jusqu'aux toilettes.", '#FFD23D'],
+  ['cerveau', 'le cerveau', '0', '96', '150', '98', '0.95', "Le cerveau ! C'est lui qui pense, et qui commande tout le corps.", '#FF7AB0', '0.84'],
+  ['poumons', 'les poumons', '0', '360', '176', '150', '0.4', "Les poumons ! Ils se remplissent d'air quand on respire.", '#48B0F8', '0.9'],
+  ['coeur', 'le cœur', '14', '374', '84', '92', '0.5', 'Le cœur ! Il bat pour envoyer le sang partout. Boum boum !', '#F0483E', '0.86'],
+  ['estomac', "l'estomac", '54', '486', '102', '106', '0.36', "L'estomac ! C'est là que va ce qu'on mange.", '#FF9A3D', '0.84'],
+  ['foie', 'le foie', '-52', '480', '138', '68', '0.3', 'Le foie ! Il nettoie le sang et garde des forces.', '#B0563C', '0.88'],
+  ['intestins', 'les intestins', '0', '556', '150', '94', '0.14', 'Les intestins ! Ils finissent de digérer le repas.', '#F2A07A', '0.82'],
+  ['vessie', 'la vessie', '0', '628', '74', '56', '0.2', "La vessie ! Elle garde le pipi jusqu'aux toilettes.", '#FFD23D', '0.82'],
 ] };
 
 // { n: nom, s: dessin, x, y, e: échelle, r: rotation, c: couleurs }
 const SCENES = { salle: [{ n: 'salle', s: 'c_salle', x: 0, y: 0 }] };
-const CIELS = { salle: ['#E4F8F2', '#C8EEE4', '#8CC6B8', 1] };
+const CIELS = { salle: ['#FFF6E2', '#FBE7C2', '#C28E52', 1] };
 
 module.exports = { S, SCENES, CIELS, LISTES };

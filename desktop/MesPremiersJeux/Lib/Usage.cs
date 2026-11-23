@@ -209,7 +209,7 @@ namespace MesPremiersJeux.Lib
             ["NumberPartyGame"] = "Fête des nombres", ["NumbersGame"] = "Les nombres", ["CompleteGame"] = "Le panier",
             ["NumberFormsGame"] = "Le nombre dans tous ses états", ["ModelCopyGame"] = "Reproduis le modèle",
             ["ColorMagicGame"] = "Couleurs magiques", ["SizeGame"] = "Grand ou petit", ["PatternGame"] = "Les suites",
-            ["NecklaceGame"] = "Le collier de perles", ["VocabGame"] = "L'imagier", ["BodyGame"] = "Le corps", ["InsideBodyGame"] = "Dans mon corps",
+            ["NecklaceGame"] = "Le collier de perles", ["VocabGame"] = "L'imagier", ["BodyGame"] = "Le corps", ["InsideBodyGame"] = "Oscar le squelette",
             ["CapitalsGame"] = "Le tour du monde", ["SuitcaseGame"] = "La valise du voyageur", ["FoodGame"] = "Les bons plats",
             ["PlanetsGame"] = "Les planètes", ["DayNightGame"] = "Jour et nuit",
             ["MagicGame"] = "Bulles magiques", ["BalloonsGame"] = "Ballons 3D", ["ColorsGame"] = "Couleurs",

@@ -80,6 +80,9 @@ namespace MesPremiersJeux.Games
         /// <summary>L'enfant a choisi une zone (au regard, au doigt ou à la souris).</summary>
         public virtual void Appuie(string id) { }
 
+        /// <summary>Le temps de fixation réglé pour l'enfant, en secondes : un jeu qui fait attendre le regard (le poisson qui mord) attend ce temps-là.</summary>
+        public double Fixation = 0.9;
+
         public int Reussites { get; protected set; }
         /// <summary>La force du bruit de fond, de 0 à 1 (l'eau qui coule…).</summary>
         public virtual double Bruit => 0;
