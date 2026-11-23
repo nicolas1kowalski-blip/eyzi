@@ -29,6 +29,8 @@ namespace MesPremiersJeux.Games
         private readonly Grid _racine = new Grid();
         private readonly Canvas _monde = new Canvas { Width = VecMoteur.W, Height = VecMoteur.H };
         private readonly Canvas[] _calques;
+        private readonly Canvas _boutons = new Canvas();      // les zones du moteur : des boutons invisibles, pour le regard
+        private int _zonesVues = -1;
         private readonly int[] _etats;
         private readonly Dictionary<VecObjet, Vue> _vues = new Dictionary<VecObjet, Vue>();
         private readonly GradientStop _cielHaut = new GradientStop(Colors.LightSkyBlue, 0), _cielBas = new GradientStop(Colors.White, 0.56),
@@ -64,6 +66,7 @@ namespace MesPremiersJeux.Games
                 _etats[i] = -1;
                 _monde.Children.Add(_calques[i]);
             }
+            _monde.Children.Add(_boutons);
             _racine.Children.Add(new Viewbox { Stretch = Stretch.Uniform, Child = _monde });
             _racine.Children.Add(_points);
             _hote.Content = _racine;
@@ -80,6 +83,11 @@ namespace MesPremiersJeux.Games
                     case "pof": SoundFx.Puff(); break;
                     case "pschhh": SoundFx.Sizzle(); break;
                     case "plouf": SoundFx.Plouf(); break;
+                    case "pouet": SoundFx.Honk(); break;
+                    case "tambour": SoundFx.Drum(); break;
+                    case "boum": SoundFx.Boom(); break;
+                    case "sifflet": SoundFx.Whistle(); break;
+                    case "clic": SoundFx.Shutter(); break;
                     case "note": SoundFx.PlayNote(n); break;
                     default: SoundFx.PopSound(); break;
                 }
@@ -218,6 +226,21 @@ namespace MesPremiersJeux.Games
                     if (o.Genre == VecGenre.Ligne && v.Decalage != o.Decalage) { v.Decalage = o.Decalage; ((Path)v.Ui).StrokeDashOffset = o.Decalage; }
                 }
 
+            // les zones que l'enfant peut choisir : un bouton invisible sur chacune (le regard le choisit comme partout ailleurs)
+            if (_moteur.Zones != null && _moteur.EtatDesZones != _zonesVues)
+            {
+                _zonesVues = _moteur.EtatDesZones;
+                _boutons.Children.Clear();
+                foreach (var z in _moteur.Zones)
+                {
+                    string id = z.Id;
+                    var b = new Button { Width = z.L, Height = z.H, Template = BoutonInvisible, Focusable = false, Cursor = System.Windows.Input.Cursors.Hand };
+                    b.Click += (s, e) => { if (!GameControl.Paused) _moteur.Appuie(id); };
+                    Canvas.SetLeft(b, z.X); Canvas.SetTop(b, z.Y);
+                    _boutons.Children.Add(b);
+                }
+            }
+
             // le fond de la page et les points d'avancement
             string fond = _moteur.CielHaut + _moteur.CielBas + _moteur.Sol;
             if (fond != _fondVu)
@@ -234,6 +257,33 @@ namespace MesPremiersJeux.Games
                     _points.Children.Add(new Ellipse { Width = 18, Height = 18, Margin = new Thickness(5, 0, 5, 0), Stroke = Brushes.White, StrokeThickness = 3, Opacity = 0.9,
                         Fill = i < _numeroVu ? Brosse("#FFE066") : i == _numeroVu ? Brushes.White : Brushes.Transparent });
             }
+        }
+
+        private static readonly ControlTemplate BoutonInvisible = FaisBoutonInvisible();
+        private static ControlTemplate FaisBoutonInvisible()
+        {
+            var bord = new FrameworkElementFactory(typeof(Border));
+            bord.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+            bord.SetValue(Border.CornerRadiusProperty, new CornerRadius(26));
+            var t = new ControlTemplate(typeof(Button)) { VisualTree = bord };
+            t.Seal();
+            return t;
+        }
+
+        /// <summary>Une image de la scène telle qu'elle est dessinée (x, y, largeur, hauteur dans le repère du jeu).</summary>
+        public System.Windows.Media.Imaging.BitmapSource Capture(int x, int y, int largeur, int hauteur)
+        {
+            var image = new System.Windows.Media.Imaging.RenderTargetBitmap((int)VecMoteur.W, (int)VecMoteur.H, 96, 96, PixelFormats.Pbgra32);
+            var dessin = new DrawingVisual();
+            using (var c = dessin.RenderOpen())
+            {
+                c.DrawRectangle(_racine.Background, null, new Rect(0, 0, VecMoteur.W, VecMoteur.H));
+                c.DrawRectangle(new VisualBrush(_monde) { Stretch = Stretch.Fill, ViewboxUnits = BrushMappingMode.Absolute, Viewbox = new Rect(0, 0, VecMoteur.W, VecMoteur.H) }, null, new Rect(0, 0, VecMoteur.W, VecMoteur.H));
+            }
+            image.Render(dessin);
+            var morceau = new System.Windows.Media.Imaging.CroppedBitmap(image, new Int32Rect(x, y, largeur, hauteur));
+            morceau.Freeze();
+            return morceau;
         }
 
         private Vue VueDe(VecObjet o)

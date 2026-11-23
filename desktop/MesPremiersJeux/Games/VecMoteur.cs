@@ -50,6 +50,9 @@ namespace MesPremiersJeux.Games
         public void Vide() { if (Objets.Count > 0) { Objets.Clear(); Etat++; } }
     }
 
+    /// <summary>Une zone que l'enfant peut choisir (une carte, un bouton) : l'application pose dessus un bouton invisible.</summary>
+    internal sealed class VecZone { public string Id; public double X, Y, L, H; }
+
     internal abstract class VecMoteur
     {
         public const double W = 1600, H = 900;
@@ -69,6 +72,13 @@ namespace MesPremiersJeux.Games
         public Action<string, int> Son = (s, i) => { };   // « klaxon », « pschhh », « plouf », « pop », « note » (+ numéro)
         public Action Bravo = () => { };                  // la fête (confettis, étoile)
         public Func<bool> VoixOccupee = () => false;
+        public Action<string> Demande = s => { };         // autre chose : « photo » (garder une image du jeu)…
+
+        /// <summary>Les zones que l'enfant peut choisir, s'il y en a ; EtatDesZones change quand elles changent.</summary>
+        public virtual List<VecZone> Zones => null;
+        public virtual int EtatDesZones => 0;
+        /// <summary>L'enfant a choisi une zone (au regard, au doigt ou à la souris).</summary>
+        public virtual void Appuie(string id) { }
 
         public int Reussites { get; protected set; }
         /// <summary>La force du bruit de fond, de 0 à 1 (l'eau qui coule…).</summary>
