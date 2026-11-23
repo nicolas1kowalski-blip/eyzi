@@ -26,8 +26,11 @@ permissions:
 jobs:
   promote:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.promo.outputs.tag }}
     steps:
       - name: Promotion
+        id: promo
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
@@ -43,6 +46,7 @@ jobs:
           fi
           [ -n "$TAG" ] || { echo "Aucune version test à promouvoir."; exit 1; }
           echo "Promotion de $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,isPrerelease
           # Les versions prod plus anciennes redeviennent des versions test : une seule prod à la fois.
@@ -55,3 +59,56 @@ jobs:
           done
           # La branche qui a servi de déclencheur (« prod-v… ») ne sert plus : on la supprime.
           case "$GITHUB_REF" in refs/heads/prod-*) gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/$GITHUB_REF" || true;; esac
+
+  # La même version part au Microsoft Store : le paquet MSIX de la version promue est déposé dans
+  # l'espace partenaires et envoyé en certification (Microsoft le valide, puis le Store met à jour
+  # les tablettes installées par le Store). Il faut quatre secrets GitHub, créés une fois dans
+  # l'espace partenaires (Paramètres du compte → Utilisateurs → Applications Microsoft Entra) :
+  #   STORE_TENANT_ID, STORE_SELLER_ID, STORE_CLIENT_ID, STORE_CLIENT_SECRET
+  # Sans eux, cette étape ne fait rien et la promotion reste ce qu'elle était.
+  store:
+    needs: promote
+    runs-on: windows-latest
+    env:
+      STORE_APP_ID: 9N0PL01VFJLG
+      TAG: ${{ needs.promote.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      STORE_TENANT_ID: ${{ secrets.STORE_TENANT_ID }}
+      STORE_SELLER_ID: ${{ secrets.STORE_SELLER_ID }}
+      STORE_CLIENT_ID: ${{ secrets.STORE_CLIENT_ID }}
+      STORE_CLIENT_SECRET: ${{ secrets.STORE_CLIENT_SECRET }}
+    steps:
+      - name: Secrets du Store présents ?
+        id: pret
+        shell: pwsh
+        run: |
+          if ($env:STORE_TENANT_ID -and $env:STORE_SELLER_ID -and $env:STORE_CLIENT_ID -and $env:STORE_CLIENT_SECRET) {
+            "oui=1" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "::notice::Secrets du Store absents : le paquet n'est pas envoyé au Microsoft Store (dépôt à la main)."
+          }
+
+      - name: Paquet de la version promue
+        if: steps.pret.outputs.oui == '1'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force paquet | Out-Null
+          gh release download $env:TAG --repo $env:GITHUB_REPOSITORY --pattern "Eyzi-Store-*.msix" --dir paquet
+          $f = Get-ChildItem paquet -Filter *.msix | Select-Object -First 1
+          if (-not $f) { Write-Error "Pas de paquet Store dans la version $env:TAG"; exit 1 }
+          Write-Host "Paquet : $($f.Name) ($([math]::Round($f.Length / 1MB)) Mo)"
+
+      - name: Outil du Microsoft Store
+        if: steps.pret.outputs.oui == '1'
+        uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
+
+      - name: Envoi au Microsoft Store
+        if: steps.pret.outputs.oui == '1'
+        shell: pwsh
+        run: |
+          msstore reconfigure --tenantId $env:STORE_TENANT_ID --sellerId $env:STORE_SELLER_ID --clientId $env:STORE_CLIENT_ID --clientSecret $env:STORE_CLIENT_SECRET
+          if ($LASTEXITCODE -ne 0) { Write-Error "Connexion à l'espace partenaires refusée"; exit 1 }
+          $f = Get-ChildItem paquet -Filter *.msix | Select-Object -First 1
+          msstore publish $f.FullName --appId $env:STORE_APP_ID
+          if ($LASTEXITCODE -ne 0) { Write-Error "Le Store a refusé l'envoi (une soumission est peut-être déjà en cours de validation)"; exit 1 }
+          Write-Host "::notice::$env:TAG envoyée au Microsoft Store : en attente de la validation de Microsoft."

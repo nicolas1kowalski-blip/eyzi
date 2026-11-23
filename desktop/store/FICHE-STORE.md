@@ -79,3 +79,25 @@ Publiée : **https://eyzi.fr/confidentialite.html** (c'est l'adresse à saisir d
 Le responsable nommé est « Eyzi » avec contact@eyzi.fr ; les hébergeurs sont cités sans pays
 (Supabase, Vercel, OVH) ; la durée est « tant que la licence est utilisée, suppression sur demande ».
 À préciser plus tard si besoin : le pays des serveurs et une durée chiffrée.
+
+## 5. Les mises à jour du Store, sans rien déposer à la main
+
+À chaque promotion en prod (`.github/workflows/promote.yml`), le paquet MSIX de la version promue est
+envoyé au Store et part en certification. Microsoft le valide (quelques heures à quelques jours), puis
+le Store met à jour les tablettes installées par le Store.
+
+Cela demande quatre secrets GitHub (dépôt → Settings → Secrets and variables → Actions). Sans eux,
+l'envoi ne se fait pas et la promotion reste ce qu'elle était.
+
+| Secret GitHub | Où le trouver |
+|---|---|
+| `STORE_TENANT_ID` | Espace partenaires → Paramètres du compte → Utilisateurs → Applications Microsoft Entra : l'ID du locataire |
+| `STORE_CLIENT_ID` | Même page : l'ID de l'application créée pour GitHub (rôle « Gestionnaire ») |
+| `STORE_CLIENT_SECRET` | Même page : « Ajouter une clé » sur cette application (affichée une seule fois) |
+| `STORE_SELLER_ID` | Espace partenaires → Paramètres du compte → Informations légales : l'ID vendeur |
+
+Ces valeurs ne vont que dans les secrets GitHub : jamais dans le dépôt, ni dans une conversation.
+
+Limites : la fiche (textes, images) se modifie toujours dans l'espace partenaires ; si une soumission
+est déjà en cours de validation, l'envoi suivant est refusé (relancer la promotion une fois la
+première validée).
