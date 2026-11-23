@@ -1,5 +1,5 @@
-// Le banc d'essai du jeu « Le jet d'eau » : il fait tourner le VRAI moteur (Games/JetMoteur.cs, avec les dessins de
-// Games/JetArt.cs) sous Linux, lui joue un regard écrit à l'avance, et écrit une image SVG par instant demandé.
+// Le banc d'essai des jeux « dessinés » : il fait tourner le VRAI moteur d'un jeu (Games/JetMoteur.cs, Games/PecheMoteur.cs…,
+// avec ses dessins) sous Linux, lui joue un regard écrit à l'avance, et écrit une image SVG par instant demandé.
 // Usage : mono banc.exe <dossier de sortie> <scène de départ> <durée en s> <une image toutes les n> [graine]
 using System;
 using System.Collections.Generic;
@@ -19,13 +19,15 @@ static class Banc
         string dossier = a[0], scene = a.Length > 1 ? a[1] : "voiture";
         double duree = a.Length > 2 ? double.Parse(a[2], Inv) : 20; int chaque = a.Length > 3 ? int.Parse(a[3]) : 15;
         Directory.CreateDirectory(dossier);
-        var m = new JetMoteur(a.Length > 4 ? int.Parse(a[4]) : 7);
+        int graine = a.Length > 4 ? int.Parse(a[4]) : 7;
+        string[] scenesDuJet = { "voiture", "feu", "remplir", "jardin", "roue" };
+        VecMoteur m = new JetMoteur(graine);
         var journal = new StringBuilder();
         double t = 0;
         m.Dit = s => journal.AppendLine(t.ToString("0.00", Inv) + "  VOIX  " + s);
         m.Son = (s, i) => journal.AppendLine(t.ToString("0.00", Inv) + "  SON   " + s + (i != 0 ? " " + i : ""));
         m.Bravo = () => journal.AppendLine(t.ToString("0.00", Inv) + "  BRAVO");
-        m.Demarre(Array.IndexOf(new[] { "voiture", "feu", "remplir", "jardin", "roue" }, scene));
+        m.Demarre(Math.Max(0, Array.IndexOf(scenesDuJet, scene)));
         // Le regard automatique : il va vers ce qu'il reste à arroser, y reste, et regarde parfois ailleurs une seconde.
         double gx = 800, gy = 420, ailleurs = 0; var alea = new Random(3);
         int image = 0;
@@ -56,10 +58,10 @@ static class Banc
         return "#FF00FF";
     }
 
-    static string Svg(JetMoteur m)
+    static string Svg(VecMoteur m)
     {
         var defs = new StringBuilder(); var corps = new StringBuilder(); int id = 0;
-        double h = JetMoteur.Horizon / JetMoteur.H * 100;
+        double h = m.Horizon / VecMoteur.H * 100;
         defs.Append($"<linearGradient id=\"fond\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"{m.CielHaut}\"/><stop offset=\"{N(h)}%\" stop-color=\"{m.CielBas}\"/><stop offset=\"{N(h)}%\" stop-color=\"{m.Sol}\"/><stop offset=\"1\" stop-color=\"{m.Sol}\"/></linearGradient>");
         corps.Append("<rect width=\"1600\" height=\"900\" fill=\"url(#fond)\"/>");
         foreach (var calque in m.Calques)
@@ -69,8 +71,8 @@ static class Banc
                 corps.Append($"<g transform=\"translate({N(o.X)},{N(o.Y)}) rotate({N(o.R)}) scale({o.SX.ToString("0.####", Inv)},{o.SY.ToString("0.####", Inv)})\" opacity=\"{N(o.Op)}\">");
                 switch (o.Genre)
                 {
-                    case JetGenre.Dessin:
-                        foreach (var f in JetArt.Dessins[o.Dessin])
+                    case VecGenre.Dessin:
+                        foreach (var f in m.Dessins[o.Dessin])
                         {
                             string fond = "none";
                             if (f.G != null)
@@ -88,20 +90,20 @@ static class Banc
                             corps.Append($"<path d=\"{f.D}\" fill=\"{fond}\" stroke=\"{trait}\" stroke-width=\"{N(f.W)}\" opacity=\"{N(f.O)}\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>");
                         }
                         break;
-                    case JetGenre.Plein:
+                    case VecGenre.Plein:
                         if (o.Points != null)
                         {
                             string clip = "";
-                            if (o.Decoupe != null) { string c = "c" + (id++); defs.Append($"<clipPath id=\"{c}\"><path d=\"{JetArt.Dessins[o.Decoupe][0].D}\"/></clipPath>"); clip = $" clip-path=\"url(#{c})\""; }
+                            if (o.Decoupe != null) { string c = "c" + (id++); defs.Append($"<clipPath id=\"{c}\"><path d=\"{m.Dessins[o.Decoupe][0].D}\"/></clipPath>"); clip = $" clip-path=\"url(#{c})\""; }
                             corps.Append($"<polygon points=\"{string.Join(" ", o.Points.Select(N))}\" fill=\"{o.Couleur}\"{clip}/>");
                         }
                         break;
-                    case JetGenre.Ligne:
+                    case VecGenre.Ligne:
                         if (o.Points != null)
                             corps.Append($"<polyline points=\"{string.Join(" ", o.Points.Select(N))}\" fill=\"none\" stroke=\"{o.Couleur}\" stroke-width=\"{N(o.Epaisseur)}\" stroke-linecap=\"round\" stroke-linejoin=\"round\""
                                 + (o.Tiret > 0 ? $" stroke-dasharray=\"{N(o.Tiret * o.Epaisseur)} {N(o.Espace * o.Epaisseur)}\" stroke-dashoffset=\"{N(o.Decalage * o.Epaisseur)}\"" : "") + "/>");
                         break;
-                    case JetGenre.Texte:
+                    case VecGenre.Texte:
                         corps.Append($"<text font-family=\"Arial Black,Arial\" font-weight=\"900\" font-size=\"{N(o.Taille)}\" text-anchor=\"middle\" dominant-baseline=\"middle\" fill=\"{o.Couleur}\" stroke=\"#2A1C4E\" stroke-width=\"10\" stroke-linejoin=\"round\" paint-order=\"stroke\">{o.Texte}</text>");
                         break;
                 }

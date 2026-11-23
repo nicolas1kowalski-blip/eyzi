@@ -9,75 +9,35 @@ namespace MesPremiersJeux.Games
     //
     //  Il ne connaît ni l'écran ni Windows : il tient une liste d'objets à dessiner
     //  (rangés par calques) et les fait bouger image par image. L'application le
-    //  dessine avec WPF (WaterJetGame.cs) ; le banc d'essai (desktop/jetdeau/banc)
+    //  dessine avec WPF (VecToile.cs) ; le banc d'essai (desktop/jeux-dessines/banc)
     //  le fait tourner sous Linux et en tire de vraies images. C'est le même code
     //  des deux côtés : ce qu'on voit sur les images est ce que fait le jeu.
     // ══════════════════════════════════════════════════════════════════════
 
-    internal enum JetGenre { Dessin, Plein, Ligne, Texte }
-
-    /// <summary>Un objet à dessiner : un dessin de JetArt, une forme pleine, une ligne ou un mot.</summary>
-    internal sealed class JetObjet
+    internal sealed partial class JetMoteur : VecMoteur
     {
-        public JetGenre Genre;
-        public string Dessin;             // Dessin : la clé dans JetArt.Dessins
-        public string[] Couleurs;         // Dessin : les couleurs « $nom » (nom, valeur, nom, valeur…)
-        public double X, Y, R, SX = 1, SY = 1, Op = 1;
-        public double E { get => SY; set { SX = value; SY = value; } }
-        public string Couleur;            // Plein, Ligne, Texte
-        public double[] Points;           // Plein, Ligne : x0, y0, x1, y1… dans le repère de l'objet
-        public int Etat;                  // change quand Points ou Texte changent (le dessinateur refait alors la forme)
-        public double Epaisseur, Tiret, Espace, Decalage;   // Ligne (tirets en unités d'épaisseur)
-        public string Decoupe;            // Plein : un dessin dont la première forme découpe l'objet (ex. l'eau dans l'aquarium)
-        public string Texte; public double Taille;          // Texte : centré sur l'origine, cerné de sombre
-        public JetObjet En(double x, double y, double e = 1, double r = 0) { X = x; Y = y; E = e; R = r; return this; }
-    }
-
-    /// <summary>Un calque : ses objets, du fond vers le devant.</summary>
-    internal sealed class JetCalque
-    {
-        public readonly List<JetObjet> Objets = new List<JetObjet>();
-        public int Etat;                  // change quand la liste change
-        public JetObjet Ajoute(JetObjet o) { Objets.Add(o); Etat++; return o; }
-        public JetObjet Avant(JetObjet repere, JetObjet o) { int i = Objets.IndexOf(repere); if (i < 0) Objets.Add(o); else Objets.Insert(i, o); Etat++; return o; }
-        public JetObjet Apres(JetObjet repere, JetObjet o) { int i = Objets.IndexOf(repere); if (i < 0) Objets.Add(o); else Objets.Insert(i + 1, o); Etat++; return o; }
-        public void Retire(JetObjet o) { if (Objets.Remove(o)) Etat++; }
-        public void Vide() { if (Objets.Count > 0) { Objets.Clear(); Etat++; } }
-    }
-
-    internal sealed partial class JetMoteur
-    {
-        public const double W = 1600, H = 900;
         private const double PivotY = 1076, LongueurLance = 404, Raccourci = 0.62;      // la lance est vue de derrière, dans sa longueur : elle paraît plus courte
 
         // Les calques, du fond vers le devant.
-        public readonly JetCalque Ciel = new JetCalque(), Decor = new JetCalque(), Eau = new JetCalque(), Avant = new JetCalque(), Effets = new JetCalque(), Rideau = new JetCalque();
-        public JetCalque[] Calques => new[] { Ciel, Decor, Eau, Avant, Effets, Rideau };
-
-        /// <summary>Le fond de la page : couleur du haut du ciel, du bas du ciel, et du sol sous l'image.</summary>
-        public string CielHaut = "#7CC8FF", CielBas = "#E4F6FF", Sol = "#63B24C";
-        /// <summary>La hauteur (dans la scène) où le ciel laisse la place au sol.</summary>
-        public const double Horizon = 506;
-
-        // Ce que le moteur demande à l'application.
-        public Action<string> Dit = s => { };             // faire parler la voix
-        public Action<string, int> Son = (s, i) => { };   // « klaxon », « pschhh », « plouf », « pop », « note » (+ numéro)
-        public Action Bravo = () => { };                  // la fête de fin de scène (confettis, étoile)
-        public Func<bool> VoixOccupee = () => false;
+        public readonly VecCalque Ciel = new VecCalque(), Decor = new VecCalque(), Eau = new VecCalque(), Avant = new VecCalque(), Effets = new VecCalque(), Rideau = new VecCalque();
+        private readonly VecCalque[] _calques;
+        public override VecCalque[] Calques => _calques;
+        public override Dictionary<string, VecForme[]> Dessins => JetArt.Dessins;
+        protected override VecCalque CalqueDesMots => Effets;
 
         /// <summary>La force du jet, de 0 à 1 (pour le volume du bruit de l'eau).</summary>
         public double Pression { get; private set; }
-        public int Reussites { get; private set; }
+        public override double Bruit => Pression;
         public int Numero { get; private set; } = -1;
-        public int NombreDeScenes => _scenes.Count;
+        public override int Etapes => _scenes.Count;
+        public override int Etape => Numero;
 
-        private readonly Random _alea;
-        private double _temps, _vu = -10, _sansProgres, _indice, _depuis;
-        private double _rx = W / 2, _ry = 420, _cx = W / 2, _cy = 420;      // le regard, et le point visé (qui le suit en douceur)
-        private readonly JetObjet _lance, _arceauBord, _arceau, _arceauReflet, _gantPoignee, _boucheEau, _jetBord, _jetCorps, _jetCoeur, _jetReflet, _jetFil, _jetFil2, _gerbeA, _gerbeB, _brume, _soleil, _rayons, _lueur, _vague;
+        private double _sansProgres, _indice, _depuis;
+        private double _cx = W / 2, _cy = 420;      // le point visé (il suit le regard en douceur)
+        private readonly VecObjet _lance, _arceauBord, _arceau, _arceauReflet, _gantPoignee, _boucheEau, _jetBord, _jetCorps, _jetCoeur, _jetReflet, _jetFil, _jetFil2, _gerbeA, _gerbeB, _brume, _soleil, _rayons, _lueur, _vague;
         private double _angle, _coup, _egoutte, _prochaineOnde, _prochaineGoutte;
         private bool _coulait;
-        private readonly JetObjet[] _nuages;
+        private readonly VecObjet[] _nuages;
         private readonly Bac _gouttes, _gadoue, _bulles, _mousse, _vapeur, _fumee, _braises, _ondes, _etoiles, _coeurs;
         private readonly Bac[] _bacs;
         private readonly List<Scene> _scenes = new List<Scene>();
@@ -85,12 +45,10 @@ namespace MesPremiersJeux.Games
         private enum Etat { Entree, Joue, Fete, Sortie }
         private Etat _etat;
         private bool _touche;
-        private sealed class Mot { public JetObjet O; public double Age, X, Y; }
-        private readonly List<Mot> _mots = new List<Mot>();
 
-        public JetMoteur(int graine = 0)
+        public JetMoteur(int graine = 0) : base(graine)
         {
-            _alea = graine == 0 ? new Random() : new Random(graine);
+            _calques = new[] { Ciel, Decor, Eau, Avant, Effets, Rideau };
 
             _lueur = Pose(Ciel, "lueur", 1380, 150);
             _rayons = Pose(Ciel, "rayons", 1380, 150);
@@ -109,18 +67,18 @@ namespace MesPremiersJeux.Games
             // Au premier plan : la lance, l'arceau de sa vanne et le gant qui le tire, l'eau dans sa bouche ;
             // puis le jet (il sort de la lance, donc il passe devant elle), la gerbe et les gouttes.
             _lance = Pose(Avant, "lance", W / 2, PivotY);
-            _arceauBord = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#2A1C4E", Epaisseur = 24 });
-            _arceau = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#B9C2D6", Epaisseur = 15 });
-            _arceauReflet = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 5, Op = 0.8 });
+            _arceauBord = Avant.Ajoute(new VecObjet { Genre = VecGenre.Ligne, Couleur = "#2A1C4E", Epaisseur = 24 });
+            _arceau = Avant.Ajoute(new VecObjet { Genre = VecGenre.Ligne, Couleur = "#B9C2D6", Epaisseur = 15 });
+            _arceauReflet = Avant.Ajoute(new VecObjet { Genre = VecGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 5, Op = 0.8 });
             _gantPoignee = Pose(Avant, "gant_poignee", 0, 0);
             _boucheEau = Pose(Avant, "bouche_eau", 0, 0);
             _boucheEau.Op = 0;
-            _jetBord = Avant.Ajoute(new JetObjet { Genre = JetGenre.Plein, Couleur = "#1E78D6", Op = 0 });
-            _jetCorps = Avant.Ajoute(new JetObjet { Genre = JetGenre.Plein, Couleur = "#48B0F8", Op = 0 });
-            _jetCoeur = Avant.Ajoute(new JetObjet { Genre = JetGenre.Plein, Couleur = "#9ADCFF", Op = 0 });
-            _jetReflet = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 5, Op = 0 });
-            _jetFil2 = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#CDEEFF", Epaisseur = 4, Tiret = 2, Espace = 7, Op = 0 });
-            _jetFil = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 5, Tiret = 3, Espace = 5, Op = 0 });
+            _jetBord = Avant.Ajoute(new VecObjet { Genre = VecGenre.Plein, Couleur = "#1E78D6", Op = 0 });
+            _jetCorps = Avant.Ajoute(new VecObjet { Genre = VecGenre.Plein, Couleur = "#48B0F8", Op = 0 });
+            _jetCoeur = Avant.Ajoute(new VecObjet { Genre = VecGenre.Plein, Couleur = "#9ADCFF", Op = 0 });
+            _jetReflet = Avant.Ajoute(new VecObjet { Genre = VecGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 5, Op = 0 });
+            _jetFil2 = Avant.Ajoute(new VecObjet { Genre = VecGenre.Ligne, Couleur = "#CDEEFF", Epaisseur = 4, Tiret = 2, Espace = 7, Op = 0 });
+            _jetFil = Avant.Ajoute(new VecObjet { Genre = VecGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 5, Tiret = 3, Espace = 5, Op = 0 });
             _brume = Pose(Avant, "brume", 0, 0); _brume.Op = 0;
             _gerbeA = Pose(Avant, "gerbe_a", 0, 0); _gerbeA.Op = 0;
             _gerbeB = Pose(Avant, "gerbe_b", 0, 0); _gerbeB.Op = 0;
@@ -139,33 +97,10 @@ namespace MesPremiersJeux.Games
         }
 
         /// <summary>Ouvre la première scène (à appeler une fois Dit, Son et Bravo branchés).</summary>
-        public void Demarre(int scene = 0) { if (_scene == null) { Ouvre(scene); _etat = Etat.Entree; _depuis = 0; } }
+        public override void Demarre(int scene = 0) { if (_scene == null) { Ouvre(scene); _etat = Etat.Entree; _depuis = 0; } }
 
         /// <summary>Ce qu'il reste à arroser, s'il en reste (pour le coup de pouce, et pour le regard automatique du banc d'essai).</summary>
-        public bool ProchaineCible(out double x, out double y) { x = y = 0; return _scene != null && _etat == Etat.Joue && _scene.Reste(out x, out y); }
-
-        // ------------------------------------------------------------------
-        //  Ce que l'application dit au moteur
-        // ------------------------------------------------------------------
-        /// <summary>L'enfant regarde ce point de la scène (ou y pose le pointeur).</summary>
-        public void Regard(double x, double y) { _rx = x; _ry = y; _vu = _temps; }
-
-        // ------------------------------------------------------------------
-        //  Petits outils
-        // ------------------------------------------------------------------
-        private JetObjet Pose(JetCalque calque, string dessin, double x, double y, double e = 1, params string[] couleurs)
-            => calque.Ajoute(new JetObjet { Genre = JetGenre.Dessin, Dessin = dessin, Couleurs = couleurs != null && couleurs.Length > 0 ? couleurs : null }.En(x, y, e));
-        private static JetObjet Dessin(string dessin, params string[] couleurs)
-            => new JetObjet { Genre = JetGenre.Dessin, Dessin = dessin, Couleurs = couleurs != null && couleurs.Length > 0 ? couleurs : null };
-
-        private double Hasard() => _alea.NextDouble();
-        private double Entre(double a, double b) => a + (b - a) * _alea.NextDouble();
-        private static double Borne(double v, double a = 0, double b = 1) => Math.Max(a, Math.Min(b, v));
-        private static double Mel(double a, double b, double u) => a + (b - a) * u;
-        private static double Doux(double x) { x = Borne(x); return x < 0.5 ? 2 * x * x : 1 - Math.Pow(-2 * x + 2, 2) / 2; }
-        private static double Sortant(double x) { x = Borne(x); return 1 - Math.Pow(1 - x, 3); }
-        private static double Rebond(double x) => x <= 0 ? 0 : x >= 1 ? 1 : Math.Pow(2, -9 * x) * Math.Sin((x * 10 - 0.75) * (2 * Math.PI / 3)) + 1;
-        private static double Distance(double x1, double y1, double x2, double y2) => Math.Sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+        public override bool ProchaineCible(out double x, out double y) { x = y = 0; return _scene != null && _etat == Etat.Joue && _scene.Reste(out x, out y); }
 
         private void Progres() { _sansProgres = 0; _indice = 0; }
         private void Reussite() { Reussites++; }
@@ -180,78 +115,6 @@ namespace MesPremiersJeux.Games
             }
         }
 
-        /// <summary>Un mot de bande dessinée (« Tut tut ! », « Pschhh ! ») qui saute puis s'envole.</summary>
-        private void Ecris(string texte, double x, double y, string couleur, double taille = 64)
-        {
-            double demi = texte.Length * taille * 0.32;
-            var o = Effets.Ajoute(new JetObjet { Genre = JetGenre.Texte, Texte = texte, Taille = taille, Couleur = couleur, Op = 0 });
-            _mots.Add(new Mot { O = o, X = Borne(x, 40 + demi, W - 40 - demi), Y = Math.Max(80, y) });
-        }
-
-        // ------------------------------------------------------------------
-        //  Les petites choses qui volent : gouttes, bulles, vapeur, étoiles…
-        // ------------------------------------------------------------------
-        private sealed class Grain { public JetObjet O; public double X, Y, VX, VY, G, Vie, Age, Taille, Gonfle, Tourne; public bool Vivant; }
-
-        private sealed class Bac
-        {
-            private readonly List<Grain> _grains = new List<Grain>();
-            public Bac(JetMoteur m, JetCalque calque, string dessin, int nombre)
-            {
-                for (int i = 0; i < nombre; i++) { var o = m.Pose(calque, dessin, 0, 0); o.Op = 0; _grains.Add(new Grain { O = o }); }
-            }
-            public void Lance(double x, double y, double vx, double vy, double pesanteur, double vie, double taille = 1, double gonfle = 0, double tourne = 0)
-            {
-                foreach (var g in _grains)
-                {
-                    if (g.Vivant) continue;
-                    g.X = x; g.Y = y; g.VX = vx; g.VY = vy; g.G = pesanteur; g.Vie = vie; g.Age = 0; g.Taille = taille; g.Gonfle = gonfle; g.Tourne = tourne; g.Vivant = true;
-                    return;
-                }
-            }
-            public void Avance(double dt)
-            {
-                foreach (var g in _grains)
-                {
-                    if (!g.Vivant) continue;
-                    g.Age += dt;
-                    if (g.Age >= g.Vie) { g.Vivant = false; g.O.Op = 0; continue; }
-                    g.VY += g.G * dt; g.X += g.VX * dt; g.Y += g.VY * dt;
-                    double u = g.Age / g.Vie;
-                    g.O.X = g.X; g.O.Y = g.Y;
-                    g.O.E = g.Taille * (1 + g.Gonfle * u) * Math.Min(1, g.Age * 14);
-                    g.O.R += g.Tourne * dt;
-                    g.O.Op = Math.Min(1, (1 - u) * 3);
-                }
-            }
-            public void Vide() { foreach (var g in _grains) { g.Vivant = false; g.O.Op = 0; } }
-        }
-
-        /// <summary>Plusieurs objets qui bougent ensemble (la voiture, ses yeux, sa bouche, sa boue…).</summary>
-        private sealed class Membre { public JetObjet O; public double X, Y, SX = 1, SY = 1, R; public double E { set { SX = value; SY = value; } } }
-        private sealed class Groupe
-        {
-            public double X, Y, R, SX = 1, SY = 1;
-            public readonly List<Membre> Membres = new List<Membre>();
-            public Membre Ajoute(JetObjet o, double x = 0, double y = 0, double e = 1, double r = 0) { var m = new Membre { O = o, X = x, Y = y, SX = e, SY = e, R = r }; Membres.Add(m); return m; }
-            public void Place()
-            {
-                double a = R * Math.PI / 180, c = Math.Cos(a), s = Math.Sin(a);
-                foreach (var m in Membres)
-                {
-                    double x = m.X * SX, y = m.Y * SY;
-                    m.O.X = X + x * c - y * s; m.O.Y = Y + x * s + y * c;
-                    m.O.R = R + m.R; m.O.SX = SX * m.SX; m.O.SY = SY * m.SY;
-                }
-            }
-            /// <summary>Où se trouve, dans la scène, un point donné dans le repère du groupe.</summary>
-            public void Monde(double x, double y, out double mx, out double my)
-            {
-                double a = R * Math.PI / 180, c = Math.Cos(a), s = Math.Sin(a);
-                x *= SX; y *= SY; mx = X + x * c - y * s; my = Y + x * s + y * c;
-            }
-        }
-
         // ------------------------------------------------------------------
         //  D'une scène à l'autre
         // ------------------------------------------------------------------
@@ -261,10 +124,10 @@ namespace MesPremiersJeux.Games
             _scene = _scenes[Numero];
             Decor.Vide();
             foreach (var b in _bacs) b.Vide();
-            var objets = new Dictionary<string, JetObjet>();
+            var objets = new Dictionary<string, VecObjet>();
             foreach (var p in JetArt.Scenes[_scene.Cle])
             {
-                var o = Decor.Ajoute(new JetObjet { Genre = JetGenre.Dessin, Dessin = p.Dessin, Couleurs = _scene.Couleurs(p.Nom) ?? p.C }.En(p.X, p.Y, p.E, p.R));
+                var o = Decor.Ajoute(new VecObjet { Genre = VecGenre.Dessin, Dessin = p.Dessin, Couleurs = _scene.Couleurs(p.Nom) ?? p.C }.En(p.X, p.Y, p.E, p.R));
                 objets[p.Nom] = o;
             }
             var ciel = JetArt.Ciels[_scene.Cle];
@@ -279,7 +142,7 @@ namespace MesPremiersJeux.Games
         // ------------------------------------------------------------------
         //  Une image du jeu
         // ------------------------------------------------------------------
-        public void Avance(double dt)
+        public override void Avance(double dt)
         {
             if (dt <= 0 || _scene == null) return;
             dt = Math.Min(dt, 0.1);
@@ -398,18 +261,7 @@ namespace MesPremiersJeux.Games
             }
             _scene.Anime(dt);
             foreach (var b in _bacs) b.Avance(dt);
-
-            // --- Les mots de bande dessinée ---
-            for (int i = _mots.Count - 1; i >= 0; i--)
-            {
-                var m = _mots[i];
-                m.Age += dt;
-                if (m.Age > 1.4) { Effets.Retire(m.O); _mots.RemoveAt(i); continue; }
-                m.O.E = Rebond(m.Age / 0.45);
-                m.O.X = m.X; m.O.Y = m.Y - 50 * Sortant(m.Age / 1.4);
-                m.O.R = -6 + 4 * Math.Sin(m.Age * 9);
-                m.O.Op = Borne((1.4 - m.Age) / 0.35);
-            }
+            AvanceMots(dt);
         }
 
         /// <summary>Où se trouve, dans la scène, un point donné dans le repère de la lance.</summary>
@@ -471,7 +323,7 @@ namespace MesPremiersJeux.Games
         private abstract class Scene
         {
             protected readonly JetMoteur J;
-            protected Dictionary<string, JetObjet> O;
+            protected Dictionary<string, VecObjet> O;
             /// <summary>Secondes depuis l'ouverture de la scène.</summary>
             public double T;
             protected Scene(JetMoteur jeu) { J = jeu; }
@@ -481,7 +333,7 @@ namespace MesPremiersJeux.Games
             public abstract bool Finie { get; }
             public virtual double DureeFete => 3.6;
             public virtual string[] Couleurs(string nom) => null;
-            public void Prepare(Dictionary<string, JetObjet> objets) { O = objets; T = 0; Construit(); }
+            public void Prepare(Dictionary<string, VecObjet> objets) { O = objets; T = 0; Construit(); }
             protected abstract void Construit();
             /// <summary>L'eau touche le point (x, y) pendant dt secondes.</summary>
             public abstract void Arrose(double x, double y, double dt);
@@ -507,9 +359,9 @@ namespace MesPremiersJeux.Games
             private sealed class Tache { public Membre M; public double V = 1, E; }
             private readonly List<Tache> _taches = new List<Tache>();
             private readonly Groupe _g = new Groupe();
-            private JetObjet _ombre;
+            private VecObjet _ombre;
             private Membre[] _pupilles, _paupieres, _bouches, _joues, _halos, _essuie;
-            private readonly JetObjet[] _mouches = new JetObjet[3];
+            private readonly VecObjet[] _mouches = new VecObjet[3];
             private readonly double[] _envol = new double[3];
             private double _chatouille, _saut;
             private bool _fete;
@@ -536,7 +388,7 @@ namespace MesPremiersJeux.Games
                 _g.X = X0; _g.Y = Y0; _g.R = 0; _g.SX = _g.SY = E0;
                 _g.Ajoute(auto);
                 // le visage se glisse entre la carrosserie et la boue
-                JetObjet Sur(string dessin, params string[] c) => J.Decor.Avant(O["boue0"], Dessin(dessin, c));
+                VecObjet Sur(string dessin, params string[] c) => J.Decor.Avant(O["boue0"], Dessin(dessin, c));
                 _halos = new[] { _g.Ajoute(Sur("auto_halo"), -176, -150), _g.Ajoute(Sur("auto_halo"), 176, -150) };
                 _pupilles = new[] { _g.Ajoute(Sur("auto_pupille"), -176, -150), _g.Ajoute(Sur("auto_pupille"), 176, -150) };
                 _paupieres = new[] { _g.Ajoute(Sur("auto_paupiere", teinte), -176, -150), _g.Ajoute(Sur("auto_paupiere", teinte), 176, -150) };

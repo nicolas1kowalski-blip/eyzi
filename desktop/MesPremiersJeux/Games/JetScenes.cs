@@ -10,12 +10,12 @@ namespace MesPremiersJeux.Games
         // ══════════ 2. Les pompiers : la maison a peur, les flammes dansent sur son toit ══════════
         private sealed class SceneFeu : Scene
         {
-            private sealed class Feu { public JetObjet O, Lueur; public double V = 1, E, X, Y; public int I; }
+            private sealed class Feu { public VecObjet O, Lueur; public double V = 1, E, X, Y; public int I; }
             private readonly List<Feu> _feux = new List<Feu>();
             private readonly Groupe _g = new Groupe();
             private Membre[] _pupilles, _sourcils;
             private Membre _portePeur, _porteSourire, _chatPeur, _chatContent;
-            private JetObjet _gyro, _ombre;
+            private VecObjet _gyro, _ombre;
             private double _son, _saut, X0, Y0;
             private bool _fete;
 
@@ -36,7 +36,7 @@ namespace MesPremiersJeux.Games
                 _g.Membres.Clear(); _g.X = X0; _g.Y = Y0; _g.R = 0; _g.SX = _g.SY = 1;
                 _g.Ajoute(maison);
                 // le visage se glisse entre les murs et les flammes
-                JetObjet Sur(string dessin) => J.Decor.Avant(O["flamme0"], Dessin(dessin));
+                VecObjet Sur(string dessin) => J.Decor.Avant(O["flamme0"], Dessin(dessin));
                 _chatPeur = _g.Ajoute(Sur("chat_peur"), 0, -392, 0.86); _chatContent = _g.Ajoute(Sur("chat_content"), 0, -392, 0.86);
                 _pupilles = new[] { _g.Ajoute(Sur("maison_pupille"), -150, -200), _g.Ajoute(Sur("maison_pupille"), 150, -200) };
                 _sourcils = new[] { _g.Ajoute(Sur("maison_sourcil"), -150, -292), _g.Ajoute(Sur("maison_sourcil"), 150, -292) };
@@ -150,7 +150,7 @@ namespace MesPremiersJeux.Games
         {
             private sealed class Cuve
             {
-                public string Nom; public JetObjet Devant, Eau, Ecume, Triste, Content;
+                public string Nom; public VecObjet Devant, Eau, Ecume, Triste, Content;
                 public double X, Y, E, G, D, H, B, Sable, Niveau, Plein = -1, Taille;      // G, D, H, B : l'intérieur (gauche, droite, haut, bas), dans le repère du dessin
                 public double Surface => B - (B - H) * Niveau;
             }
@@ -175,8 +175,8 @@ namespace MesPremiersJeux.Games
                 var devant = O[nom];
                 var c = new Cuve { Nom = nom, Devant = devant, X = devant.X, Y = devant.Y, E = devant.E, G = g, D = d, H = h, B = b, Sable = sable, Taille = taille };
                 // l'eau : une forme bleue dont le dessus ondule, découpée à la forme du récipient ; puis une écume claire à la surface
-                c.Eau = J.Decor.Avant(devant, new JetObjet { Genre = JetGenre.Plein, Couleur = "#5CC0FF", Decoupe = nom + "_dedans", Op = 0.6 }.En(c.X, c.Y, c.E));
-                c.Ecume = J.Decor.Avant(devant, new JetObjet { Genre = JetGenre.Plein, Couleur = "#E4F6FF", Decoupe = nom + "_dedans", Op = 0.9 }.En(c.X, c.Y, c.E));
+                c.Eau = J.Decor.Avant(devant, new VecObjet { Genre = VecGenre.Plein, Couleur = "#5CC0FF", Decoupe = nom + "_dedans", Op = 0.6 }.En(c.X, c.Y, c.E));
+                c.Ecume = J.Decor.Avant(devant, new VecObjet { Genre = VecGenre.Plein, Couleur = "#E4F6FF", Decoupe = nom + "_dedans", Op = 0.9 }.En(c.X, c.Y, c.E));
                 // le poisson (ou le canard) se voit à travers la vitre, devant l'eau
                 c.Triste = J.Decor.Avant(devant, Dessin(hote + "_triste", couleurs));
                 c.Content = J.Decor.Avant(devant, Dessin(hote + "_content", couleurs));
@@ -281,10 +281,10 @@ namespace MesPremiersJeux.Games
             {
                 new[] { "#FFB8D6", "#FF6FA8" }, new[] { "#D8BEFF", "#9A6AE8" }, new[] { "#FFD23D", "#FFAA20" }, new[] { "#B0E4FF", "#4FB8FF" }, new[] { "#FFB0A0", "#F0483E" },
             };
-            private sealed class Plante { public JetObjet Pousse, Tige, F1, F2, Bouton, Fleur, Papillon; public double X, Y, V, Eclose = -1, HautX, HautY; public int I; }
+            private sealed class Plante { public VecObjet Pousse, Tige, F1, F2, Bouton, Fleur, Papillon; public double X, Y, V, Eclose = -1, HautX, HautY; public int I; }
             private readonly List<Plante> _plantes = new List<Plante>();
-            private JetObjet _arc, _escargot;
-            private readonly JetObjet[] _abeilles = new JetObjet[2];
+            private VecObjet _arc, _escargot;
+            private readonly VecObjet[] _abeilles = new VecObjet[2];
 
             public SceneJardin(JetMoteur j) : base(j) { }
             public override string Cle => "jardin";
@@ -400,8 +400,8 @@ namespace MesPremiersJeux.Games
                 new[] { "#FFD08A", "#FF9A2E" }, new[] { "#D8BEFF", "#9A6AE8" }, new[] { "#FFB0A0", "#F0483E" }, new[] { "#FFE98A", "#FFC23D" },
             };
             private static readonly string[][] Robes = { new[] { "#FFFFFF", "#DCE4F2" }, new[] { "#FFE4EE", "#FFB0CC" }, new[] { "#E4F6FF", "#A8D8F8" } };
-            private JetObjet _roue;
-            private readonly JetObjet[] _eteinte = new JetObjet[8], _allumee = new JetObjet[8], _halo = new JetObjet[8], _chevaux = new JetObjet[3], _ciel = new JetObjet[16];
+            private VecObjet _roue;
+            private readonly VecObjet[] _eteinte = new VecObjet[8], _allumee = new VecObjet[8], _halo = new VecObjet[8], _chevaux = new VecObjet[3], _ciel = new VecObjet[16];
             private readonly double[] _px = new double[8], _py = new double[8];
             private double _vitesse, _angle, _tours, _manege;
             private int _lumieres;
