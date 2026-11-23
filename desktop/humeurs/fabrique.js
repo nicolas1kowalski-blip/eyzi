@@ -1,5 +1,6 @@
 // Fabrique les humeurs animées d'Eyzi : pour chaque scène, une vidéo (.mp4), une vignette (.png) et une ligne dans humeurs.txt,
 // rangées dans ../MesPremiersJeux/Humeurs. Il faut Node avec Playwright (Chromium) et ffmpeg.
+// Les bruitages sont ajoutés aux vidéos à la fin, par sons.py (Python 3 avec numpy et scipy) : voir ce fichier.
 //   node fabrique.js              tout fabriquer
 //   node fabrique.js miam soif    seulement ces scènes
 //   node fabrique.js --vignettes  seulement les vignettes (rapide)
@@ -46,4 +47,6 @@ const ORDRE_CAT=['joie','tendre','rigolo','pasbien','actions'];
     fs.rmSync(dos,{recursive:true,force:true}); console.log('fabriqué',s.cle,(fs.statSync(path.join(SORTIE,s.cle+'.mp4')).size/1024|0)+' Ko'); }
   if(!apercu&&!choix.length) fs.writeFileSync(path.join(SORTIE,'humeurs.txt'),'# clé|page|titre|ce que la tablette dit|durée (s) — fabriqué par desktop/humeurs/fabrique.js\n'+toutes.map(s=>[s.cle,s.cat,s.titre,s.dit,s.duree].join('|')).join('\n')+'\n');
   await b.close(); console.log(err?('⚠ '+err+' erreur(s) JavaScript'):'sans erreur JavaScript');
+  // les bruitages : une bande-son par scène, glissée dans la vidéo
+  if(!apercu&&!vigSeules){ try{ execFileSync(process.env.PYTHON||'python3',[path.join(ICI,'sons.py'),...choix],{stdio:'inherit'}); }catch(e){ console.log('⚠ les bruitages ne sont pas faits (python3 sons.py) :',e.message); } }
 })();

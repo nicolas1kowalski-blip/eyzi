@@ -134,7 +134,7 @@ namespace MesPremiersJeux.Views
             page.Children.Add(_suite);
 
             // --- La scène : la vidéo dans un cadre arrondi, sur le même fond que l'animation ---
-            _film = new MediaElement { LoadedBehavior = MediaState.Manual, UnloadedBehavior = MediaState.Manual, Stretch = Stretch.Uniform, IsMuted = true };
+            _film = new MediaElement { LoadedBehavior = MediaState.Manual, UnloadedBehavior = MediaState.Manual, Stretch = Stretch.Uniform, Volume = 0.85 };      // chaque vidéo porte ses bruitages (desktop/humeurs/sons.py)
             _film.MediaEnded += (s, e) => Fermer();
             _film.MediaFailed += (s, e) => { Log.Write("humeurs", "vidéo illisible : " + (e.ErrorException?.Message ?? "?")); Secours(); };
             _secours = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Visibility = Visibility.Collapsed, Children = { _secoursImage, _secoursTitre } };
