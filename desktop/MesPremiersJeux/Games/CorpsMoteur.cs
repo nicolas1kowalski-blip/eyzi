@@ -25,6 +25,7 @@ namespace MesPremiersJeux.Games
     internal sealed class CorpsMoteur : VecMoteur
     {
         private const double AX = 800;                     // l'axe du corps
+        private const double K = 1.2, Y0 = -14, Gros = 1.12;      // le corps est agrandi pour que les organes soient grands ; les organes un peu plus encore
         private const double Relief = 17;                  // de combien glisse ce qui est tout devant quand il tourne
         private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
@@ -46,7 +47,7 @@ namespace MesPremiersJeux.Games
         private sealed class Organe
         {
             public string Cle, Nom, Dit, Couleur; public double X, Y, L, H, Z; public bool EnPlace; public double Age = 9;
-            public VecObjet O, Etiquette, Nom2, Point, Fil; public int Rang;
+            public VecObjet O, Halo, Etiquette, Nom2, Point, Fil; public int Rang;
         }
         private sealed class Piece { public VecObjet O; public double X, Y, Z; }       // un morceau du bonhomme : sa place, sa profondeur
         private sealed class Lueur { public VecObjet Halo, Bord, Tirets, Non; public Organe Pour; public double Faux = -1; }
@@ -88,16 +89,19 @@ namespace MesPremiersJeux.Games
                 _organes.Add(new Organe { Cle = l[0], Nom = l[1], X = double.Parse(l[2], Inv), Y = double.Parse(l[3], Inv), L = double.Parse(l[4], Inv), H = double.Parse(l[5], Inv), Z = double.Parse(l[6], Inv), Dit = l[7], Couleur = l[8] });
 
             // --- Le corps, son intérieur, le squelette à peine visible, les organes (du plus profond au plus proche), les côtes, les reflets ---
-            Morceau("r_corps", 0, 0, 0); Morceau("r_interieur", 0, 0, 0.1); Morceau("r_squelette", 0, 0, 0.18);
+            Morceau("r_corps", 0, 0, 0); Morceau("r_interieur", 0, 0, 0.1); Morceau("r_squelette", 0, 0, 0.18); Morceau("r_cotes", 0, 0, 0.2);
             var parProfondeur = new List<Organe>(_organes); parProfondeur.Sort((a, b) => a.Z.CompareTo(b.Z));
+            foreach (var o in parProfondeur) { o.Halo = Pose(Corps, "r_halo", 0, 0); o.Halo.Op = 0; }
             foreach (var o in parProfondeur) { o.O = Pose(Corps, "o_" + o.Cle, AX + o.X, o.Y); o.O.Op = 0; }
             _globules = new Bac(this, Corps, "c_globule", 14);
             _air = new Bac(this, Corps, "c_air", 14);
-            Morceau("r_cotes", 0, 0, 0.85); Morceau("r_reflets", 0, 0, 1.0);
+            Morceau("r_reflets", 0, 0, 1.0);
             for (int i = 0; i < _ondes.Length; i++) { _ondes[i] = Pose(Corps, "r_onde", 0, 0); _ondes[i].Op = 0; }
             _barre = Pose(Corps, "r_balayage", AX, 0); _barre.Op = 0;
 
             // --- À droite : une étiquette par organe posé, reliée à lui par un fil ; en bas, le pouls ---
+            var deHautEnBas = new List<Organe>(_organes); deHautEnBas.Sort((a, b) => a.Y.CompareTo(b.Y));
+            for (int i = 0; i < deHautEnBas.Count; i++) deHautEnBas[i].Rang = i;
             foreach (var o in _organes)
             {
                 o.Fil = Interface.Ajoute(new VecObjet { Genre = VecGenre.Ligne, Couleur = "#B8F2FF", Epaisseur = 2.5, Op = 0 });
@@ -143,7 +147,7 @@ namespace MesPremiersJeux.Games
         // ------------------------------------------------------------------
         private void NouvelleManche()
         {
-            foreach (var o in _organes) { o.EnPlace = false; o.O.Op = 0; o.Etiquette.Op = o.Nom2.Op = o.Point.Op = o.Fil.Op = 0; }
+            foreach (var o in _organes) { o.EnPlace = false; o.O.Op = 0; o.Halo.Op = 0; o.Etiquette.Op = o.Nom2.Op = o.Point.Op = o.Fil.Op = 0; }
             _ordre.Clear(); _poses = 0; _balayage = 0;
             if (Niveau == 0) foreach (var c in new[] { "cerveau", "coeur", "poumons", "estomac", "intestins" }) _ordre.Add(O(c));      // pour commencer : les cinq plus connus, toujours dans le même ordre
             else
@@ -210,7 +214,7 @@ namespace MesPremiersJeux.Games
 
         private static void Zone(Organe o, out double x, out double y, out double l, out double h)
         {
-            l = Math.Max(o.L + 30, 136); h = Math.Max(o.H + 24, 112); x = AX + o.X - l / 2; y = o.Y - h / 2;
+            l = Math.Max(o.L * K * Gros + 26, 136); h = Math.Max(o.H * K * Gros + 20, 112); x = AX + o.X * K - l / 2; y = Y0 + o.Y * K - h / 2;
         }
         private static bool SeTouchent(Organe a, Organe b)
         {
@@ -225,7 +229,7 @@ namespace MesPremiersJeux.Games
             l.Bord = Corps.Ajoute(new VecObjet { Genre = VecGenre.Ligne, Couleur = "#0E1528", Epaisseur = 9, Tiret = 1.6, Espace = 1.6 });
             l.Tirets = Corps.Ajoute(new VecObjet { Genre = VecGenre.Ligne, Couleur = "#B8F2FF", Epaisseur = 6, Tiret = 2.4, Espace = 2.4 });
             l.Non = Corps.Ajoute(Dessin("c_non")); l.Non.Op = 0;
-            double rx = o.L / 2 + 10, ry = o.H / 2 + 8;
+            double rx = o.L * K * Gros / 2 + 10, ry = o.H * K * Gros / 2 + 8;
             var pts = new double[74];
             for (int i = 0; i <= 36; i++) { double a = Math.PI * 2 * i / 36; pts[i * 2] = rx * Math.Cos(a); pts[i * 2 + 1] = ry * Math.Sin(a); }
             l.Bord.Points = pts; l.Tirets.Points = pts;
@@ -289,12 +293,11 @@ namespace MesPremiersJeux.Games
             var c = _cible;
             c.EnPlace = true; c.Age = 0; c.O.Op = 1;
             foreach (var l in _lueurs) { l.Halo.Op = 0; l.Bord.Op = 0; l.Tirets.Op = 0; l.Non.Op = 0; }
-            double x = AX + c.X + c.Z * Relief * _tour, y = c.Y;
+            double x = AX + c.X * K + c.Z * Relief * _tour, y = Y0 + c.Y * K;
             for (int i = 0; i < 10; i++) { double a = Math.PI * 2 * i / 10 + Hasard(); _etoiles.Lance(x, y, Math.Cos(a) * 220 * Entre(.6, 1), Math.Sin(a) * 220 * Entre(.6, 1), 0, Entre(.5, .8), Entre(.6, 1.2), 0, Entre(-200, 200)); }
             Onde(x, y); Son("note", 2 + _rang);
             Reussites++;
-            // son étiquette s'ajoute à droite, reliée à lui
-            c.Rang = _poses++;
+            // son étiquette s'ajoute à droite, reliée à lui (chaque organe a sa ligne, de haut en bas : les fils ne se croisent pas)
             c.Etiquette.Y = c.Nom2.Y = 96 + c.Rang * 84;
             c.Etiquette.Op = c.Nom2.Op = c.Point.Op = c.Fil.Op = 1;
             if (c.Cle == "vessie") Son("plouf", 0);
@@ -338,8 +341,8 @@ namespace MesPremiersJeux.Games
                 case Etat.Vol:
                 {
                     double u = Borne(_depuis / 0.7), w = Doux(u);
-                    double x = Mel(_volX0, AX + _cible.X + _cible.Z * Relief * _tour, w), y = Mel(_volY0, _cible.Y, w) - 130 * 4 * u * (1 - u);
-                    foreach (var o in _aRetirer) { o.X = x; o.Y = y; o.E = Mel(_volE0, 1, w) * (1 + .2 * Math.Sin(Math.PI * u)); o.R = 14 * Math.Sin(Math.PI * 2 * u); }
+                    double x = Mel(_volX0, AX + _cible.X * K + _cible.Z * Relief * _tour, w), y = Mel(_volY0, Y0 + _cible.Y * K, w) - 130 * 4 * u * (1 - u);
+                    foreach (var o in _aRetirer) { o.X = x; o.Y = y; o.E = Mel(_volE0, K * Gros, w) * (1 + .2 * Math.Sin(Math.PI * u)); o.R = 14 * Math.Sin(Math.PI * 2 * u); }
                     if (Hasard() < dt * 30) _etoiles.Lance(x + Entre(-20, 20), y + Entre(-20, 20), 0, 20, 0, .4, Entre(.3, .6), 0, 200);
                     if (u >= 1) EnPlace();
                     break;
@@ -361,12 +364,12 @@ namespace MesPremiersJeux.Games
                     }
                     break;
                 case Etat.Fete:
-                    if (Math.Floor(_depuis / 0.45) != Math.Floor((_depuis - dt) / 0.45)) { var c = O("coeur"); Onde(AX + c.X + c.Z * Relief * _tour, c.Y); for (int i = 0; i < 6; i++) _etoiles.Lance(AX + Entre(-260, 260), Entre(60, 760), Entre(-30, 30), Entre(-60, -10), 0, Entre(.6, 1), Entre(.6, 1.3), 0, Entre(-200, 200)); }
+                    if (Math.Floor(_depuis / 0.45) != Math.Floor((_depuis - dt) / 0.45)) { var c = O("coeur"); Onde(AX + c.X * K + c.Z * Relief * _tour, Y0 + c.Y * K); for (int i = 0; i < 6; i++) _etoiles.Lance(AX + Entre(-260, 260), Entre(60, 760), Entre(-30, 30), Entre(-60, -10), 0, Entre(.6, 1), Entre(.6, 1.3), 0, Entre(-200, 200)); }
                     if (_depuis > 5.2 && (!VoixOccupee() || _depuis > 9)) { _etat = Etat.Vide; _depuis = 0; Son("pof", 0); _balayage = 0; }
                     break;
                 case Etat.Vide:
                     // le balayage repasse : les organes s'éteignent, leurs étiquettes aussi
-                    foreach (var o in _organes) if (o.EnPlace) { double op = Borne(1 - _depuis / 0.8); o.O.Op = op; o.Etiquette.Op = o.Nom2.Op = o.Point.Op = o.Fil.Op = op; }
+                    foreach (var o in _organes) if (o.EnPlace) { double op = Borne(1 - _depuis / 0.8); o.O.Op = op; o.Halo.Op = op * .5; o.Etiquette.Op = o.Nom2.Op = o.Point.Op = o.Fil.Op = op; }
                     if (_depuis >= 1.1) NouvelleManche();
                     break;
             }
@@ -391,9 +394,9 @@ namespace MesPremiersJeux.Games
             double souffle = respire ? Math.Sin(_temps * 2.1) : 0;
             foreach (var p in _pieces)
             {
-                p.O.X = AX + p.X + p.Z * Relief * _tour; p.O.Y = p.Y;
-                if (p.Z == 0) p.O.SX = 1 - 0.04 * Math.Abs(_tour);                       // de trois quarts, il paraît un peu plus étroit
-                if (p.O.Dessin == "r_cotes") p.O.SX = 1 + .012 * souffle;
+                p.O.X = AX + p.X + p.Z * Relief * _tour; p.O.Y = Y0; p.O.E = K;
+                if (p.Z == 0) p.O.SX = K * (1 - 0.04 * Math.Abs(_tour));                 // de trois quarts, il paraît un peu plus étroit
+                if (p.O.Dessin == "r_cotes") p.O.SX = K * (1 + .012 * souffle);
             }
 
             // --- Le balayage : une barre de lumière descend le long du corps ---
@@ -417,7 +420,7 @@ namespace MesPremiersJeux.Games
                 if (!o.EnPlace) continue;
                 o.Age += dt;
                 double pop = o.Age < 0.5 ? Rebond(o.Age / 0.45) : 1, sx = 1, sy = 1, r = 0;
-                double x = AX + o.X + o.Z * Relief * _tour, y = o.Y;
+                double x = AX + o.X * K + o.Z * Relief * _tour, y = Y0 + o.Y * K, g = K * Gros;
                 switch (o.Cle)
                 {
                     case "coeur":
@@ -431,20 +434,22 @@ namespace MesPremiersJeux.Games
                     case "poumons":
                         sx = 1 + .05 * souffle; sy = 1 + .04 * souffle;
                         // l'air descend par la trachée quand ils se gonflent
-                        if (Math.Cos(_temps * 2.1) > 0.3 && Hasard() < dt * 9) _air.Lance(x + Entre(-4, 4), 170, Entre(-6, 6), 150, 0, .7, Entre(.6, 1));
+                        if (Math.Cos(_temps * 2.1) > 0.3 && Hasard() < dt * 9) _air.Lance(x + Entre(-4, 4), Y0 + 176 * K, Entre(-6, 6), 170, 0, .7, Entre(.7, 1.2));
                         break;
                     case "cerveau":
-                        if (Hasard() < dt * 3) _etoiles.Lance(x + Entre(-46, 46), y + Entre(-36, 30), 0, 0, 0, Entre(.3, .5), Entre(.3, .6), 0, Entre(-90, 90));
+                        if (Hasard() < dt * 3) _etoiles.Lance(x + Entre(-60, 60), y + Entre(-46, 40), 0, 0, 0, Entre(.3, .5), Entre(.3, .6), 0, Entre(-90, 90));
                         break;
                     case "estomac": r = 2.5 * Math.Sin(_temps * 2.6); sx = 1 + .03 * Math.Sin(_temps * 5.2); break;
                     case "foie": sx = sy = 1 + .02 * Math.Sin(_temps * 1.6); break;
                     case "intestins": sx = 1 + .03 * Math.Sin(_temps * 3.4); sy = 1 - .03 * Math.Sin(_temps * 3.4); break;
                     case "vessie": sy = 1 + .05 * Math.Sin(_temps * 1.3); sx = 1 + .03 * Math.Sin(_temps * 1.3 + 1); break;
                 }
-                o.O.X = x; o.O.Y = y; o.O.SX = pop * sx; o.O.SY = pop * sy; o.O.R = r;
+                o.O.X = x; o.O.Y = y; o.O.SX = pop * sx * g; o.O.SY = pop * sy * g; o.O.R = r;
+                // une lueur claire derrière lui : il se détache bien du corps
+                o.Halo.X = x; o.Halo.Y = y; o.Halo.SX = (o.L * g / 2 + 26) / 100 * pop; o.Halo.SY = (o.H * g / 2 + 22) / 100 * pop; if (_etat != Etat.Vide) o.Halo.Op = .5 + .1 * Math.Sin(_temps * 3 + o.Rang);
 
                 // son étiquette : le fil part de l'organe et rejoint la pastille
-                double ex = 1200 + 30 * (1 - Sortant(o.Age / 0.4)), ey = o.Etiquette.Y, px = x + o.L * 0.34, py = y - o.H * 0.1;
+                double ex = 1200 + 30 * (1 - Sortant(o.Age / 0.4)), ey = o.Etiquette.Y, px = x + o.L * g * 0.34, py = y - o.H * g * 0.1;
                 o.Etiquette.X = ex; o.Nom2.X = ex + 180;
                 o.Point.X = px; o.Point.Y = py; o.Point.E = 1 + .15 * Math.Sin(_temps * 4 + o.Rang);
                 o.Fil.Points = new[] { px, py, ex - 70, ey, ex, ey }; o.Fil.Etat++;
@@ -454,7 +459,7 @@ namespace MesPremiersJeux.Games
             foreach (var l in _lueurs)
             {
                 var o = l.Pour;
-                double x = AX + o.X + o.Z * Relief * _tour, y = o.Y;
+                double x = AX + o.X * K + o.Z * Relief * _tour, y = Y0 + o.Y * K;
                 bool vu = _etat == Etat.Attend || _etat == Etat.Presente;
                 double bat = .5 + .5 * Math.Sin(_temps * 5), doux = Niveau == 2 ? .6 : 1;
                 if (l.Faux >= 0)
@@ -465,7 +470,7 @@ namespace MesPremiersJeux.Games
                     l.Halo.Op = 0; l.Bord.Op = 0; l.Tirets.Op = 0;
                     continue;
                 }
-                l.Halo.X = x; l.Halo.Y = y; l.Halo.SX = (o.L / 2 + 30) / 100 * (1 + .08 * bat); l.Halo.SY = (o.H / 2 + 26) / 100 * (1 + .08 * bat); l.Halo.Op = vu ? (.7 + .3 * bat) * doux : 0;
+                l.Halo.X = x; l.Halo.Y = y; l.Halo.SX = (o.L * K * Gros / 2 + 30) / 100 * (1 + .08 * bat); l.Halo.SY = (o.H * K * Gros / 2 + 26) / 100 * (1 + .08 * bat); l.Halo.Op = vu ? (.7 + .3 * bat) * doux : 0;
                 foreach (var t in new[] { l.Bord, l.Tirets }) { t.X = x; t.Y = y; t.E = 1 + .03 * bat; t.Decalage = -_temps * 5; t.Op = vu ? doux : 0; }
             }
         }
