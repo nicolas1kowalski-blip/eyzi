@@ -152,6 +152,7 @@ namespace MesPremiersJeux.Views
                 Children = { new Viewbox { Stretch = Stretch.Uniform, Margin = new Thickness(14), Child = cadre } },
             };
             _scene.MouseLeftButtonUp += (s, e) => Fermer();   // l'accompagnant peut l'arrêter d'un appui
+            Gaze.GazeTargets.SetParentOnly(_scene, true);     // … mais pas le regard : il ne clique jamais sur la scène
             root.Children.Add(_scene);
 
             _garde.Tick += (s, e) => Fermer();
@@ -284,6 +285,7 @@ namespace MesPremiersJeux.Views
         //  La scène
         // ------------------------------------------------------------------
         private Humeur _enCours;
+        private bool _sansClic;
 
         private void Jouer(Humeur h)
         {
@@ -292,7 +294,10 @@ namespace MesPremiersJeux.Views
             _secours.Visibility = Visibility.Collapsed;
             _film.Visibility = Visibility.Visible;
             _scene.Visibility = Visibility.Visible;
-            Gaze.GazeTargets.ModalRoot = _scene;      // pendant la scène, le regard ne déclenche rien
+            // Pendant la scène, le regard ne déclenche rien : ni les cases cachées derrière, ni un clic « dans le vide »
+            // à force de regarder la vidéo (c'est lui qui l'arrêtait avant la fin).
+            Gaze.GazeTargets.ModalRoot = _scene;
+            if (!_sansClic) { Gaze.GazeGate.PushTargetsOnly(); _sansClic = true; }
             Speech.SayAlways(h.Dit);
             GazeStats.RecordComm("humeur-" + h.Cle);
             // La garde : un peu plus que la durée, au cas où la vidéo ne dirait jamais qu'elle est finie.
@@ -328,6 +333,7 @@ namespace MesPremiersJeux.Views
         private void Fermer()
         {
             _garde.Stop();
+            if (_sansClic) { Gaze.GazeGate.PopTargetsOnly(); _sansClic = false; }
             if (_enCours == null && _scene.Visibility != Visibility.Visible) return;
             _enCours = null;
             try { _film.Stop(); _film.Source = null; } catch { }
