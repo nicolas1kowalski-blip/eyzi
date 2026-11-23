@@ -21,13 +21,15 @@ static class Banc
         Directory.CreateDirectory(dossier);
         int graine = a.Length > 4 ? int.Parse(a[4]) : 7;
         string[] scenesDuJet = { "voiture", "feu", "remplir", "jardin", "roue" };
-        VecMoteur m = new JetMoteur(graine);
+        // « peche », « peche1 », « peche2 » : La pêche (au niveau 0, 1 ou 2) ; sinon une scène du jet d'eau
+        bool peche = scene.StartsWith("peche");
+        VecMoteur m = peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
         var journal = new StringBuilder();
         double t = 0;
         m.Dit = s => journal.AppendLine(t.ToString("0.00", Inv) + "  VOIX  " + s);
         m.Son = (s, i) => journal.AppendLine(t.ToString("0.00", Inv) + "  SON   " + s + (i != 0 ? " " + i : ""));
         m.Bravo = () => journal.AppendLine(t.ToString("0.00", Inv) + "  BRAVO");
-        m.Demarre(Math.Max(0, Array.IndexOf(scenesDuJet, scene)));
+        m.Demarre(peche ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : Math.Max(0, Array.IndexOf(scenesDuJet, scene)));
         // Le regard automatique : il va vers ce qu'il reste à arroser, y reste, et regarde parfois ailleurs une seconde.
         double gx = 800, gy = 420, ailleurs = 0; var alea = new Random(3);
         int image = 0;
