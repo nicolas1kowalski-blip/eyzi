@@ -23,8 +23,8 @@ static class Banc
         string[] scenesDuJet = { "voiture", "feu", "remplir", "jardin", "roue" };
         // « peche », « peche1 », « peche2 » : La pêche (au niveau 0, 1 ou 2) ; sinon une scène du jet d'eau
         bool peche = scene.StartsWith("peche");
-        bool patate = scene.StartsWith("patate");
-        VecMoteur m = patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
+        bool patate = scene.StartsWith("patate"), corps = scene.StartsWith("corps");
+        VecMoteur m = corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
         // Patatou : ce que l'enfant choisit, écrit à l'avance (l'instant, la zone)
         var choix = new List<KeyValuePair<double, string>>();
         if (patate) foreach (var c in "1.6 c:0|4.0 c:1|6.4 c:0|11.0 f:3|12.2 c:3|14.5 f:4|15.6 c:7|18.0 f:5|19.0 c:0|21.5 f:6|22.5 c:0|25.0 photo|28.0 surprise|33.5 photo|36.5 f:3|37.5 c:10|40 f:0|41 c:4|43 nu".Split('|'))
@@ -33,10 +33,11 @@ static class Banc
         var journal = new StringBuilder();
         double t = 0;
         m.Dit = s => { journal.AppendLine(t.ToString("0.00", Inv) + "  VOIX  " + s); voixJusqua = t + 0.5 + s.Length * 0.055; };
-        if (patate) m.VoixOccupee = () => t < voixJusqua;
+        if (patate || corps) m.VoixOccupee = () => t < voixJusqua;
+        double pose = 0; bool trompe = false;
         m.Son = (s, i) => journal.AppendLine(t.ToString("0.00", Inv) + "  SON   " + s + (i != 0 ? " " + i : ""));
         m.Bravo = () => journal.AppendLine(t.ToString("0.00", Inv) + "  BRAVO");
-        m.Demarre(peche ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : Math.Max(0, Array.IndexOf(scenesDuJet, scene)));
+        m.Demarre(corps ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : peche ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : Math.Max(0, Array.IndexOf(scenesDuJet, scene)));
         // Le regard automatique : il va vers ce qu'il reste à arroser, y reste, et regarde parfois ailleurs une seconde.
         double gx = 800, gy = 420, ailleurs = 0; var alea = new Random(3);
         int image = 0;
@@ -50,6 +51,19 @@ static class Banc
                 while (choix.Count > 0 && choix[0].Key <= t) { m.Appuie(choix[0].Value); journal.AppendLine(t.ToString("0.00", Inv) + "  CHOIX " + choix[0].Value); choix.RemoveAt(0); }
                 if (choix.Count > 0 && choix[0].Key - t < 0.9) { var z = m.Zones.Find(q => q.Id == choix[0].Value); if (z != null) { vx = z.X + z.L / 2; vy = z.Y + z.H / 2; } }
                 gx += (vx - gx) * 0.2; gy += (vy - gy) * 0.2;
+                m.Regard(gx, gy);
+            }
+            else if (corps)
+            {
+                // le regard va sur la bonne zone, y reste une seconde, et la choisit ; une fois sur quatre il se trompe d'abord
+                if (m.ProchaineCible(out double zx, out double zy))
+                {
+                    if (pose == 0) trompe = alea.NextDouble() < 0.3 && m.Zones.Count > 1;
+                    if (trompe) { var autre = m.Zones.Find(q => Math.Abs(q.X + q.L / 2 - zx) + Math.Abs(q.Y + q.H / 2 - zy) > 1); if (autre != null) { zx = autre.X + autre.L / 2; zy = autre.Y + autre.H / 2; } }
+                    gx += (zx - gx) * 0.14; gy += (zy - gy) * 0.14; pose += 1 / 30.0;
+                    if (pose > 1.6) { var z = m.Zones.Find(q => gx >= q.X && gx <= q.X + q.L && gy >= q.Y && gy <= q.Y + q.H); if (z != null) { m.Appuie(z.Id); journal.AppendLine(t.ToString("0.00", Inv) + "  CHOIX " + z.Id); } pose = 0; }
+                }
+                else { pose = 0; gx += (800 + 260 * Math.Sin(t * 0.9) - gx) * 0.06; gy += (330 + 80 * Math.Sin(t * 1.3) - gy) * 0.06; }
                 m.Regard(gx, gy);
             }
             else if (ailleurs > 0) ailleurs -= 1 / 30.0;
