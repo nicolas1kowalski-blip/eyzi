@@ -34,45 +34,66 @@ S.nuage = [
 S.oiseau = [T('M-26,-4 q12,-16 26,2 q14,-18 26,-2', N, 6)];
 
 // ═════════════ La lance, vue par celui qui la tient (l'origine est le pivot, elle pointe vers le haut) ═════════════
-// un gant de pompier posé sur la lance : k = 1 à droite, -1 à gauche ; (ox, oy) = où il serre
-const gant = (k, ox, oy) => { const X = v => r1(ox + k * v), Y = v => r1(oy + v), q = (a, b, c, d) => `q${r1(k * a)},${b} ${r1(k * c)},${d}`;
-  return [
-    P(`M${X(96)},${Y(84)} ${q(50, -26, 96, 10)} l${k * 6},60 ${q(-60, -20, -104, 10)} Z`, GV(oy + 60, oy + 160, '#F0483E', '#C9302A'), 8),
-    T(`M${X(104)},${Y(112)} ${q(46, -22, 90, 8)}`, '#FFE066', 12),
-    P(`M${X(30)},${Y(-40)} ${q(70, -30, 96, 30)} ${q(16, 50, -16, 96)} ${q(-40, 34, -90, 10)} Z`, GL(ox + k * 20, 0, ox + k * 130, 0, [0, '#FFD84A'], [1, '#F2A51C']), 8),
-    T(`M${X(62)},${Y(-16)} ${q(30, -4, 46, 22)} M${X(58)},${Y(16)} ${q(34, -2, 56, 22)} M${X(54)},${Y(48)} ${q(30, 0, 52, 16)}`, '#D98E12', 6, .8),
-    P(`M${X(36)},${Y(-30)} ${q(-26, -52, 8, -76)} ${q(34, -8, 44, 30)} ${q(4, 30, -18, 54)} Z`, GL(ox + k * 20, 0, ox + k * 90, 0, [0, '#FFE066'], [1, '#F7B92C']), 8),
-  ]; };
+// un cylindre de métal vu de côté : sombre sur les bords, un éclat près du bord gauche
+const CYL = (x0, x1, sombre, clair, moyen, ombre) => GL(x0, 0, x1, 0, [0, sombre], [.2, clair], [.48, moyen], [.82, ombre], [1, sombre]);
+const LAITON = (x0, x1) => CYL(x0, x1, '#8A5A0A', '#FFF3B0', '#F2B92C', '#B5780C');
+const ACIER = (x0, x1) => CYL(x0, x1, '#6C7893', '#FFFFFF', '#C9D3E8', '#8793AD');
+const CAOUTCHOUC = (x0, x1) => CYL(x0, x1, '#14101E', '#6B6488', '#3A3454', '#1E1A30');
+const LAQUE = (x0, x1) => CYL(x0, x1, '#8E1A14', '#FFB0A6', '#F0483E', '#B5261F');
+const TOILE = (x0, x1) => CYL(x0, x1, '#A8843E', '#FFF8E0', '#F2DCA8', '#C9A45A');
+const GANT = (x0, x1) => GL(x0, 0, x1, 0, [0, '#FFE066'], [.5, '#FFC83D'], [1, '#E08E12']);
 S.lance = [
-  // le tuyau de toile
-  P('M-108,80 L-94,-150 L94,-150 L108,80 Z', GH(-108, 108, '#FFF3D0', '#D9B36A'), 9),
-  T('M-100,-10 H100 M-98,-60 H98 M-96,-110 H96', '#C99A4A', 5, .6), T('M-70,70 L-62,-146', '#FFFFFF', 12, .7),
-  T('M-30,70 L-26,-146 M30,70 L26,-146', '#E8C98A', 4, .7),
-  // la bague de laiton
-  P('M-102,-150 Q0,-132 102,-150 L98,-200 Q0,-182 -98,-200 Z', GH(-102, 102, '#FFE98A', '#C98410'), 9), T('M-72,-160 L-70,-188', '#FFF8D0', 11, .85),
-  T('M40,-152 L38,-190 M70,-156 L68,-194', '#B5750C', 5, .6),
-  // le corps rouge verni, qui s'affine vers le bout
-  P('M-86,-198 Q0,-182 86,-198 L58,-352 Q0,-342 -58,-352 Z', GH(-86, 86, '#FF7A6E', '#B5261F'), 9),
-  T('M-56,-204 L-38,-340', '#FFD0CA', 14, .85), T('M-30,-200 L-18,-340', '#FF9C94', 6, .7), T('M56,-212 L40,-338', '#8E1A14', 10, .45),
-  // la poignée de caoutchouc
-  P('M-80,-238 Q0,-224 80,-238 L72,-296 Q0,-284 -72,-296 Z', GH(-80, 80, '#5B5578', '#2A2540'), 8),
-  T('M-52,-236 L-48,-290 M-26,-232 L-24,-288 M0,-230 L0,-286 M26,-232 L24,-288 M52,-236 L48,-290', '#8E88AA', 5, .7),
-  // le bec de laiton et sa bouche
-  P('M-66,-350 Q0,-336 66,-350 L58,-402 Q0,-414 -58,-402 Z', GH(-66, 66, '#FFE98A', '#C98410'), 9), T('M-44,-356 L-40,-396', '#FFF8D0', 10, .85),
-  P(el(0, -404, 56, 16), '#3A2C5C', 8), A(el(0, -402, 40, 9), '#7FD3FF', .95),
-  // les deux gants qui la tiennent
-  ...gant(-1, -36, -70), ...gant(1, 30, -170),
+  // le tuyau de toile, avec sa trame
+  P('M-86,140 L-74,-118 Q0,-104 74,-118 L86,140 Z', TOILE(-86, 86), 9),
+  T('M-80,100 L74,40 M-78,40 L72,-20 M-76,-20 L70,-80 M-80,130 L20,140', '#B5904A', 4, .45), T('M80,100 L-74,40 M78,40 L-72,-20 M76,-20 L-70,-80', '#B5904A', 4, .45),
+  T('M-84,140 L-72,-116 M84,140 L72,-116', '#F0483E', 9, .9),
+  // le raccord de laiton, avec ses deux tenons
+  P(rr(-106, -170, 30, 44, 8), LAITON(-106, -76), 7), P(rr(76, -170, 30, 44, 8), LAITON(76, 106), 7),
+  P('M-86,-112 Q0,-96 86,-112 L86,-186 Q0,-170 -86,-186 Z', LAITON(-86, 86), 9),
+  T('M-84,-134 Q0,-118 84,-134 M-84,-164 Q0,-148 84,-164', '#8A5A0A', 5, .55),
+  // le corps de la vanne, en acier poli
+  P('M-72,-184 Q0,-170 72,-184 L68,-250 Q0,-236 -68,-250 Z', ACIER(-72, 72), 9),
+  P(ci(-70, -216, 15), ACIER(-85, -55), 6), P(ci(70, -216, 15), ACIER(55, 85), 6), A(ci(-70, -216, 5), '#3A3454'), A(ci(70, -216, 5), '#3A3454'),
+  // le fût laqué rouge, qui s'affine
+  P('M-64,-248 Q0,-234 64,-248 L52,-340 Q0,-328 -52,-340 Z', LAQUE(-64, 64), 9),
+  T('M-58,-270 Q0,-256 58,-270 M-55,-292 Q0,-278 55,-292 M-53,-314 Q0,-300 53,-314', '#7A120E', 5, .5),
+  // l'embout de caoutchouc, évasé et cranté, et sa bouche
+  P('M-56,-338 Q0,-326 56,-338 L64,-398 Q0,-386 -64,-398 Z', CAOUTCHOUC(-64, 64), 9),
+  T('M-46,-346 L-52,-392 M-24,-342 L-27,-390 M0,-340 L0,-388 M24,-342 L27,-390 M46,-346 L52,-392', '#8E88AA', 5, .55),
+  P('M-64,-398 Q0,-386 64,-398 L62,-408 Q0,-398 -62,-408 Z', LAQUE(-64, 64), 6),
+  P(el(0, -406, 62, 17), '#1E1A30', 8), A(el(0, -404, 46, 11), GV(-415, -393, '#0E0A18', '#3A3454')),
+  // le gant gauche, qui serre le tuyau : le dos de la main, les quatre doigts par-dessus, la manchette
+  P('M-128,36 L-184,150 L-110,176 L-78,66 Z', GV(36, 176, '#4A4466', '#2A2540'), 8), T('M-150,96 L-96,116', '#FFE066', 12), T('M-158,116 L-102,136', '#E8F0F8', 7),
+  P('M-80,-96 Q-146,-92 -160,-30 Q-166,40 -112,62 L-78,60 Z', GANT(-166, -78), 8), T('M-140,-50 q-10,40 14,84', '#FFF3B0', 8, .6),
+  ...[-92, -62, -32, -2].map((y, i) => P(rr(-98, y, 96 - i * 4, 27, 13), GANT(-98, 0), 7)),
+  T('M-52,-88 v20 M-52,-58 v20 M-52,-28 v20 M-52,2 v20', '#C97E0C', 4, .7),
+  P('M-96,34 Q-70,24 -52,46 Q-60,70 -92,62 Z', GANT(-96, -52), 7),
 ];
+// la poignée de la vanne (un arceau d'acier) et le gant droit qui la tire : posés par le jeu, ils reculent quand l'eau s'ouvre
+S.gant_poignee = [
+  P('M-40,84 L46,84 L74,190 L-52,190 Z', GV(84, 190, '#4A4466', '#2A2540'), 8), T('M-44,120 H56', '#FFE066', 12), T('M-46,144 H62', '#E8F0F8', 7),
+  P('M-50,-4 Q-58,62 -34,88 L40,88 Q60,58 50,-4 Z', GANT(-58, 60), 8), T('M-34,20 q-6,30 6,54', '#FFF3B0', 8, .6),
+  ...[-48, -23, 2, 27].map((x, i) => P(rr(x, -38, 23, 50 - (i === 0 || i === 3 ? 6 : 0), 11.5), GANT(x, x + 23), 7)),
+  T('M-44,-8 h16 M-19,-10 h16 M6,-10 h16 M31,-8 h16', '#C97E0C', 4, .7),
+  P('M-50,10 Q-78,4 -80,34 Q-72,56 -46,48 Z', GANT(-80, -46), 7),
+];
+// l'eau dans la bouche de la lance
+S.bouche_eau = [A(el(0, 0, 46, 11), GV(-11, 11, '#DDF5FF', '#48B0F8')), T(el(0, 0, 46, 11), '#FFFFFF', 4, .8), A(el(0, -10, 58, 22), GR(0, -10, 58, [0, '#FFFFFF', .9], [.6, '#DDF5FF', .5], [1, '#DDF5FF', 0]))];
 
 // ═════════════ L'eau ═════════════
-S.goutte = [P('M0,-15 q-12,16 0,24 q12,-8 0,-24 Z', GV(-15, 10, '#C8EEFF', '#5CC0FF'), 3, '#2E8FE0'), A(ci(-3, -1, 3), '#fff', .9)];
+S.goutte = [P('M0,-15 q-12,16 0,24 q12,-8 0,-24 Z', GV(-15, 10, '#DDF5FF', '#48B0F8'), 3, '#1E78D6'), A(ci(-3, -1, 3), '#fff', .9)];
 S.bulle = [P(ci(0, 0, 13), GR(-4, -5, 16, [0, '#FFFFFF', .95], [1, '#CDEBFF', .55]), 3, '#7FB6E6'), T('M-6,-6 q3,-5 9,-4', '#fff', 3)];
 S.mousse = [P('M-26,6 a16,16 0 0 1 6,-26 a20,20 0 0 1 36,-4 a16,16 0 0 1 14,28 a12,12 0 0 1 -12,10 L-16,14 a10,10 0 0 1 -10,-8 Z', GV(-30, 16, '#FFFFFF', '#DCEFFF'), 3, '#9CC6EA')];
-S.eclabousse = [
-  A('M0,-70 L14,-26 L52,-58 L34,-14 L82,-22 L42,6 L76,36 L30,26 L34,66 L4,34 L-22,70 L-22,28 L-66,44 L-38,8 L-84,-10 L-38,-18 L-58,-58 L-16,-30 Z', GR(0, 0, 80, [0, '#FFFFFF', 1], [.6, '#BFE8FF', .9], [1, '#7FD3FF', .6])),
-  T('M0,-70 L14,-26 L52,-58 L34,-14 L82,-22 L42,6 L76,36 L30,26 L34,66 L4,34 L-22,70 L-22,28 L-66,44 L-38,8 L-84,-10 L-38,-18 L-58,-58 L-16,-30 Z', '#2E8FE0', 4, .8),
+// la gerbe : une couronne de langues d'eau arrondies (deux formes qui alternent)
+const couronne = (n, dedans, dehors, tour) => { let d = ''; for (let i = 0; i <= n; i++) { const a = tour + i * 360 / n, [x, y] = pol(a, dedans), [cx, cy] = pol(a - 180 / n, dehors * (.78 + .22 * alea(i + n))); d += i ? ` Q${cx},${cy} ${x},${y}` : `M${x},${y}`; } return d + ' Z'; };
+for (const [k, n, r, t] of [['a', 9, 100, 0], ['b', 8, 92, 22]]) S['gerbe_' + k] = [
+  A(couronne(n, 34, r + 22, t), GR(0, 0, r + 22, [0, '#FFFFFF', .0], [.5, '#DDF5FF', .55], [1, '#A6E2FF', .0])),
+  P(couronne(n, 30, r, t + 180 / n), GR(0, 0, r, [0, '#FFFFFF', 1], [.55, '#DDF5FF', .95], [1, '#7FD3FF', .75]), 3.5, '#3E9BE8', .96),
+  A(ci(0, 0, 30), GR(0, 0, 30, [0, '#FFFFFF', 1], [1, '#FFFFFF', .2])),
+  ...[...Array(n)].map((_, i) => { const [x, y] = pol(t + i * 360 / n + 12, r + 14 + 16 * alea(i * 3 + n)); return P(ci(x, y, 5 + 4 * alea(i + 7)), '#DDF5FF', 2.5, '#3E9BE8'); }),
 ];
-S.onde = [T(el(0, 0, 60, 18), '#FFFFFF', 7, .9), T(el(0, 0, 60, 18), '#7FD3FF', 3)];
+S.brume = [A(ci(0, 0, 150), GR(0, 0, 150, [0, '#FFFFFF', .55], [.5, '#EAF8FF', .25], [1, '#EAF8FF', 0]))];
+S.onde = [T(el(0, 0, 60, 20), '#FFFFFF', 8, .9), T(el(0, 0, 60, 20), '#7FD3FF', 3)];
 S.vague = [   // le rideau d'eau qui passe d'une scène à l'autre (origine : en haut à gauche de la crête)
   A('M-100,60 q100,-90 200,0 t200,0 t200,0 t200,0 t200,0 t200,0 t200,0 t200,0 t200,0 V2200 H-100 Z', GV(0, 1400, '#5CC0FF', '#2E7FD6')),
   T('M-100,60 q100,-90 200,0 t200,0 t200,0 t200,0 t200,0 t200,0 t200,0 t200,0 t200,0', '#FFFFFF', 26, .95),

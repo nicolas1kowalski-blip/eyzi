@@ -48,7 +48,7 @@ namespace MesPremiersJeux.Games
     internal sealed partial class JetMoteur
     {
         public const double W = 1600, H = 900;
-        private const double PivotY = 1076, LongueurLance = 408;
+        private const double PivotY = 1076, LongueurLance = 404, Raccourci = 0.62;      // la lance est vue de derrière, dans sa longueur : elle paraît plus courte
 
         // Les calques, du fond vers le devant.
         public readonly JetCalque Ciel = new JetCalque(), Decor = new JetCalque(), Eau = new JetCalque(), Avant = new JetCalque(), Effets = new JetCalque(), Rideau = new JetCalque();
@@ -74,7 +74,9 @@ namespace MesPremiersJeux.Games
         private readonly Random _alea;
         private double _temps, _vu = -10, _sansProgres, _indice, _depuis;
         private double _rx = W / 2, _ry = 420, _cx = W / 2, _cy = 420;      // le regard, et le point visé (qui le suit en douceur)
-        private readonly JetObjet _lance, _jetBord, _jetCorps, _jetReflet, _jetFil, _gerbe, _soleil, _rayons, _lueur, _vague;
+        private readonly JetObjet _lance, _arceauBord, _arceau, _arceauReflet, _gantPoignee, _boucheEau, _jetBord, _jetCorps, _jetCoeur, _jetReflet, _jetFil, _jetFil2, _gerbeA, _gerbeB, _brume, _soleil, _rayons, _lueur, _vague;
+        private double _angle, _coup, _egoutte, _prochaineOnde, _prochaineGoutte;
+        private bool _coulait;
         private readonly JetObjet[] _nuages;
         private readonly Bac _gouttes, _gadoue, _bulles, _mousse, _vapeur, _fumee, _braises, _ondes, _etoiles, _coeurs;
         private readonly Bac[] _bacs;
@@ -95,23 +97,35 @@ namespace MesPremiersJeux.Games
             _soleil = Pose(Ciel, "soleil", 1380, 150);
             _nuages = new[] { Pose(Ciel, "nuage", 300, 150), Pose(Ciel, "nuage", 960, 96, 0.7), Pose(Ciel, "nuage", 1560, 250, 0.55) };
 
-            // L'eau : les gouttes et la mousse, puis le jet (deux formes qui s'affinent vers le fond, deux filets clairs), puis la gerbe.
+            // Ce qui vole dans la scène : la boue, la mousse, les bulles, la fumée…
             _gadoue = new Bac(this, Eau, "gadoue", 24);
             _mousse = new Bac(this, Eau, "mousse", 26);
             _bulles = new Bac(this, Eau, "bulle", 26);
             _fumee = new Bac(this, Eau, "fumee", 20);
             _vapeur = new Bac(this, Eau, "vapeur", 28);
             _braises = new Bac(this, Eau, "braise", 24);
-            _ondes = new Bac(this, Eau, "onde", 8);
-            _jetBord = Eau.Ajoute(new JetObjet { Genre = JetGenre.Plein, Couleur = "#2E8FE0", Op = 0 });
-            _jetCorps = Eau.Ajoute(new JetObjet { Genre = JetGenre.Plein, Couleur = "#7FD3FF", Op = 0 });
-            _jetReflet = Eau.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#DDF5FF", Epaisseur = 9, Op = 0 });
-            _jetFil = Eau.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 6, Tiret = 3, Espace = 4, Op = 0 });
-            _gouttes = new Bac(this, Eau, "goutte", 56);
-            _gerbe = Pose(Eau, "eclabousse", 0, 0);
-            _gerbe.Op = 0;
+            _ondes = new Bac(this, Eau, "onde", 10);
 
+            // Au premier plan : la lance, l'arceau de sa vanne et le gant qui le tire, l'eau dans sa bouche ;
+            // puis le jet (il sort de la lance, donc il passe devant elle), la gerbe et les gouttes.
             _lance = Pose(Avant, "lance", W / 2, PivotY);
+            _arceauBord = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#2A1C4E", Epaisseur = 24 });
+            _arceau = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#B9C2D6", Epaisseur = 15 });
+            _arceauReflet = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 5, Op = 0.8 });
+            _gantPoignee = Pose(Avant, "gant_poignee", 0, 0);
+            _boucheEau = Pose(Avant, "bouche_eau", 0, 0);
+            _boucheEau.Op = 0;
+            _jetBord = Avant.Ajoute(new JetObjet { Genre = JetGenre.Plein, Couleur = "#1E78D6", Op = 0 });
+            _jetCorps = Avant.Ajoute(new JetObjet { Genre = JetGenre.Plein, Couleur = "#48B0F8", Op = 0 });
+            _jetCoeur = Avant.Ajoute(new JetObjet { Genre = JetGenre.Plein, Couleur = "#9ADCFF", Op = 0 });
+            _jetReflet = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 5, Op = 0 });
+            _jetFil2 = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#CDEEFF", Epaisseur = 4, Tiret = 2, Espace = 7, Op = 0 });
+            _jetFil = Avant.Ajoute(new JetObjet { Genre = JetGenre.Ligne, Couleur = "#FFFFFF", Epaisseur = 5, Tiret = 3, Espace = 5, Op = 0 });
+            _brume = Pose(Avant, "brume", 0, 0); _brume.Op = 0;
+            _gerbeA = Pose(Avant, "gerbe_a", 0, 0); _gerbeA.Op = 0;
+            _gerbeB = Pose(Avant, "gerbe_b", 0, 0); _gerbeB.Op = 0;
+            _gouttes = new Bac(this, Avant, "goutte", 64);
+
             _etoiles = new Bac(this, Effets, "etoile", 44);
             _coeurs = new Bac(this, Effets, "coeur", 16);
             _vague = Pose(Rideau, "vague", -100, H + 40);
@@ -278,29 +292,67 @@ namespace MesPremiersJeux.Games
             _cx += (Borne(_rx, 30, W - 30) - _cx) * suit;
             _cy += (Borne(_ry, 60, 800) - _cy) * suit;
 
-            // --- La lance : au premier plan, elle glisse et pivote pour viser le point regardé ---
-            double bx = W / 2 + (_cx - W / 2) * 0.24;
-            double angle = Borne(Math.Atan2(_cx - bx, PivotY - _cy), -0.95, 0.95);
-            double recul = Pression * (3 * Math.Sin(_temps * 43) + 2 * Math.Sin(_temps * 61));        // elle vibre sous la pression
-            _lance.X = bx; _lance.Y = PivotY + 10 * Pression + recul; _lance.R = angle * 180 / Math.PI;
-            double ux = Math.Sin(angle), uy = -Math.Cos(angle);
-            double tx = _lance.X + ux * LongueurLance, ty = _lance.Y + uy * LongueurLance;
-
-            // --- Le jet : large à la sortie de la lance, fin là-bas, pour donner la profondeur ---
-            double portee = Distance(tx, ty, _cx, _cy);
-            bool coule = Pression > 0.03 && portee > 40;
+            // --- La lance : au premier plan, elle glisse et pivote pour viser un peu au-dessus du point regardé (l'eau retombe dessus) ---
             double loin = Borne((_cy - 250) / 520);            // 0 : loin (haut de l'image) ; 1 : tout près
-            if (coule) TraceJet(tx, ty, portee, loin, dt);
-            _jetBord.Op = _jetCorps.Op = coule ? 1 : 0; _jetReflet.Op = coule ? 0.85 : 0; _jetFil.Op = coule ? 0.9 : 0;
-            _touche = coule && Pression > 0.9;
+            double taille = Mel(1.22, 1.4, loin), longueur = LongueurLance * Raccourci * taille;
+            double bx = W / 2 + (_cx - W / 2) * 0.3;
+            // on baisse les mains pour viser près : le bout de la lance reste toujours en dessous du point regardé
+            double pivot = Borne(_cy + 80, 640, 850) + longueur;
+            double leve = Mel(70, 24, loin);
+            double vise = Borne(Math.Atan2(_cx - bx, pivot - (_cy - leve)), -1.02, 1.02);
+            _angle += (vise - _angle) * Math.Min(1, dt * 16);          // elle a du poids : elle suit avec un rien de retard
+            bool coule = Pression > 0.03;
+            if (coule && !_coulait) _coup = 1;                          // le coup de recul quand l'eau s'ouvre
+            if (!coule && _coulait) { _egoutte = 0.9; _prochaineGoutte = 0.1; }
+            _coulait = coule;
+            _coup *= Math.Exp(-dt * 9);
+            double vibre = Pression * (2.6 * Math.Sin(_temps * 43) + 1.8 * Math.Sin(_temps * 61));
+            _lance.X = bx + vibre * 0.5; _lance.Y = pivot + 6 * Pression + vibre + 16 * _coup; _lance.R = _angle * 180 / Math.PI; _lance.SX = taille; _lance.SY = taille * Raccourci;
+            double ux = Math.Sin(_angle), uy = -Math.Cos(_angle);
+            double tx = _lance.X + ux * longueur, ty = _lance.Y + uy * longueur;
+
+            // l'arceau de la vanne recule quand l'eau s'ouvre, et le gant droit avec lui
+            double recule = Mel(-92, 66, Doux(Pression));
+            var arc = new double[26];
+            for (int i = 0; i <= 12; i++) { double th = Math.PI * i / 12; arc[i * 2] = -76 * Math.Cos(th); arc[i * 2 + 1] = -216 + recule * Math.Sin(th); }
+            foreach (var a in new[] { _arceauBord, _arceau, _arceauReflet })
+            {
+                a.X = _lance.X; a.Y = _lance.Y; a.R = _lance.R; a.SX = _lance.SX; a.SY = _lance.SY;
+                if (a == _arceauReflet) { var r = (double[])arc.Clone(); for (int i = 1; i < r.Length; i += 2) r[i] -= 3; a.Points = r; } else a.Points = arc;
+                a.Etat++;
+            }
+            DansLaLance(0, -216 + recule, out double gx, out double gy);
+            _gantPoignee.X = gx; _gantPoignee.Y = gy; _gantPoignee.R = _lance.R; _gantPoignee.SX = taille; _gantPoignee.SY = taille * 0.82;
+            DansLaLance(0, -LongueurLance, out double mx, out double my);
+            _boucheEau.X = mx; _boucheEau.Y = my; _boucheEau.R = _lance.R; _boucheEau.SX = taille * (1 + 0.06 * Math.Sin(_temps * 37)); _boucheEau.SY = taille * Raccourci; _boucheEau.Op = Borne(Pression * 3);
+
+            // --- Le jet : il sort dans l'axe de la lance, large, puis retombe en s'affinant sur le point regardé ---
+            double portee = Distance(tx, ty, _cx, _cy);
+            bool trace = coule && portee > 50 && (_cx - tx) * ux + (_cy - ty) * uy > 20;
+            if (trace) TraceJet(tx, ty, ux, uy, portee, loin, taille, dt);
+            _jetBord.Op = _jetCorps.Op = trace ? 0.96 : 0; _jetCoeur.Op = trace ? 0.9 : 0; _jetReflet.Op = trace ? 0.75 : 0; _jetFil.Op = trace ? 0.85 : 0; _jetFil2.Op = trace ? 0.7 : 0;
+            _touche = trace && Pression > 0.9;
+            double k = Mel(0.55, 1.15, loin);
             if (_touche)
             {
-                double k = Mel(0.55, 1.15, loin);
-                for (int i = 0; i < 3; i++)
-                    _gouttes.Lance(_cx + Entre(-10, 10) * k, _cy, Entre(-230, 230) * k, Entre(-380, -110) * k, 1000, Entre(0.35, 0.65), Entre(0.6, 1.2) * k);
-                _gerbe.X = _cx; _gerbe.Y = _cy; _gerbe.E = k * (0.75 + 0.3 * Math.Abs(Math.Sin(_temps * 31))); _gerbe.R = Math.Floor(_temps * 14) * 37; _gerbe.Op = 0.95;
+                // là où l'eau arrive : une brume, une couronne d'eau qui palpite, des gouttes qui giclent et qui coulent, des ronds qui s'élargissent
+                for (int i = 0; i < 2; i++)
+                    _gouttes.Lance(_cx + Entre(-10, 10) * k, _cy, Entre(-240, 240) * k, Entre(-400, -120) * k, 1000, Entre(0.35, 0.65), Entre(0.5, 1.0) * k);
+                if (Hasard() < 0.5) _gouttes.Lance(_cx + Entre(-34, 34) * k, _cy + Entre(0, 24) * k, Entre(-20, 20), Entre(40, 130), 320, Entre(0.5, 0.8), Entre(0.5, 0.8) * k);
+                _prochaineOnde -= dt;
+                if (_prochaineOnde <= 0) { _prochaineOnde = 0.17; _ondes.Lance(_cx, _cy + 6 * k, 0, 0, 0, 0.5, 0.45 * k, 2.2); }
+                bool pair = Math.Floor(_temps * 13) % 2 == 0;
+                var g = pair ? _gerbeA : _gerbeB; (pair ? _gerbeB : _gerbeA).Op = 0;
+                g.X = _cx; g.Y = _cy; g.E = k * (0.78 + 0.26 * Math.Abs(Math.Sin(_temps * 29))); g.R = 14 * Math.Sin(_temps * 17); g.Op = 0.96;
+                _brume.X = _cx; _brume.Y = _cy; _brume.E = k * (1 + 0.1 * Math.Sin(_temps * 9)); _brume.Op = 0.85;
             }
-            else _gerbe.Op = 0;
+            else { _gerbeA.Op = 0; _gerbeB.Op = 0; _brume.Op = Math.Max(0, _brume.Op - dt * 4); }
+            // la lance s'égoutte quand l'eau s'arrête
+            if (_egoutte > 0)
+            {
+                _egoutte -= dt; _prochaineGoutte -= dt;
+                if (_prochaineGoutte <= 0) { _prochaineGoutte = 0.26; _gouttes.Lance(tx + Entre(-20, 20), ty + 6, Entre(-20, 20), 30, 800, 0.7, Entre(0.8, 1.1)); }
+            }
 
             // --- Le ciel ---
             _rayons.R += dt * 14; _lueur.E = 1 + 0.05 * Math.Sin(_temps * 1.7);
@@ -360,33 +412,57 @@ namespace MesPremiersJeux.Games
             }
         }
 
-        private const int Pas = 18;
-        private readonly double[] _milieu = new double[(Pas + 1) * 2];
-
-        private void TraceJet(double tx, double ty, double portee, double loin, double dt)
+        /// <summary>Où se trouve, dans la scène, un point donné dans le repère de la lance.</summary>
+        private void DansLaLance(double x, double y, out double mx, out double my)
         {
-            // Une courbe légèrement bombée, de la lance au point visé ; on n'en trace que le début tant que la pression monte.
-            double sx = (tx + _cx) / 2, sy = (ty + _cy) / 2 - (30 + portee * 0.10);
-            double p = Pression, large0 = 34, large1 = Mel(7, 15, loin);
-            var bord = new double[(Pas + 1) * 4]; var corps = new double[(Pas + 1) * 4]; var reflet = new double[(Pas + 1) * 2];
+            double c = Math.Cos(_angle), s = Math.Sin(_angle);
+            x *= _lance.SX; y *= _lance.SY;
+            mx = _lance.X + x * c - y * s; my = _lance.Y + x * s + y * c;
+        }
+
+        private const int Pas = 24;
+
+        private void TraceJet(double tx, double ty, double ux, double uy, double portee, double loin, double taille, double dt)
+        {
+            // Une courbe qui part dans l'axe de la lance et retombe sur le point visé ; on n'en trace que le début tant que la pression monte.
+            double sx = tx + ux * portee * 0.5, sy = ty + uy * portee * 0.5;
+            double p = Pression, large0 = 36 * taille, large1 = Mel(7, 15, loin);
+            int n = Pas + 1;
+            var bord = new double[n * 4]; var corps = new double[n * 4]; var coeur = new double[n * 4];
+            var reflet = new double[n * 2]; var fil = new double[n * 2]; var fil2 = new double[n * 2];
+            int ou = _alea.Next(3, Pas - 2);      // d'où part la gouttelette de cette image
             for (int i = 0; i <= Pas; i++)
             {
                 double u = p * i / Pas, v = 1 - u;
                 double x = v * v * tx + 2 * v * u * sx + u * u * _cx, y = v * v * ty + 2 * v * u * sy + u * u * _cy;
                 double dx = 2 * v * (sx - tx) + 2 * u * (_cx - sx), dy = 2 * v * (sy - ty) + 2 * u * (_cy - sy), d = Math.Max(1e-6, Math.Sqrt(dx * dx + dy * dy));
                 double nx = -dy / d, ny = dx / d;
-                double l = Mel(large0, large1, Math.Pow(u, 0.7)) * (1 + 0.06 * Math.Sin(_temps * 26 - i * 0.9));   // l'eau ondule un peu
+                // l'eau ondule un peu, et se défait en arrivant
+                double onde = 1 + 0.05 * Math.Sin(_temps * 26 - i * 0.9) + (u > 0.6 ? 0.2 * (u - 0.6) / 0.4 * Math.Sin(_temps * 34 - i * 1.7) : 0);
+                double l = Mel(large0, large1, Math.Pow(u, 0.75)) * onde;
                 int a = i * 2, b = (2 * Pas + 1 - i) * 2;
-                bord[a] = x + nx * (l + 5); bord[a + 1] = y + ny * (l + 5); bord[b] = x - nx * (l + 5); bord[b + 1] = y - ny * (l + 5);
+                bord[a] = x + nx * (l + 4.5); bord[a + 1] = y + ny * (l + 4.5); bord[b] = x - nx * (l + 4.5); bord[b + 1] = y - ny * (l + 4.5);
                 corps[a] = x + nx * l; corps[a + 1] = y + ny * l; corps[b] = x - nx * l; corps[b + 1] = y - ny * l;
-                _milieu[a] = x; _milieu[a + 1] = y;
-                reflet[a] = x + nx * l * 0.5; reflet[a + 1] = y + ny * l * 0.5;
+                // le cœur clair et le reflet sont du côté gauche : la lumière vient de là
+                double cx = x - nx * l * 0.2, cy = y - ny * l * 0.2;
+                coeur[a] = cx + nx * l * 0.5; coeur[a + 1] = cy + ny * l * 0.5; coeur[b] = cx - nx * l * 0.5; coeur[b + 1] = cy - ny * l * 0.5;
+                reflet[a] = x - nx * l * 0.66; reflet[a + 1] = y - ny * l * 0.66;
+                fil[a] = x - nx * l * 0.1; fil[a + 1] = y - ny * l * 0.1;
+                fil2[a] = x + nx * l * 0.5; fil2[a + 1] = y + ny * l * 0.5;
+                // de fines gouttelettes se détachent du jet et retombent
+                if (i == ou && p > 0.6)
+                {
+                    double cote = Hasard() < 0.5 ? -1 : 1, e = Mel(0.4, 0.75, loin);
+                    _gouttes.Lance(x + nx * l * cote, y + ny * l * cote, dx / d * 140 + nx * cote * Entre(50, 130), dy / d * 140 + ny * cote * Entre(50, 130) - 30, 700, Entre(0.3, 0.5), Entre(0.5, 0.9) * e);
+                }
             }
-            _jetBord.Points = bord; _jetBord.Etat++;
-            _jetCorps.Points = corps; _jetCorps.Etat++;
-            _jetReflet.Points = reflet; _jetReflet.Etat++;
-            _jetFil.Points = (double[])_milieu.Clone(); _jetFil.Etat++;
-            _jetFil.Decalage -= dt * 22;
+            foreach (var (o, pts) in new[] { (_jetBord, bord), (_jetCorps, corps), (_jetCoeur, coeur), (_jetReflet, reflet), (_jetFil, fil), (_jetFil2, fil2) }) { o.Points = pts; o.Etat++; }
+            _jetFil.Decalage -= dt * 24; _jetFil2.Decalage -= dt * 15;
+            // pendant que le jet s'allonge, son bout fait déjà une petite gerbe
+            if (p < 0.9 && p > 0.15)
+            {
+                _gerbeA.X = fil[Pas * 2]; _gerbeA.Y = fil[Pas * 2 + 1]; _gerbeA.E = 0.38 * Mel(0.6, 1.1, loin); _gerbeA.R = _temps * 300; _gerbeA.Op = 0.9;
+            }
         }
 
         // ------------------------------------------------------------------
