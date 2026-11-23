@@ -5,10 +5,11 @@ using MesPremiersJeux.Lib;
 namespace MesPremiersJeux.Games
 {
     /// <summary>
-    /// 💀 « Oscar le squelette » — Oscar, le squelette de la classe, pend à sa potence : il lui manque ses organes
-    /// (le cerveau, les poumons, le cœur, l'estomac, le foie, les intestins, la vessie). La voix en nomme un,
-    /// l'enfant le remet à sa place ; une fois posé, l'organe se met à vivre et la voix dit à quoi il sert.
-    /// Trois niveaux, mémorisés : un seul endroit brille ; trois endroits au choix ; reconnaître l'organe parmi trois.
+    /// 🧠 « Le corps humain » — un corps humain translucide, comme dans une visionneuse d'anatomie, attend ses
+    /// organes (le cerveau, les poumons, le cœur, l'estomac, le foie, les intestins, la vessie). La voix en nomme
+    /// un, l'enfant le remet à sa place ; une fois posé, l'organe se met à vivre, la voix dit à quoi il sert et
+    /// une étiquette reliée à l'organe s'ajoute. Trois niveaux, mémorisés : un seul endroit brille ; trois
+    /// endroits au choix ; reconnaître l'organe parmi trois.
     ///
     /// Le jeu est dans CorpsMoteur.cs, ses dessins dans CorpsArt.cs (fabriqué par desktop/jeux-dessines) ;
     /// l'affichage, le regard, la voix et les bruits sont dans VecToile.cs.
