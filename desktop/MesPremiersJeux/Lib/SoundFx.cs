@@ -311,6 +311,102 @@ namespace MesPremiersJeux.Lib
             });
         }
 
+        // ------------------------------------------------------------------
+        //  Les bruits du jeu « Le jet d'eau »
+        // ------------------------------------------------------------------
+        /// <summary>Le fichier WAV (généré une fois) du bruit de l'eau qui coule, à jouer en boucle avec un MediaPlayer.
+        /// Le début et la fin se fondent l'un dans l'autre : la boucle ne s'entend pas.</summary>
+        public static string WaterLoopFile()
+        {
+            Directory.CreateDirectory(FileCacheDir);
+            var path = Path.Combine(FileCacheDir, "jet-eau-v1.wav");
+            if (!File.Exists(path))
+            {
+                var rng = new Random(11);
+                int n = Rate * 2, fondu = Rate / 4;
+                var brut = new float[n + fondu];
+                double lp = 0, lp2 = 0, prev = 0, hp = 0;
+                for (int i = 0; i < brut.Length; i++)
+                {
+                    double noise = rng.NextDouble() * 2 - 1;
+                    hp = 0.82 * (hp + noise - prev); prev = noise;      // on retire le grave : un chuintement
+                    lp += 0.35 * (hp - lp);                              // puis on adoucit l'aigu
+                    lp2 += 0.02 * (noise - lp2);                         // un fond de gargouillis
+                    double remous = 0.8 + 0.2 * Math.Sin(2 * Math.PI * 5.5 * i / Rate) * Math.Sin(2 * Math.PI * 0.5 * i / Rate);
+                    brut[i] = (float)((lp * 0.75 + lp2 * 1.4) * remous * 0.6);
+                }
+                var s = new float[n];
+                for (int i = 0; i < n; i++)
+                {
+                    if (i < fondu) { double u = i / (double)fondu; s[i] = (float)(brut[i] * u + brut[n + i] * (1 - u)); }
+                    else s[i] = brut[i];
+                }
+                File.WriteAllBytes(path, ToWav(s));
+            }
+            return path;
+        }
+
+        /// <summary>« Tut tut ! » : le klaxon de la voiture toute propre.</summary>
+        public static void Honk()
+        {
+            Play("klaxon", "klaxon", () =>
+            {
+                int n = (int)(Rate * 0.62);
+                var s = new float[n];
+                for (int i = 0; i < n; i++)
+                {
+                    double t = i / (double)Rate;
+                    bool on = t < 0.22 || (t > 0.32 && t < 0.6);
+                    if (!on) continue;
+                    double tt = t < 0.22 ? t : t - 0.32, dur = t < 0.22 ? 0.22 : 0.28;
+                    double env = Math.Min(1, tt * 60) * Math.Min(1, (dur - tt) * 40);
+                    double v = Math.Sin(2 * Math.PI * 392 * t) + 0.8 * Math.Sin(2 * Math.PI * 494 * t) + 0.3 * Math.Sin(2 * Math.PI * 784 * t);
+                    s[i] = (float)(Math.Tanh(v * 1.4) * env * 0.42);
+                }
+                return s;
+            });
+        }
+
+        /// <summary>« Pschhh » : une flamme qui s'éteint sous l'eau.</summary>
+        public static void Sizzle()
+        {
+            Play("pschh", "pschh", () =>
+            {
+                var rng = new Random(5);
+                int n = (int)(Rate * 0.5);
+                var s = new float[n];
+                double prev = 0, hp = 0;
+                for (int i = 0; i < n; i++)
+                {
+                    double t = i / (double)n;
+                    double noise = rng.NextDouble() * 2 - 1;
+                    hp = 0.9 * (hp + noise - prev); prev = noise;
+                    s[i] = (float)(hp * Math.Min(1, t * 30) * Math.Exp(-4.5 * t) * 0.6);
+                }
+                return s;
+            });
+        }
+
+        /// <summary>« Plouf » : un récipient plein, un poisson qui replonge.</summary>
+        public static void Plouf()
+        {
+            Play("plouf", "plouf", () =>
+            {
+                var rng = new Random(9);
+                var bloup = Glide(520, 150, 0.16, 0.55);
+                int n = (int)(Rate * 0.4);
+                var s = new float[n];
+                double lp = 0;
+                for (int i = 0; i < n; i++)
+                {
+                    double t = i / (double)n;
+                    lp += 0.25 * ((rng.NextDouble() * 2 - 1) - lp);
+                    s[i] = (float)((i < bloup.Length ? bloup[i] : 0) + lp * Math.Sin(Math.PI * Math.Min(1, t * 1.6)) * Math.Exp(-5 * t) * 0.9);
+                }
+                return s;
+            });
+        }
+
         /// <summary>Petit « pop » joyeux (apparition, rebond).</summary>
         public static void PopSound()
             => Play("pop", "pop", () => Glide(420, 180, 0.1, 0.5));

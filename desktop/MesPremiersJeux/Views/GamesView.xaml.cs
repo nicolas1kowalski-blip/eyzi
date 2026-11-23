@@ -50,6 +50,7 @@ namespace MesPremiersJeux.Views
                     ("🎣", "La pêche", c => new FishingGame(c)),
                     ("🥔", "Patatou", c => new PotatoGame(c)),
                     ("🥧", "Tartes à la crème", c => new PieFaceGame(c)),
+                    ("💦", "Le jet d'eau", c => new WaterJetGame(c)),
                 },
             },
             new Theme
