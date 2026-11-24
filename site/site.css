@@ -163,6 +163,7 @@ button:disabled{opacity:.6;cursor:wait}
 
 /* ======== refonte 2 : la scène animée de l'écoute, avant/après, sections en zigzag ======== */
 .hero .in{grid-template-columns:.9fr 1.1fr}
+@media(max-width:900px){.hero .in{grid-template-columns:1fr}.hero .ctas{justify-content:center}}
 .scene{position:relative;min-height:420px;display:grid;grid-template-columns:.8fr 2.2fr .8fr;align-items:center;gap:6px;padding-bottom:30px}
 .sc-face{font-size:56px;line-height:1;text-align:center;filter:drop-shadow(0 8px 20px rgba(0,0,0,.35))}
 .sc-bubble{background:#fff;color:#1B1430;border-radius:18px;padding:10px 14px;font-weight:700;font-size:15px;line-height:1.25;margin-top:10px;position:relative;box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0}
