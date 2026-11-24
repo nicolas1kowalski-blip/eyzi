@@ -86,6 +86,13 @@ Le responsable nommé est « Eyzi » avec contact@eyzi.fr ; les hébergeurs sont
 envoyé au Store et part en certification. Microsoft le valide (quelques heures à quelques jours), puis
 le Store met à jour les tablettes installées par le Store.
 
+**État au 24 novembre 2026 : pas actif.** Le compte développeur d'Eyzi est un compte individuel, et
+l'espace partenaires n'y propose pas l'onglet « Applications Microsoft Entra » (seul l'onglet
+« Users » apparaît, même avec un annuaire Entra relié). Sans cet onglet, pas d'identifiants, donc pas
+d'envoi automatique : le paquet se dépose à la main à chaque promotion. L'étape reste dans
+`promote.yml`, endormie, au cas où Microsoft ouvre cette possibilité ou si le compte devient un compte
+d'entreprise.
+
 Cela demande quatre secrets GitHub (dépôt → Settings → Secrets and variables → Actions). Sans eux,
 l'envoi ne se fait pas et la promotion reste ce qu'elle était.
 
