@@ -745,12 +745,12 @@ namespace MesPremiersJeux
 
         private void StartGazeSources()
         {
+            CheckStreamCrash(); // avant l'arrêt, qui efface le témoin
             StopGazeSources();
             string driver = _settings?.GazeDriver;
             if (string.IsNullOrWhiteSpace(driver)) driver = "auto";
             _dwell.PreferCursor = driver == "curseur";
             Lib.Log.Write("app", "Pilote du regard : " + driver);
-            CheckStreamCrash();
 
             try
             {
@@ -794,6 +794,8 @@ namespace MesPremiersJeux
         {
             _fallbackWatch?.Stop();
             _fallbackWatch = null;
+            // Arrêt voulu (changement de pilote, fermeture) : ce n'est pas une fermeture en plein démarrage.
+            try { System.IO.File.Delete(CrashFlag); } catch { }
             try { _gaze?.Dispose(); } catch { }
             try { _pro?.Dispose(); } catch { }
             try { _stream?.Dispose(); } catch { }
@@ -905,8 +907,15 @@ namespace MesPremiersJeux
         private static string CrashFlag => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MesPremiersJeux", "moteur-en-cours.txt");
 
+        // Le témoin ne se lit qu'UNE fois, au lancement : un témoin trouvé plus tard vient d'un moteur
+        // démarré par ce même programme (le parent change de pilote dans les 20 s), pas d'une fermeture.
+        // Le lire à chaque changement de pilote faisait croire à une fermeture et retenait le mauvais moteur.
+        private bool _crashVerifie;
+
         private void CheckStreamCrash()
         {
+            if (_crashVerifie) return;
+            _crashVerifie = true;
             try
             {
                 if (!System.IO.File.Exists(CrashFlag)) return;
@@ -1058,6 +1067,13 @@ namespace MesPremiersJeux
             if (string.IsNullOrEmpty(tag) || tag == _settings.GazeDriver) return;
             _settings.GazeDriver = tag;
             _settings.PreferCursor = tag == "curseur"; // compat anciennes versions
+            // « Moteur Tobii direct (comme Grid 3) » choisi à la main : on repart du moteur de la TABLETTE,
+            // même si l'autre avait été retenu. C'est la porte de sortie quand le moteur retenu ne voit rien.
+            if (tag == "stream" && _settings.StreamEngine == "stream" && TabletEngine() != null)
+            {
+                _settings.StreamEngine = "";
+                Lib.Log.Write("app", "Moteur Tobii direct choisi par le parent : on repart du moteur de la tablette");
+            }
             _settings.Save();
             Lib.Log.Write("app", "Pilote du regard changé par le parent : " + tag);
             StartGazeSources();
