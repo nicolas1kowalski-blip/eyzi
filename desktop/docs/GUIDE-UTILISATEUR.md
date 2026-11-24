@@ -24,8 +24,6 @@ Ce guide s'adresse aux parents et aux accompagnants. La première partie expliqu
 3. L'installeur est en français et ne demande **aucun droit administrateur** : il installe l'application dans le profil de l'utilisateur. Cochez « Lancer au démarrage de Windows » si la tablette est dédiée à l'enfant.
 4. À la fin, l'application se lance toute seule. Un raccourci « Eyzi » est sur le bureau et dans le menu Démarrer.
 
-**Autre façon : le Microsoft Store.** Eyzi est aussi sur le Microsoft Store (apps.microsoft.com/detail/9N0PL01VFJLG, ou le bouton « Microsoft Store » sur eyzi.fr). L'installation se fait en un clic, sans aucun de ces avertissements, et c'est le Store qui installe les mises à jour ; une nouvelle version y arrive quelques jours après les autres, le temps que Microsoft la valide. La licence est la même.
-
 Pour désinstaller : Paramètres Windows → Applications → Eyzi → Désinstaller. Le contenu de la famille (photos, voix, livres) n'est pas supprimé.
 
 ## 2. Le premier démarrage
