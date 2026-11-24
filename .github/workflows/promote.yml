@@ -60,6 +60,31 @@ jobs:
           # La branche qui a servi de déclencheur (« prod-v… ») ne sert plus : on la supprime.
           case "$GITHUB_REF" in refs/heads/prod-*) gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/$GITHUB_REF" || true;; esac
 
+      # Le pense-bête de chaque promotion : le paquet à déposer à la main dans l'espace partenaires
+      # Microsoft (le compte développeur individuel ne permet pas l'envoi automatique). Il s'affiche
+      # en haut de la page de l'exécution, avec le lien direct du fichier.
+      - name: À déposer sur le Microsoft Store
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.promo.outputs.tag }}
+        run: |
+          URL=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets \
+            --jq '.assets[] | select(.name | test("^Eyzi-Store-.*\\.msix$")) | .url' | head -n 1)
+          {
+            echo "## $TAG est en prod"
+            echo
+            if [ -n "$URL" ]; then
+              echo "### À faire : déposer cette version sur le Microsoft Store"
+              echo
+              echo "1. Télécharger le paquet : [$(basename "$URL")]($URL)"
+              echo "2. Ouvrir l'[espace partenaires](https://partner.microsoft.com/dashboard/apps-and-games/overview) avec le compte développeur habituel → Applications et jeux → **EYZI**"
+              echo "3. **Démarrer une mise à jour** → **Packages** → glisser le fichier \`.msix\` → Enregistrer"
+              echo "4. **Soumettre à la certification** (Microsoft valide en quelques heures à quelques jours)"
+            else
+              echo "Pas de paquet Store (.msix) dans cette version : rien à déposer."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # La même version part au Microsoft Store : le paquet MSIX de la version promue est déposé dans
   # l'espace partenaires et envoyé en certification (Microsoft le valide, puis le Store met à jour
   # les tablettes installées par le Store). Il faut quatre secrets GitHub, créés une fois dans
