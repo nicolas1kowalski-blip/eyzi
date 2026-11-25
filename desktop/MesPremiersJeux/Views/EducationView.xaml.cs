@@ -74,6 +74,7 @@ namespace MesPremiersJeux.Views
                     ("🏠", "Range la maison", "PS · MS", c => new TidyHouseGame(c)),
                     ("🛏️", "Sur, sous, devant, derrière", "PS · MS", c => new SpatialGame(c)),
                     ("🐮", "Où habite-t-il ?", "PS · MS", c => new HabitatGame(c)),
+                    ("🌱", "Dans l'ordre", "MS", c => new SequenceGame(c)),
                 },
             },
             new Theme

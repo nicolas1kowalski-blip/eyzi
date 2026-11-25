@@ -40,7 +40,7 @@ namespace MesPremiersJeux.Views
                 Games = new[] { "MusicSchoolGame", "BirdSongGame" } },
             new Domain { Key = "parler", Name = "Parler", Icon = "💬", Img = "micro", Tint = Color.FromRgb(0xDD, 0xEE, 0xFF), Games = new string[0] },
             new Domain { Key = "decouvrir", Name = "Découvrir", Icon = "🌱", Img = "arbre-2", Tint = Color.FromRgb(0xEA, 0xF8, 0xEE),
-                Games = new[] { "ColorMagicGame", "SizeGame", "PatternGame", "NecklaceGame", "VocabGame", "BodyGame", "InsideBodyGame", "EmotionsGame", "TidyHouseGame", "SpatialGame", "HabitatGame",
+                Games = new[] { "ColorMagicGame", "SizeGame", "PatternGame", "NecklaceGame", "VocabGame", "BodyGame", "InsideBodyGame", "EmotionsGame", "TidyHouseGame", "SpatialGame", "HabitatGame", "SequenceGame",
                                 "CapitalsGame", "SuitcaseGame", "FoodGame", "PlanetsGame", "DayNightGame", "EnglishGame", "ColorsGame", "ShapesGame", "ShadowGame", "SameGame" } },
             new Domain { Key = "jeux", Name = "Les jeux", Icon = "🎮", Img = "ballon", Tint = Color.FromRgb(0xF1, 0xE6, 0xFF), Games = null }, // tout le reste
         };

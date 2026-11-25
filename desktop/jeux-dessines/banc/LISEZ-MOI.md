@@ -33,6 +33,8 @@ Range la maison (`../maison.js`, `MaisonArt.cs`, `MaisonMoteur.cs`, pour `TidyHo
 
 Sur, sous, devant, derrière (`../reperes.js`, `ReperesArt.cs`, `LitMoteur.cs`, pour `SpatialGame.cs`) : `lit` (on découvre, puis « où est-il ? », puis « mets-le… »).
 
+Dans l'ordre (`../ordre.js`, `OrdreArt.cs`, `OrdreMoteur.cs`, pour `SequenceGame.cs`) : `ordre` (les quatre histoires à la suite).
+
 La valise du voyageur (`../valise.js`, `ValiseArt.cs`, `ValiseMoteur.cs`, pour `SuitcaseGame.cs`) : `valise` (la neige, le désert, la pluie à la suite).
 Le journal (`journal.txt`) note la voix, les bruits et les réussites.
 Ce que le banc ne vérifie pas : l'affichage WPF lui-même, le son, et le vrai regard.
