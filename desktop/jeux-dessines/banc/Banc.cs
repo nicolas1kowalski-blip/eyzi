@@ -29,10 +29,10 @@ static class Banc
         bool panier = scene == "panier";
         bool fil = scene == "fil";
         bool gouter = scene == "gouter", train = scene == "train";
-        bool maison = scene == "maison";
+        bool maison = scene == "maison" || scene == "habitats";
         bool valise = scene == "valise";
         bool lit = scene == "lit";
-        VecMoteur m = lit ? new LitMoteur(graine) : valise ? new ValiseMoteur(graine) : maison ? new MaisonMoteur(graine) : gouter ? new GouterMoteur(graine) : train ? new TrainMoteur(graine) : fil ? new FilMoteur(graine) : panier ? new PanierMoteur(graine) : chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
+        VecMoteur m = lit ? new LitMoteur(graine) : valise ? new ValiseMoteur(graine) : maison ? new MaisonMoteur(graine, scene == "habitats") : gouter ? new GouterMoteur(graine) : train ? new TrainMoteur(graine) : fil ? new FilMoteur(graine) : panier ? new PanierMoteur(graine) : chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
         // Patatou : ce que l'enfant choisit, écrit à l'avance (l'instant, la zone)
         var choix = new List<KeyValuePair<double, string>>();
         if (patate) foreach (var c in "1.6 c:0|4.0 c:1|6.4 c:0|11.0 f:3|12.2 c:3|14.5 f:4|15.6 c:7|18.0 f:5|19.0 c:0|21.5 f:6|22.5 c:0|25.0 photo|28.0 surprise|33.5 photo|36.5 f:3|37.5 c:10|40 f:0|41 c:4|43 nu".Split('|'))
@@ -79,7 +79,9 @@ static class Banc
         }
         // « maison » : le banc joue l'activité « Range la maison » (les pièces à découvrir, puis huit objets à ranger)
         var mm = m as MaisonMoteur; var vues = new bool[3]; int rangement = -1;
-        string[][] objets = { new[] { "casserole", "0" }, new[] { "brosse-a-dents", "1" }, new[] { "ours-peluche", "2" }, new[] { "savon", "1" }, new[] { "bol", "0" }, new[] { "pull", "2" }, new[] { "reveil", "2" }, new[] { "tasse", "0" } };
+        string[][] objets = scene == "habitats"
+            ? new[] { new[] { "vache", "0" }, new[] { "renard", "1" }, new[] { "baleine", "2" }, new[] { "hibou", "1" }, new[] { "cochon", "0" }, new[] { "pieuvre", "2" }, new[] { "ecureuil", "1" }, new[] { "poule", "0" } }
+            : new[] { new[] { "casserole", "0" }, new[] { "brosse-a-dents", "1" }, new[] { "ours-peluche", "2" }, new[] { "savon", "1" }, new[] { "bol", "0" }, new[] { "pull", "2" }, new[] { "reveil", "2" }, new[] { "tasse", "0" } };
         if (mm != null)
         {
             installe = () =>

@@ -29,7 +29,7 @@ Chamboule-tout (`../chamboule.js`, `ChambouleMoteur.cs`, `ChambouleGame.cs`) : `
 
 Les décors des activités de nombres (`../nombres.js`, `NombresArt.cs`) : `panier` (`PanierMoteur.cs`, pour `CompleteGame.cs`), `fil`, `gouter`, `train` (`FilMoteur.cs`, `GouterMoteur.cs`, `TrainMoteur.cs`, pour `MathGame.cs`). Ici c'est l'activité qui choisit les nombres et juge les réponses : le banc joue son rôle avec quelques questions écrites à l'avance. Les peluches partagées sont dans `../peluches.js`.
 
-Range la maison (`../maison.js`, `MaisonArt.cs`, `MaisonMoteur.cs`, pour `TidyHouseGame.cs`) : `maison`. Les objets à ranger sont des images de la banque d'images de l'application (`MesPremiersJeux/Images`), que `banc.sh` indique au banc par `EYZI_IMAGES`. Le paysage partagé est dans `../paysage.js`.
+Range la maison (`../maison.js`, `MaisonArt.cs`, `MaisonMoteur.cs`, pour `TidyHouseGame.cs`) : `maison`. Le même moteur montre les trois lieux de vie de « Où habite-t-il ? » (`HabitatGame.cs`) : `habitats`. Les objets à ranger sont des images de la banque d'images de l'application (`MesPremiersJeux/Images`), que `banc.sh` indique au banc par `EYZI_IMAGES`. Le paysage partagé est dans `../paysage.js`.
 
 Sur, sous, devant, derrière (`../reperes.js`, `ReperesArt.cs`, `LitMoteur.cs`, pour `SpatialGame.cs`) : `lit` (on découvre, puis « où est-il ? », puis « mets-le… »).
 

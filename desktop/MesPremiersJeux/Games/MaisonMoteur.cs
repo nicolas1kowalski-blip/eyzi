@@ -16,6 +16,10 @@ namespace MesPremiersJeux.Games
     //
     //  Ce que le moteur signale à l'activité (par Demande) : « piece:1 » (la
     //  pièce choisie, de gauche à droite : 0, 1, 2).
+    //
+    //  Le même moteur sert à « Où habite-t-il ? » (HabitatGame.cs) : à la place
+    //  des pièces, trois cadres montrent la ferme, la forêt et la mer, et les
+    //  objets à ranger sont des animaux.
     // ══════════════════════════════════════════════════════════════════════
 
     internal sealed class MaisonMoteur : VecMoteur
@@ -44,22 +48,26 @@ namespace MesPremiersJeux.Games
         public override List<VecZone> Zones => _zones;
         public override int EtatDesZones => _etatZones;
 
+        private readonly bool _habitats;      // le décor de « Où habite-t-il ? » : la ferme, la forêt, la mer dans trois cadres
+        private readonly Bac _feuillesMortes;
         private bool _ouvert, _choix, _fete;
         private int _bonne = -1;
         private double _arrive = 9, _non = 9, _sansChoix, _souffle, _feteVue;
 
         private static double PieceX(int i) => 70 + i * 490;
 
-        public MaisonMoteur(int graine = 0) : base(graine)
+        /// <param name="habitats">faux : la maison et ses trois pièces ; vrai : les trois lieux de vie (la ferme, la forêt, la mer)</param>
+        public MaisonMoteur(int graine = 0, bool habitats = false) : base(graine)
         {
+            _habitats = habitats;
             _calques = new[] { Ciel, Decor, Pieces, Ranges, Murs, Devant, Effets };
             _rayons = Pose(Ciel, "rayons", 1520, 58, 0.5); _soleil = Pose(Ciel, "soleil", 1520, 58, 0.5);
             _nuages = new[] { Pose(Ciel, "nuage", 180, 80, 0.55), Pose(Ciel, "nuage", 1560, 250, 0.4) };
             foreach (var p in MaisonArt.Scenes["maison"]) Decor.Ajoute(new VecObjet { Genre = VecGenre.Dessin, Dessin = p.Dessin }.En(p.X, p.Y, p.E, p.R));
             _fumee = new Bac(this, Decor, "brume", 8);
-            Pose(Decor, "m_cheminee", 0, 0);
+            if (!_habitats) Pose(Decor, "m_cheminee", 0, 0);
 
-            var noms = MaisonArt.Listes["pieces"];
+            var noms = MaisonArt.Listes[_habitats ? "habitats" : "pieces"];
             for (int i = 0; i < 3; i++)
             {
                 var p = new Piece { X = PieceX(i) };
@@ -69,8 +77,9 @@ namespace MesPremiersJeux.Games
             }
             _vapeur = new Bac(this, Pieces, "brume", 10);
             _bulles = new Bac(this, Pieces, "bulle", 14);
+            _feuillesMortes = new Bac(this, Pieces, "feuille_morte", 12);
             // l'ombre et le cadre passent par-dessus les objets rangés
-            Pose(Murs, "m_maison", 0, 0);
+            Pose(Murs, _habitats ? "l_cadres" : "m_maison", 0, 0);
             for (int i = 0; i < 3; i++)
             {
                 var p = _pieces[i];
@@ -79,7 +88,7 @@ namespace MesPremiersJeux.Games
                 Pose(Murs, "m_plaque", p.X + PieceL / 2, 164);
                 Murs.Ajoute(new VecObjet { Genre = VecGenre.Texte, Texte = noms[i][1], Taille = noms[i][1].Length > 12 ? 30 : 36, Couleur = "#FFF6DC" }.En(p.X + PieceL / 2, 164));
             }
-            Pose(Devant, "m_buisson", 14, 724, 0.8); Pose(Devant, "m_buisson", 1592, 728, 0.85);
+            if (!_habitats) { Pose(Devant, "m_buisson", 14, 724, 0.8); Pose(Devant, "m_buisson", 1592, 728, 0.85); }
             _projecteur = Pose(Devant, "m_projecteur", AttenteX, AttenteY + 96); _projecteur.Op = 0;
             _tapis = Pose(Devant, "m_tapis", AttenteX, AttenteY + 96); _tapis.Op = 0;
             _etoiles = new Bac(this, Effets, "etoile", 40);
@@ -112,7 +121,7 @@ namespace MesPremiersJeux.Games
             if (i < 0 || i > 2) return;
             _pieces[i].Allumee = 0;
             for (int k = 0; k < 6; k++) _etoiles.Lance(PieceX(i) + Entre(60, 420), PieceY + Entre(40, 200), Entre(-80, 80), Entre(-160, -40), 200, 0.9, Entre(0.6, 1), 0, Entre(-200, 200));
-            if (i == 2) Ecris("Zzz…", PieceX(2) + 190, PieceY + 240, "#DCCBFA", 54);
+            if (i == 2 && !_habitats) Ecris("Zzz…", PieceX(2) + 190, PieceY + 240, "#DCCBFA", 54);
         }
 
         /// <summary>Deuxième acte : cet objet (une image de la banque) attend d'être rangé dans la pièce « bonne ».</summary>
@@ -172,7 +181,7 @@ namespace MesPremiersJeux.Games
             for (int i = 0; i < _nuages.Length; i++) { _nuages[i].X += (5 + i * 3) * dt; if (_nuages[i].X > 1800) _nuages[i].X = -200; }
             // la cheminée fume
             _souffle -= dt;
-            if (_souffle <= 0) { _souffle = 0.7; _fumee.Lance(1192, 4, Entre(10, 40), -Entre(30, 60), 0, 2.2, 0.16, 2.2); }
+            if (_souffle <= 0 && !_habitats) { _souffle = 0.7; _fumee.Lance(1192, 4, Entre(10, 40), -Entre(30, 60), 0, 2.2, 0.16, 2.2); }
 
             bool vu = _temps - _vu < 0.4;
             for (int i = 0; i < 3; i++)
@@ -190,7 +199,14 @@ namespace MesPremiersJeux.Games
                 p.Ombre.Op = p.Refus < 0.9 ? Math.Sin(p.Refus / 0.9 * Math.PI) : 0;
                 p.Fond.X = p.X + (p.Refus < 0.5 ? 9 * Math.Sin(p.Refus * 44) * (1 - p.Refus / 0.5) : 0);
                 // la pièce allumée s'anime : la casserole fume, la baignoire fait des bulles
-                if (allumee && Hasard() < dt * 7)
+                if (allumee && _habitats)
+                {
+                    if (Hasard() >= dt * 7) continue;
+                    // le lieu allumé s'anime : les feuilles tombent dans la forêt, les bulles montent dans la mer
+                    if (i == 1) _feuillesMortes.Lance(p.X + Entre(40, 440), PieceY + 60, Entre(-30, 30), Entre(50, 110), 60, 2.4, Entre(0.8, 1.4), 0, Entre(-200, 200));
+                    if (i == 2) _bulles.Lance(p.X + Entre(40, 440), PieceY + 380, Entre(-14, 14), -Entre(70, 130), -20, 2.2, Entre(0.7, 1.3));
+                }
+                else if (allumee && Hasard() < dt * 7)
                 {
                     if (i == 0) _vapeur.Lance(p.X + 400 + Entre(-14, 14), PieceY + 204, Entre(-14, 14), -Entre(50, 90), 0, 1.4, 0.14, 1.6);
                     if (i == 1) _bulles.Lance(p.X + Entre(60, 270), PieceY + 240, Entre(-20, 20), -Entre(60, 120), -30, 1.5, Entre(0.7, 1.3));
@@ -233,7 +249,7 @@ namespace MesPremiersJeux.Games
                 _etoiles.Lance(Entre(80, 1520), Entre(40, 200), Entre(-60, 60), Entre(80, 220), 260, 1.6, Entre(0.7, 1.4), 0, Entre(-240, 240));
             }
 
-            _etoiles.Avance(dt); _vapeur.Avance(dt); _bulles.Avance(dt); _fumee.Avance(dt);
+            _etoiles.Avance(dt); _vapeur.Avance(dt); _bulles.Avance(dt); _fumee.Avance(dt); _feuillesMortes.Avance(dt);
             AvanceMots(dt);
         }
 
