@@ -88,6 +88,9 @@ namespace MesPremiersJeux.Games
                     case "boum": SoundFx.Boom(); break;
                     case "sifflet": SoundFx.Whistle(); break;
                     case "clic": SoundFx.Shutter(); break;
+                    case "boite": SoundFx.Can(n); break;
+                    case "choc": SoundFx.CanHit(); break;
+                    case "lancer": SoundFx.Whoosh(); break;
                     case "note": SoundFx.PlayNote(n); break;
                     default: SoundFx.PopSound(); break;
                 }

@@ -24,5 +24,7 @@ Scènes du jet d'eau : `voiture`, `feu`, `remplir`, `jardin`, `roue`.
 La pêche : `peche` (niveau 0), `peche1`, `peche2` (niveaux suivants), `peche10` (la manche du soir).
 Patatou : `patate` (les choix de l'enfant sont écrits à l'avance dans `Banc.cs`).
 Le corps humain (`../corps.js`, `CorpsMoteur.cs`, `InsideBodyGame.cs`) : `corps` (niveau 0), `corps1`, `corps2`.
+
+Chamboule-tout (`../chamboule.js`, `ChambouleMoteur.cs`, `ChambouleGame.cs`) : `chamboule` (niveau 0), `chamboule1`, `chamboule2`.
 Le journal (`journal.txt`) note la voix, les bruits et les réussites.
 Ce que le banc ne vérifie pas : l'affichage WPF lui-même, le son, et le vrai regard.

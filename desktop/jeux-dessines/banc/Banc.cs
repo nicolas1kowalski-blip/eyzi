@@ -22,9 +22,11 @@ static class Banc
         int graine = a.Length > 4 ? int.Parse(a[4]) : 7;
         string[] scenesDuJet = { "voiture", "feu", "remplir", "jardin", "roue" };
         // « peche », « peche1 », « peche2 » : La pêche (au niveau 0, 1 ou 2) ; sinon une scène du jet d'eau
+        // « chamboule », « chamboule1 », « chamboule2 » : Chamboule-tout (au niveau 0, 1 ou 2)
         bool peche = scene.StartsWith("peche");
         bool patate = scene.StartsWith("patate"), corps = scene.StartsWith("corps");
-        VecMoteur m = corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
+        bool chamboule = scene.StartsWith("chamboule");
+        VecMoteur m = chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
         // Patatou : ce que l'enfant choisit, écrit à l'avance (l'instant, la zone)
         var choix = new List<KeyValuePair<double, string>>();
         if (patate) foreach (var c in "1.6 c:0|4.0 c:1|6.4 c:0|11.0 f:3|12.2 c:3|14.5 f:4|15.6 c:7|18.0 f:5|19.0 c:0|21.5 f:6|22.5 c:0|25.0 photo|28.0 surprise|33.5 photo|36.5 f:3|37.5 c:10|40 f:0|41 c:4|43 nu".Split('|'))
@@ -37,7 +39,7 @@ static class Banc
         double pose = 0; bool trompe = false;
         m.Son = (s, i) => journal.AppendLine(t.ToString("0.00", Inv) + "  SON   " + s + (i != 0 ? " " + i : ""));
         m.Bravo = () => journal.AppendLine(t.ToString("0.00", Inv) + "  BRAVO");
-        m.Demarre(corps ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : peche ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : Math.Max(0, Array.IndexOf(scenesDuJet, scene)));
+        m.Demarre(chamboule ? (scene.Length > 9 ? int.Parse(scene.Substring(9)) : 0) : corps ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : peche ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : Math.Max(0, Array.IndexOf(scenesDuJet, scene)));
         // Le regard automatique : il va vers ce qu'il reste à arroser, y reste, et regarde parfois ailleurs une seconde.
         double gx = 800, gy = 420, ailleurs = 0; var alea = new Random(3);
         int image = 0;

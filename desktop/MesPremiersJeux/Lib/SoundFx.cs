@@ -312,6 +312,57 @@ namespace MesPremiersJeux.Lib
         }
 
         // ------------------------------------------------------------------
+        //  Les bruits du jeu « Chamboule-tout »
+        // ------------------------------------------------------------------
+        /// <summary>Une boîte de conserve qui cogne : un tintement de fer-blanc, bref, sur trois hauteurs.</summary>
+        public static void Can(int k)
+        {
+            k = Math.Max(0, Math.Min(2, k));
+            Play("can" + k, () => Tin(new[] { 640.0, 780.0, 930.0 }[k], 0.2, 0.42, 0));
+        }
+
+        /// <summary>La balle qui frappe une boîte : le même fer-blanc, plus grave et plus fort, avec le choc sourd de la balle.</summary>
+        public static void CanHit() => Play("canhit", () => Tin(430, 0.32, 0.6, 0.5));
+
+        private static float[] Tin(double f0, double dur, double vol, double thump)
+        {
+            var rng = new Random(5);
+            int n = (int)(Rate * dur);
+            var s = new float[n];
+            // les partiels d'une petite caisse de métal : pas des harmoniques, et les aigus s'éteignent plus vite
+            double[] ratio = { 1, 2.32, 3.86, 5.41, 7.9 }, amp = { 1, 0.7, 0.5, 0.32, 0.2 }, decay = { 16, 24, 34, 46, 60 };
+            for (int i = 0; i < n; i++)
+            {
+                double t = i / (double)Rate, v = 0;
+                for (int p = 0; p < ratio.Length; p++) v += amp[p] * Math.Exp(-decay[p] * t) * Math.Sin(2 * Math.PI * f0 * ratio[p] * t);
+                v = v / 2.7 + (rng.NextDouble() * 2 - 1) * 0.5 * Math.Exp(-140 * t);       // le claquement du choc
+                if (thump > 0) v += thump * Math.Exp(-38 * t) * Math.Sin(2 * Math.PI * 110 * t);
+                s[i] = (float)Math.Max(-1, Math.Min(1, v * vol * Math.Min(1, t * 900)));
+            }
+            return s;
+        }
+
+        /// <summary>La balle qu'on lance : un souffle court qui monte.</summary>
+        public static void Whoosh()
+        {
+            Play("whoosh", () =>
+            {
+                var rng = new Random(9);
+                int n = (int)(Rate * 0.24);
+                var s = new float[n];
+                double lp = 0, hp = 0;
+                for (int i = 0; i < n; i++)
+                {
+                    double t = i / (double)n, noise = rng.NextDouble() * 2 - 1;
+                    lp += (0.06 + 0.3 * t) * (noise - lp);      // le filtre s'ouvre : le souffle monte
+                    hp += 0.02 * (lp - hp);
+                    s[i] = (float)((lp - hp) * Math.Pow(Math.Sin(Math.PI * t), 1.5) * 0.9);
+                }
+                return s;
+            });
+        }
+
+        // ------------------------------------------------------------------
         //  Les bruits du jeu « Le jet d'eau »
         // ------------------------------------------------------------------
         /// <summary>Le fichier WAV (généré une fois) du bruit de l'eau qui coule, à jouer en boucle avec un MediaPlayer.
