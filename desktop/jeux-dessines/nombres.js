@@ -2,7 +2,10 @@
 // le banc d'essai s'en sert pour produire de vraies images sans Windows. Les outils de dessin sont dans outils.js.
 //
 // Chaque activité a son décor (1600 × 900) :
-//   - « Le panier » : un verger, l'arbre et ses fruits, le panier d'osier à remplir.
+//   - « Le panier » : un verger, l'arbre et ses fruits, le panier d'osier à remplir ;
+//   - « Un de plus, un de moins » : les oiseaux sur les fils ;
+//   - « Partager en deux » : le goûter sur la nappe, avec Nounours ;
+//   - « La bande numérique » : le petit train des nombres.
 const { N, P, A, T, TT, GL, GR, GV, GH, r1, ci, el, rr, pol, alea } = require('./outils.js');
 const communs = require('./communs.js');
 
@@ -114,17 +117,130 @@ S.pancarte_voile = [A(rr(-92, -92, 184, 176, 22), '#5A6684', .55)];
 S.papillon_aile = [P('M0,0 C-10,-34 -46,-38 -44,-10 C-42,6 -20,8 0,0 Z', GR(-24, -16, 40, [0, '$clair'], [1, '$c']), 2.5), P('M0,2 C-8,26 -34,30 -32,12 C-30,2 -14,0 0,2 Z', GR(-18, 14, 30, [0, '$clair'], [1, '$c']), 2.5), A(ci(-28, -16, 6), '#FFFFFF', .7)];
 S.papillon_corps = [P(el(0, 0, 4, 16), '#3A3454', 2), T('M-1,-14 q-6,-12 -12,-14 M1,-14 q6,-12 12,-14', '#3A3454', 2.5)];
 
+// ═════════════ « Un de plus, un de moins » : les oiseaux sur le fil ═════════════
+// un oiseau tout rond (l'origine est là où il se pose) ; il prend les couleurs « c », « clair » et « fonce »
+const plumage = () => GR(-14, -68, 84, [0, '$clair'], [.55, '$c'], [1, '$fonce']);
+const corpsOiseau = [
+  P('M-32,-38 Q-70,-46 -88,-24 Q-64,-12 -38,-18 Z', '$fonce', 4),
+  P(el(0, -52, 50, 46), plumage(), 5),
+  A(el(10, -38, 30, 27), '#FFF8E8', .9),
+  P('M44,-62 L68,-55 L44,-46 Z', GV(-62, -46, '#FFC84A', '#F2901C'), 3.5),
+  A(ci(22, -68, 10), '#FFFFFF'), A(ci(25, -68, 5.5), N), A(ci(27, -70, 2), '#FFFFFF'),
+  A(ci(30, -50, 7), '#FF8FA8', .55),
+  T('M-6,-96 q2,-14 16,-12 M4,-97 q8,-10 18,-4', '$fonce', 5),
+];
+const pattes = [T('M-10,-10 v10 M12,-10 v10', '#E8901C', 5), T('M-18,0 h16 M4,0 h16', '#E8901C', 5)];
+S.oiseau_pose = [...pattes, ...corpsOiseau, P('M-30,-62 Q6,-76 20,-48 Q0,-24 -28,-36 Z', GV(-76, -24, '$c', '$fonce'), 4), T('M-18,-52 q14,-4 26,4 M-18,-42 q12,-2 20,4', '$fonce', 3, .6)];
+S.oiseau_vol_a = [...corpsOiseau, P('M-22,-64 Q-58,-140 -4,-158 Q26,-118 16,-64 Z', GV(-158, -64, '$clair', '$c'), 4), T('M-18,-96 q8,-30 14,-44 M-2,-90 q6,-22 8,-40', '$fonce', 3, .6)];
+S.oiseau_vol_b = [...corpsOiseau, P('M-24,-58 Q-70,-22 -34,16 Q10,-6 14,-52 Z', GV(-58, 16, '$c', '$fonce'), 4), T('M-28,-30 q8,14 4,30 M-14,-34 q10,10 8,26', '$fonce', 3, .6)];
+// un poteau et ses deux traverses (l'origine est le pied)
+const POTEAU_BOIS = (x0, x1) => GL(x0, 0, x1, 0, [0, '#6B4422'], [.35, '#B5804E'], [.7, '#8A5A32'], [1, '#5E3A1C']);
+S.poteau = [
+  A(el(0, 2, 60, 12), GR(0, 2, 60, [0, '#1E5A24', .5], [1, '#1E5A24', 0])),
+  P(rr(-17, -500, 34, 502, 10), POTEAU_BOIS(-17, 17), 6), T('M-4,-460 v430', '#5E3A1C', 3, .4),
+  P(rr(-96, -380, 192, 24, 9), GV(-380, -356, '#B5804E', '#7E4E22'), 6), P(rr(-96, -200, 192, 24, 9), GV(-200, -176, '#B5804E', '#7E4E22'), 6),
+  ...[-78, 78].flatMap(x => [P(rr(x - 9, -402, 18, 24, 6), '#DCE6F4', 4), P(rr(x - 9, -222, 18, 24, 6), '#DCE6F4', 4)]),
+];
+// une note de musique, quand les oiseaux chantent
+S.note = [P('M-10,14 a12,9 0 1 0 14,-6 V-30 l22,-8 v12 l-14,5 V8', GV(-38, 22, '#D0A8FF', '#9A5CF0'), 3.5)];
+
+// ═════════════ « Partager en deux » : le goûter sur la nappe ═════════════
+require('./peluches.js')(S);      // le nounours invité
+const carreaux = [];
+for (let i = 0; i < 9; i++) { const xh = 150 + i * 162.5, xb = -40 + i * 210; if (i % 2 === 0) carreaux.push(A(`M${xh},452 h81 L${xb + 105},920 h-105 Z`, '#FFFFFF', .3)); }
+for (let k = 0; k < 5; k++) { const y0 = 452 + [0, 62, 150, 262, 398][k], y1 = y0 + [28, 40, 52, 64, 70][k], g = y => 150 - (y - 452) * 190 / 468, d = y => 1450 + (y - 452) * 190 / 468; carreaux.push(A(`M${r1(g(y0))},${y0} H${r1(d(y0))} L${r1(d(y1))},${y1} H${r1(g(y1))} Z`, '#FFFFFF', .3)); }
+S.g_nappe = [
+  A('M110,470 H1490 L1680,930 H-80 Z', '#2F7A2E', .35),
+  P('M150,452 H1450 L1640,920 H-40 Z', GV(452, 900, '#F5655C', '#D9382E'), 6),
+  ...carreaux,
+  T('M150,452 H1450', '#FFD0C8', 5, .8),
+];
+// une assiette (l'origine est son centre)
+S.assiette = [
+  A(el(0, 12, 214, 60), GR(0, 12, 214, [0, '#6B1A14', .4], [1, '#6B1A14', 0])),
+  P(el(0, 0, 200, 60), GV(-60, 60, '#FFFFFF', '#DCE6F4'), 6),
+  T(el(0, -3, 152, 42), '#B8C8E0', 4, .9), A(el(0, -2, 146, 39), GV(-40, 40, '#F2F6FC', '#FFFFFF')),
+  T('M-150,-18 q40,-22 110,-28', '#FFFFFF', 6, .9),
+];
+// un petit gâteau (l'origine est le bas ; 92 de large, 112 de haut)
+S.gateau = [
+  A(el(0, 0, 44, 8), GR(0, 0, 44, [0, '#6B1A14', .35], [1, '#6B1A14', 0])),
+  P('M-36,-52 H36 L27,0 Q0,7 -27,0 Z', GL(-36, 0, 36, 0, [0, '#E05C9A'], [.3, '#FFB0D0'], [.6, '#F27AB0'], [1, '#C2407E']), 5),
+  T('M-24,-50 l5,48 M-12,-50 l3,52 M0,-50 v54 M12,-50 l-3,52 M24,-50 l-5,48', '#C2407E', 3, .6),
+  P('M-44,-50 Q-52,-74 -30,-78 Q-34,-100 -8,-98 Q0,-118 20,-100 Q44,-100 36,-78 Q54,-70 44,-50 Q0,-38 -44,-50 Z', GR(-12, -86, 70, [0, '#FFFFFF'], [.6, '#FFF1D6'], [1, '#EBCB98']), 5),
+  T('M-30,-66 Q0,-56 30,-68 M-18,-86 Q4,-78 22,-88', '#D9B67E', 3, .6),
+  P(ci(4, -108, 11), GR(0, -112, 14, [0, '#FF9482'], [1, '#D92A22']), 3.5), T('M6,-118 q4,-10 12,-12', '#6B4422', 3),
+  A(ci(1, -111, 3), '#FFFFFF', .8),
+  ...[[-26, -62, '#48A0F8'], [16, -60, '#5CC86A'], [-6, -72, '#FFC12E'], [28, -74, '#B07AF2'], [-22, -84, '#FF8A4A']].map(([x, y, c]) => T(`M${x},${y} l6,3`, c, 4)),
+];
+// le carton du prénom, posé derrière l'assiette de l'enfant (l'origine est le bas du carton)
+S.carton = [
+  A(el(0, 2, 150, 14), GR(0, 2, 150, [0, '#6B1A14', .35], [1, '#6B1A14', 0])),
+  P('M-150,0 L-132,-96 H132 L150,0 Z', GV(-96, 0, '#FFFFFF', '#E6ECF6'), 6), T('M-124,-84 H124', '#FFD23D', 7), T('M-136,-12 H136', '#FFD23D', 7),
+];
+
+// ═════════════ « La bande numérique » : le petit train des nombres ═════════════
+const TOLE = (x0, x1, a, b, c, d) => GL(x0, 0, x1, 0, [0, d], [.25, b], [.6, a], [1, d]);
+S.t_rails = [
+  A('M0,-6 H1600 V44 H0 Z', GV(-6, 44, '#C9B48E', '#A8926A')),
+  ...[...Array(28)].map((_, i) => P(rr(i * 60 - 20, 2, 34, 26, 5), GV(2, 28, '#8A5A32', '#5E3A1C'), 3)),
+  T('M0,0 H1600', '#2A1C4E', 12), T('M0,0 H1600', '#B8C4DC', 6), T('M0,-2 H1600', '#FFFFFF', 2, .8),
+];
+// un wagon (l'origine est le bas du wagon, au milieu ; 124 de large) aux couleurs « c », « clair », « fonce »
+S.wagon = [
+  T('M-76,-30 H76', '#3A3454', 9),
+  P(rr(-58, -150, 116, 118, 16), GL(-58, 0, 58, 0, [0, '$fonce'], [.2, '$clair'], [.55, '$c'], [1, '$fonce']), 6),
+  P(rr(-66, -160, 132, 22, 9), GV(-160, -138, '$clair', '$c'), 5),
+  P(rr(-64, -40, 128, 20, 8), GV(-40, -20, '#5A6684', '#3A3454'), 5),
+  T('M-46,-128 V-48 M46,-128 V-48', '$fonce', 4, .5), A(rr(-44, -132, 14, 60, 6), '#FFFFFF', .22),
+];
+S.wagon_halo = [A(rr(-92, -186, 184, 190, 40), GR(0, -92, 130, [0, '#FFF6A8', .95], [.65, '#FFD23D', .55], [1, '#FFD23D', 0]))];
+// la locomotive (l'origine est le bas, au milieu ; 230 de large), tournée vers la droite
+S.loco = [
+  T('M-116,-30 H96', '#3A3454', 9),
+  // la cabine
+  P(rr(-110, -196, 92, 164, 14), GL(-110, 0, -18, 0, [0, '#1E4FA8'], [.3, '#7FC0FF'], [.6, '#3F8EF2'], [1, '#1E4FA8']), 6),
+  P(rr(-94, -176, 60, 56, 10), GV(-176, -120, '#DDF2FF', '#9AD0FF'), 5), T('M-84,-166 l22,0', '#FFFFFF', 5, .9),
+  P(rr(-124, -212, 120, 24, 10), GV(-212, -188, '#FFE066', '#F2A51C'), 6),
+  // la chaudière
+  P('M-22,-140 H70 Q104,-140 104,-106 V-40 H-22 Z', GV(-140, -40, '#FF7A6C', '#C2281E'), 6),
+  T('M10,-138 V-42 M52,-138 V-42', '#8E1A14', 5, .55), A('M-16,-132 H70 Q92,-130 96,-112 H-16 Z', '#FFFFFF', .28),
+  P(rr(14, -166, 34, 30, 12), GV(-166, -136, '#FFE98A', '#F2A51C'), 5),
+  // la cheminée
+  P('M58,-140 L54,-196 H44 V-212 H98 V-196 H88 L84,-140 Z', GV(-212, -140, '#5A6684', '#2A2440'), 6),
+  // le phare et le chasse-pierres
+  P(ci(104, -92, 15), GR(100, -96, 18, [0, '#FFFFFF'], [1, '#FFE066']), 5),
+  P('M96,-44 L132,-18 H88 Z', GV(-44, -18, '#FFE066', '#F2A51C'), 5),
+  P(rr(-116, -42, 216, 22, 8), GV(-42, -20, '#5A6684', '#3A3454'), 5),
+];
+S.roue = [P(ci(0, 0, 22), GR(-5, -6, 26, [0, '#8793AD'], [1, '#3A3454']), 5), A(ci(0, 0, 13), '#DCE6F4'), T('M-13,0 H13 M0,-13 V13 M-9,-9 L9,9 M-9,9 L9,-9', '#5A6684', 3), P(ci(0, 0, 5), '#F2A51C', 2.5)];
+S.fumee = [A(ci(0, 0, 34), GR(-8, -8, 40, [0, '#FFFFFF', .95], [.6, '#E6ECF6', .7], [1, '#E6ECF6', 0]))];
+
 // ═════════════ Les scènes ═════════════
 const SCENES = {
   verger: [
     { n: 'lointain', s: 'v_lointain', x: 0, y: 0 }, { n: 'pre', s: 'v_pre', x: 0, y: 0 },
     { n: 'arbre_ombre', s: 'arbre_ombre', x: 400, y: 648 }, { n: 'arbre', s: 'arbre', x: 380, y: 640 },
   ],
+  fil: [
+    { n: 'lointain', s: 'v_lointain', x: 0, y: 0 }, { n: 'pre', s: 'v_pre', x: 0, y: 0 },
+    { n: 'poteau_g', s: 'poteau', x: 110, y: 668 }, { n: 'poteau_d', s: 'poteau', x: 1490, y: 668 },
+  ],
+  gouter: [
+    { n: 'lointain', s: 'v_lointain', x: 0, y: 0 }, { n: 'pre', s: 'v_pre', x: 0, y: 0 }, { n: 'nappe', s: 'g_nappe', x: 0, y: 0 },
+  ],
+  train: [
+    { n: 'lointain', s: 'v_lointain', x: 0, y: 0 }, { n: 'pre', s: 'v_pre', x: 0, y: 0 }, { n: 'rails', s: 't_rails', x: 0, y: 612 },
+  ],
 };
-const CIELS = { verger: ['#6CBFFF', '#E4F6FF', '#4EA63E', 1] };
+const CIELS = { verger: ['#6CBFFF', '#E4F6FF', '#4EA63E', 1], fil: ['#6CBFFF', '#E4F6FF', '#4EA63E', 1], gouter: ['#6CBFFF', '#E4F6FF', '#4EA63E', 1], train: ['#6CBFFF', '#E4F6FF', '#4EA63E', 1] };
 const LISTES = {
   // les fruits : le dessin, un, plusieurs, féminin
   fruits: [['fruit_pomme', 'pomme', 'pommes'], ['fruit_poire', 'poire', 'poires'], ['fruit_orange', 'orange', 'oranges'], ['fruit_citron', 'citron', 'citrons']],
+  // les plumages des oiseaux : couleur, clair, foncé
+  plumages: [['#48A0F8', '#C4E6FF', '#1E68C6'], ['#F25F5C', '#FFC4BC', '#B02A26'], ['#FFC12E', '#FFF2A8', '#D98A0E'], ['#5CC86A', '#C8F6C0', '#2E8E3E'], ['#B07AF2', '#E6D4FF', '#6A3CC6'], ['#FF8A4A', '#FFD6B0', '#C2560C']],
+  // les couleurs des wagons : couleur, clair, foncé
+  wagons: [['#F2A51C', '#FFE9A8', '#B5780C'], ['#3DBA62', '#C0F4C8', '#1E7A3A'], ['#3F8EF2', '#C4E2FF', '#1E4FA8'], ['#B07AF2', '#E6D4FF', '#6A3CC6'], ['#F25F9A', '#FFC8E0', '#B02A66']],
   // là où pendent les fruits à cueillir (dans la scène)
   branches: [[170, 330], [300, 172], [432, 330], [562, 172], [652, 362]],
 };

@@ -26,5 +26,7 @@ Patatou : `patate` (les choix de l'enfant sont écrits à l'avance dans `Banc.cs
 Le corps humain (`../corps.js`, `CorpsMoteur.cs`, `InsideBodyGame.cs`) : `corps` (niveau 0), `corps1`, `corps2`.
 
 Chamboule-tout (`../chamboule.js`, `ChambouleMoteur.cs`, `ChambouleGame.cs`) : `chamboule` (niveau 0), `chamboule1`, `chamboule2`.
+
+Les décors des activités de nombres (`../nombres.js`, `NombresArt.cs`) : `panier` (`PanierMoteur.cs`, pour `CompleteGame.cs`), `fil`, `gouter`, `train` (`FilMoteur.cs`, `GouterMoteur.cs`, `TrainMoteur.cs`, pour `MathGame.cs`). Ici c'est l'activité qui choisit les nombres et juge les réponses : le banc joue son rôle avec quelques questions écrites à l'avance. Les peluches partagées sont dans `../peluches.js`.
 Le journal (`journal.txt`) note la voix, les bruits et les réussites.
 Ce que le banc ne vérifie pas : l'affichage WPF lui-même, le son, et le vrai regard.

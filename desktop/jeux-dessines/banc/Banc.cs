@@ -27,7 +27,9 @@ static class Banc
         bool patate = scene.StartsWith("patate"), corps = scene.StartsWith("corps");
         bool chamboule = scene.StartsWith("chamboule");
         bool panier = scene == "panier";
-        VecMoteur m = panier ? new PanierMoteur(graine) : chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
+        bool fil = scene == "fil";
+        bool gouter = scene == "gouter", train = scene == "train";
+        VecMoteur m = gouter ? new GouterMoteur(graine) : train ? new TrainMoteur(graine) : fil ? new FilMoteur(graine) : panier ? new PanierMoteur(graine) : chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
         // Patatou : ce que l'enfant choisit, écrit à l'avance (l'instant, la zone)
         var choix = new List<KeyValuePair<double, string>>();
         if (patate) foreach (var c in "1.6 c:0|4.0 c:1|6.4 c:0|11.0 f:3|12.2 c:3|14.5 f:4|15.6 c:7|18.0 f:5|19.0 c:0|21.5 f:6|22.5 c:0|25.0 photo|28.0 surprise|33.5 photo|36.5 f:3|37.5 c:10|40 f:0|41 c:4|43 nu".Split('|'))
@@ -36,13 +38,42 @@ static class Banc
         var journal = new StringBuilder();
         double t = 0;
         m.Dit = s => { journal.AppendLine(t.ToString("0.00", Inv) + "  VOIX  " + s); voixJusqua = t + 0.5 + s.Length * 0.055; };
-        if (patate || corps || panier) m.VoixOccupee = () => t < voixJusqua;
+        if (patate || corps || panier || fil || gouter || train) m.VoixOccupee = () => t < voixJusqua;
         double pose = 0; bool trompe = false;
         // « panier » : le banc joue le rôle de l'activité (elle choisit les nombres et juge les réponses)
         var pm = m as PanierMoteur; int tour = 0; double suite = -1;
         string[] fruits = { "fruit_pomme", "fruit_poire", "fruit_orange", "fruit_citron" };
         int[][] tours = { new[] { 4, 2, 1 }, new[] { 5, 3, 1 }, new[] { 4, 1, 0 }, new[] { 6, 3, 0 } };      // le total, ceux déjà là, on cueille (1) ou on devine (0)
         Action installe = () => { var q = tours[tour % tours.Length]; pm.Prepare(fruits[tour % fruits.Length], q[0], q[1], q[2] == 1, q[2] == 1 ? 0 : 4); };
+        // « fil » : un de plus, un de moins
+        var fm = m as FilMoteur;
+        int[][] filTours = { new[] { 3, 1 }, new[] { 5, 0 }, new[] { 7, 1 }, new[] { 9, 1 }, new[] { 2, 0 } };      // le nombre d'oiseaux, un de plus (1) ou un de moins (0)
+        if (fm != null)
+        {
+            installe = () => { var q = filTours[tour % filTours.Length]; int r = q[1] == 1 ? q[0] + 1 : q[0] - 1; var c = new List<int>(); for (int v = Math.Max(1, r - 1); c.Count < 4; v++) c.Add(v); fm.Prepare(q[0], q[1] == 1, c); };
+            installe();
+            fm.Demande = s =>
+            {
+                journal.AppendLine(t.ToString("0.00", Inv) + "  DEMANDE " + s);
+                var q = filTours[tour % filTours.Length]; int v = int.Parse(s.Substring(6));
+                if (v == (q[1] == 1 ? q[0] + 1 : q[0] - 1)) { fm.Reponse(v); suite = t + 3.4; } else fm.Refuse(v);
+            };
+        }
+        // « gouter » : partager en deux ; « train » : la bande numérique
+        var gm = m as GouterMoteur; int[] parts = { 2, 3, 1, 5, 4 };
+        if (gm != null)
+        {
+            installe = () => { int h = parts[tour % parts.Length]; var c = new List<int>(); for (int v = Math.Max(1, h - 1); c.Count < 4; v++) c.Add(v); gm.Prepare(h * 2, "Laura", c); };
+            installe();
+            gm.Demande = s => { journal.AppendLine(t.ToString("0.00", Inv) + "  DEMANDE " + s); int v = int.Parse(s.Substring(6)), h = parts[tour % parts.Length]; if (v == h) { gm.Reponse(v); suite = t + 3.8 + h * 2 * 0.34; } else gm.Refuse(v); };
+        }
+        var tm = m as TrainMoteur; int[][] trains = { new[] { 5, 3 }, new[] { 7, 6 }, new[] { 10, 4 }, new[] { 10, 9 } };
+        if (tm != null)
+        {
+            installe = () => { var q = trains[tour % trains.Length]; var c = new List<int>(); for (int v = Math.Max(1, Math.Min(q[0] - 3, q[1] - 1)); c.Count < 4; v++) c.Add(v); tm.Prepare(q[0], q[1], c); };
+            installe();
+            tm.Demande = s => { journal.AppendLine(t.ToString("0.00", Inv) + "  DEMANDE " + s); int v = int.Parse(s.Substring(6)); if (v == trains[tour % trains.Length][1]) { tm.Reponse(v); suite = t + 3.2; } else tm.Refuse(v); };
+        }
         if (pm != null)
         {
             installe();
@@ -72,7 +103,7 @@ static class Banc
                 gx += (vx - gx) * 0.2; gy += (vy - gy) * 0.2;
                 m.Regard(gx, gy);
             }
-            else if (corps || panier)
+            else if (corps || panier || fil || gouter || train)
             {
                 if (suite >= 0 && t >= suite) { suite = -1; tour++; installe(); pose = 0; }
                 // le regard va sur la bonne zone, y reste une seconde, et la choisit ; une fois sur quatre il se trompe d'abord
