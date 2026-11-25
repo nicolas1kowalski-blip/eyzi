@@ -24,6 +24,7 @@ namespace MesPremiersJeux.Games
         private readonly Func<string> _bruitDeFond;
         private readonly Action _fete;
         private readonly VecMoteur _moteur;
+        private readonly bool _incruste;
         /// <summary>Appelé à chaque fête du moteur, après l'étoile et les confettis (ex. pour noter le niveau).</summary>
         public Action ApresBravo;
         private readonly Grid _racine = new Grid();
@@ -47,9 +48,11 @@ namespace MesPremiersJeux.Games
         /// <param name="hote">le jeu (un UserControl) dont la toile devient le contenu</param>
         /// <param name="nom">le nom du jeu pour les statistiques (ex. « WaterJetGame »)</param>
         /// <param name="bruitDeFond">le fichier d'un bruit à jouer en boucle, au volume demandé par le moteur (ou rien)</param>
-        public VecToile(UserControl hote, VecMoteur moteur, Action celebrate, string nom, Func<string> bruitDeFond = null)
+        /// <param name="incruste">la toile n'est que le décor d'une activité (GameControl) : c'est l'activité qui compte
+        /// le temps de jeu, fête les réussites et garde le regard habituel sur ses boutons</param>
+        public VecToile(UserControl hote, VecMoteur moteur, Action celebrate, string nom, Func<string> bruitDeFond = null, bool incruste = false)
         {
-            _hote = hote; _moteur = moteur; _fete = celebrate; _nom = nom; _bruitDeFond = bruitDeFond;
+            _hote = hote; _moteur = moteur; _fete = celebrate; _nom = nom; _bruitDeFond = bruitDeFond; _incruste = incruste;
             _calques = new Canvas[moteur.Calques.Length];
             _etats = new int[moteur.Calques.Length];
 
@@ -95,14 +98,14 @@ namespace MesPremiersJeux.Games
                     default: SoundFx.PopSound(); break;
                 }
             };
-            _moteur.Bravo = () => { RewardStore.Add(); try { _fete?.Invoke(); } catch { } try { ApresBravo?.Invoke(); } catch { } };
+            _moteur.Bravo = () => { if (!_incruste) RewardStore.Add(); try { _fete?.Invoke(); } catch { } try { ApresBravo?.Invoke(); } catch { } };
 
             _tic.Tick += (s, e) => Tic();
             _hote.Loaded += (s, e) =>
             {
-                GazeGate.PushTargetsOnly();      // le regard n'actionne que le bouton retour
+                if (!_incruste) GazeGate.PushTargetsOnly();      // le regard n'actionne que le bouton retour
                 GazeFeed.Sample += SurRegard;
-                Usage.GameStart(_nom);
+                if (!_incruste) Usage.GameStart(_nom);
                 _debut = DateTime.Now;
                 DemarreSon();
                 _montre.Restart(); _dernier = 0;
@@ -113,9 +116,10 @@ namespace MesPremiersJeux.Games
             {
                 _tic.Stop();
                 GazeFeed.Sample -= SurRegard;
-                GazeGate.PopTargetsOnly();
                 try { _son?.Stop(); _son?.Close(); } catch { }
                 _son = null;
+                if (_incruste) return;
+                GazeGate.PopTargetsOnly();
                 GazeStats.RecordGame(_nom, (DateTime.Now - _debut).TotalSeconds, _moteur.Reussites);
                 Usage.GameStop();
             };

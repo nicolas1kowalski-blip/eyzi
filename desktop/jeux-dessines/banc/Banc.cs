@@ -26,7 +26,8 @@ static class Banc
         bool peche = scene.StartsWith("peche");
         bool patate = scene.StartsWith("patate"), corps = scene.StartsWith("corps");
         bool chamboule = scene.StartsWith("chamboule");
-        VecMoteur m = chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
+        bool panier = scene == "panier";
+        VecMoteur m = panier ? new PanierMoteur(graine) : chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
         // Patatou : ce que l'enfant choisit, écrit à l'avance (l'instant, la zone)
         var choix = new List<KeyValuePair<double, string>>();
         if (patate) foreach (var c in "1.6 c:0|4.0 c:1|6.4 c:0|11.0 f:3|12.2 c:3|14.5 f:4|15.6 c:7|18.0 f:5|19.0 c:0|21.5 f:6|22.5 c:0|25.0 photo|28.0 surprise|33.5 photo|36.5 f:3|37.5 c:10|40 f:0|41 c:4|43 nu".Split('|'))
@@ -35,8 +36,24 @@ static class Banc
         var journal = new StringBuilder();
         double t = 0;
         m.Dit = s => { journal.AppendLine(t.ToString("0.00", Inv) + "  VOIX  " + s); voixJusqua = t + 0.5 + s.Length * 0.055; };
-        if (patate || corps) m.VoixOccupee = () => t < voixJusqua;
+        if (patate || corps || panier) m.VoixOccupee = () => t < voixJusqua;
         double pose = 0; bool trompe = false;
+        // « panier » : le banc joue le rôle de l'activité (elle choisit les nombres et juge les réponses)
+        var pm = m as PanierMoteur; int tour = 0; double suite = -1;
+        string[] fruits = { "fruit_pomme", "fruit_poire", "fruit_orange", "fruit_citron" };
+        int[][] tours = { new[] { 4, 2, 1 }, new[] { 5, 3, 1 }, new[] { 4, 1, 0 }, new[] { 6, 3, 0 } };      // le total, ceux déjà là, on cueille (1) ou on devine (0)
+        Action installe = () => { var q = tours[tour % tours.Length]; pm.Prepare(fruits[tour % fruits.Length], q[0], q[1], q[2] == 1, q[2] == 1 ? 0 : 4); };
+        if (pm != null)
+        {
+            installe();
+            pm.Demande = s =>
+            {
+                journal.AppendLine(t.ToString("0.00", Inv) + "  DEMANDE " + s);
+                var q = tours[tour % tours.Length];
+                if (s.StartsWith("choix:")) { int v = int.Parse(s.Substring(6)); if (v == q[0] - q[1]) pm.Verifie(v); else { pm.Refuse(v); pm.Indice(); } }
+                else suite = t + 2.4;
+            };
+        }
         m.Son = (s, i) => journal.AppendLine(t.ToString("0.00", Inv) + "  SON   " + s + (i != 0 ? " " + i : ""));
         m.Bravo = () => journal.AppendLine(t.ToString("0.00", Inv) + "  BRAVO");
         m.Demarre(chamboule ? (scene.Length > 9 ? int.Parse(scene.Substring(9)) : 0) : corps ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : peche ? (scene.Length > 5 ? int.Parse(scene.Substring(5)) : 0) : Math.Max(0, Array.IndexOf(scenesDuJet, scene)));
@@ -55,8 +72,9 @@ static class Banc
                 gx += (vx - gx) * 0.2; gy += (vy - gy) * 0.2;
                 m.Regard(gx, gy);
             }
-            else if (corps)
+            else if (corps || panier)
             {
+                if (suite >= 0 && t >= suite) { suite = -1; tour++; installe(); pose = 0; }
                 // le regard va sur la bonne zone, y reste une seconde, et la choisit ; une fois sur quatre il se trompe d'abord
                 if (m.ProchaineCible(out double zx, out double zy))
                 {
