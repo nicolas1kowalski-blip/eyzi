@@ -31,7 +31,8 @@ static class Banc
         bool gouter = scene == "gouter", train = scene == "train";
         bool maison = scene == "maison";
         bool valise = scene == "valise";
-        VecMoteur m = valise ? new ValiseMoteur(graine) : maison ? new MaisonMoteur(graine) : gouter ? new GouterMoteur(graine) : train ? new TrainMoteur(graine) : fil ? new FilMoteur(graine) : panier ? new PanierMoteur(graine) : chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
+        bool lit = scene == "lit";
+        VecMoteur m = lit ? new LitMoteur(graine) : valise ? new ValiseMoteur(graine) : maison ? new MaisonMoteur(graine) : gouter ? new GouterMoteur(graine) : train ? new TrainMoteur(graine) : fil ? new FilMoteur(graine) : panier ? new PanierMoteur(graine) : chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
         // Patatou : ce que l'enfant choisit, écrit à l'avance (l'instant, la zone)
         var choix = new List<KeyValuePair<double, string>>();
         if (patate) foreach (var c in "1.6 c:0|4.0 c:1|6.4 c:0|11.0 f:3|12.2 c:3|14.5 f:4|15.6 c:7|18.0 f:5|19.0 c:0|21.5 f:6|22.5 c:0|25.0 photo|28.0 surprise|33.5 photo|36.5 f:3|37.5 c:10|40 f:0|41 c:4|43 nu".Split('|'))
@@ -40,7 +41,7 @@ static class Banc
         var journal = new StringBuilder();
         double t = 0;
         m.Dit = s => { journal.AppendLine(t.ToString("0.00", Inv) + "  VOIX  " + s); voixJusqua = t + 0.5 + s.Length * 0.055; };
-        if (patate || corps || panier || fil || gouter || train || maison || valise) m.VoixOccupee = () => t < voixJusqua;
+        if (patate || corps || panier || fil || gouter || train || maison || valise || lit) m.VoixOccupee = () => t < voixJusqua;
         double pose = 0; bool trompe = false;
         // « panier » : le banc joue le rôle de l'activité (elle choisit les nombres et juge les réponses)
         var pm = m as PanierMoteur; int tour = 0; double suite = -1;
@@ -112,6 +113,27 @@ static class Banc
                 if (bonsHabits[tour % 3][i]) vm.Range(i); else vm.Refuse(i);
             };
         }
+        // « lit » : le banc joue l'activité « Sur, sous, devant, derrière » (on découvre, où est-il ?, mets-le…)
+        var lm = m as LitMoteur; int acte = 1, vuesLit = 0; int[] ordreLit = { 0, 1, 2, 3 }; int cibleLit = -1;
+        int[][] questions = { new[] { 2, 1, 3 }, new[] { 2, 2, 0 }, new[] { 3, 0, 1 }, new[] { 3, 1, 3 }, new[] { 3, 2, 2 } };      // l'acte, la peluche, la place
+        int[][] ordres = { new[] { 2, 0, 3, 1 }, new[] { 1, 3, 0, 2 }, new[] { 3, 2, 1, 0 }, new[] { 0, 2, 1, 3 }, new[] { 2, 3, 0, 1 } };
+        if (lm != null)
+        {
+            lm.Prepare(0, ordreLit, 4);
+            installe = () =>
+            {
+                var q = questions[(tour - 1) % questions.Length]; acte = q[0]; cibleLit = q[2]; ordreLit = ordres[(tour - 1) % ordres.Length];
+                lm.Prepare(q[1], ordreLit, 4); if (acte == 2) lm.Va(cibleLit); lm.Attendu = cibleLit;
+            };
+            lm.Demande = s =>
+            {
+                journal.AppendLine(t.ToString("0.00", Inv) + "  DEMANDE " + s);
+                int k = int.Parse(s.Substring(6));
+                if (acte == 1) { lm.Va(ordreLit[k]); lm.Fete(k); if (++vuesLit >= 4) { lm.Actif(false); suite = t + 3.2; } }
+                else if (ordreLit[k] == cibleLit) { lm.Fete(k); lm.Actif(false); lm.Va(cibleLit); suite = t + 3.2; }
+                else lm.Refuse(k);
+            };
+        }
         if (pm != null)
         {
             installe();
@@ -141,7 +163,7 @@ static class Banc
                 gx += (vx - gx) * 0.2; gy += (vy - gy) * 0.2;
                 m.Regard(gx, gy);
             }
-            else if (corps || panier || fil || gouter || train || maison || valise)
+            else if (corps || panier || fil || gouter || train || maison || valise || lit)
             {
                 if (suite >= 0 && t >= suite) { suite = -1; tour++; installe(); pose = 0; }
                 // le regard va sur la bonne zone, y reste une seconde, et la choisit ; une fois sur quatre il se trompe d'abord

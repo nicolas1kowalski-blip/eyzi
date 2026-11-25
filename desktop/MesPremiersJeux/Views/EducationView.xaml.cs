@@ -72,6 +72,7 @@ namespace MesPremiersJeux.Views
                     ("🧠", "Le corps humain", "MS · GS", c => new InsideBodyGame(c)),
                     ("😊", "Les émotions", "PS · MS", c => new EmotionsGame(c)),
                     ("🏠", "Range la maison", "PS · MS", c => new TidyHouseGame(c)),
+                    ("🛏️", "Sur, sous, devant, derrière", "PS · MS", c => new SpatialGame(c)),
                 },
             },
             new Theme

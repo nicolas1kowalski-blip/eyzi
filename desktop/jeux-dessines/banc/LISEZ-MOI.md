@@ -31,6 +31,8 @@ Les décors des activités de nombres (`../nombres.js`, `NombresArt.cs`) : `pani
 
 Range la maison (`../maison.js`, `MaisonArt.cs`, `MaisonMoteur.cs`, pour `TidyHouseGame.cs`) : `maison`. Les objets à ranger sont des images de la banque d'images de l'application (`MesPremiersJeux/Images`), que `banc.sh` indique au banc par `EYZI_IMAGES`. Le paysage partagé est dans `../paysage.js`.
 
+Sur, sous, devant, derrière (`../reperes.js`, `ReperesArt.cs`, `LitMoteur.cs`, pour `SpatialGame.cs`) : `lit` (on découvre, puis « où est-il ? », puis « mets-le… »).
+
 La valise du voyageur (`../valise.js`, `ValiseArt.cs`, `ValiseMoteur.cs`, pour `SuitcaseGame.cs`) : `valise` (la neige, le désert, la pluie à la suite).
 Le journal (`journal.txt`) note la voix, les bruits et les réussites.
 Ce que le banc ne vérifie pas : l'affichage WPF lui-même, le son, et le vrai regard.
