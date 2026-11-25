@@ -29,7 +29,8 @@ static class Banc
         bool panier = scene == "panier";
         bool fil = scene == "fil";
         bool gouter = scene == "gouter", train = scene == "train";
-        VecMoteur m = gouter ? new GouterMoteur(graine) : train ? new TrainMoteur(graine) : fil ? new FilMoteur(graine) : panier ? new PanierMoteur(graine) : chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
+        bool maison = scene == "maison";
+        VecMoteur m = maison ? new MaisonMoteur(graine) : gouter ? new GouterMoteur(graine) : train ? new TrainMoteur(graine) : fil ? new FilMoteur(graine) : panier ? new PanierMoteur(graine) : chamboule ? new ChambouleMoteur(graine) : corps ? new CorpsMoteur(graine) : patate ? new PatateMoteur(graine) { Prenom = "Laura" } : peche ? (VecMoteur)new PecheMoteur(graine) : new JetMoteur(graine);
         // Patatou : ce que l'enfant choisit, écrit à l'avance (l'instant, la zone)
         var choix = new List<KeyValuePair<double, string>>();
         if (patate) foreach (var c in "1.6 c:0|4.0 c:1|6.4 c:0|11.0 f:3|12.2 c:3|14.5 f:4|15.6 c:7|18.0 f:5|19.0 c:0|21.5 f:6|22.5 c:0|25.0 photo|28.0 surprise|33.5 photo|36.5 f:3|37.5 c:10|40 f:0|41 c:4|43 nu".Split('|'))
@@ -38,7 +39,7 @@ static class Banc
         var journal = new StringBuilder();
         double t = 0;
         m.Dit = s => { journal.AppendLine(t.ToString("0.00", Inv) + "  VOIX  " + s); voixJusqua = t + 0.5 + s.Length * 0.055; };
-        if (patate || corps || panier || fil || gouter || train) m.VoixOccupee = () => t < voixJusqua;
+        if (patate || corps || panier || fil || gouter || train || maison) m.VoixOccupee = () => t < voixJusqua;
         double pose = 0; bool trompe = false;
         // « panier » : le banc joue le rôle de l'activité (elle choisit les nombres et juge les réponses)
         var pm = m as PanierMoteur; int tour = 0; double suite = -1;
@@ -74,6 +75,25 @@ static class Banc
             installe();
             tm.Demande = s => { journal.AppendLine(t.ToString("0.00", Inv) + "  DEMANDE " + s); int v = int.Parse(s.Substring(6)); if (v == trains[tour % trains.Length][1]) { tm.Reponse(v); suite = t + 3.2; } else tm.Refuse(v); };
         }
+        // « maison » : le banc joue l'activité « Range la maison » (les pièces à découvrir, puis huit objets à ranger)
+        var mm = m as MaisonMoteur; var vues = new bool[3]; int rangement = -1;
+        string[][] objets = { new[] { "casserole", "0" }, new[] { "brosse-a-dents", "1" }, new[] { "ours-peluche", "2" }, new[] { "savon", "1" }, new[] { "bol", "0" }, new[] { "pull", "2" }, new[] { "reveil", "2" }, new[] { "tasse", "0" } };
+        if (mm != null)
+        {
+            installe = () =>
+            {
+                rangement++;
+                if (rangement < objets.Length) mm.Montre(objets[rangement][0], int.Parse(objets[rangement][1])); else mm.Fete();
+            };
+            mm.Demande = s =>
+            {
+                journal.AppendLine(t.ToString("0.00", Inv) + "  DEMANDE " + s);
+                int i = int.Parse(s.Substring(6));
+                if (rangement < 0) { mm.Decouvre(i); vues[i] = true; if (vues[0] && vues[1] && vues[2]) suite = t + 3.6; }
+                else if (i == int.Parse(objets[rangement][1])) { mm.Range(i); suite = t + 2.2; }
+                else mm.Refuse(i);
+            };
+        }
         if (pm != null)
         {
             installe();
@@ -103,7 +123,7 @@ static class Banc
                 gx += (vx - gx) * 0.2; gy += (vy - gy) * 0.2;
                 m.Regard(gx, gy);
             }
-            else if (corps || panier || fil || gouter || train)
+            else if (corps || panier || fil || gouter || train || maison)
             {
                 if (suite >= 0 && t >= suite) { suite = -1; tour++; installe(); pose = 0; }
                 // le regard va sur la bonne zone, y reste une seconde, et la choisit ; une fois sur quatre il se trompe d'abord
