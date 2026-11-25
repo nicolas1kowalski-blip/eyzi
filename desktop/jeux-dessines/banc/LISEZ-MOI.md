@@ -37,4 +37,10 @@ Dans l'ordre (`../ordre.js`, `OrdreArt.cs`, `OrdreMoteur.cs`, pour `SequenceGame
 
 La valise du voyageur (`../valise.js`, `ValiseArt.cs`, `ValiseMoteur.cs`, pour `SuitcaseGame.cs`) : `valise` (la neige, le désert, la pluie à la suite).
 Le journal (`journal.txt`) note la voix, les bruits et les réussites.
+
+Le banc rejoue aussi la tenue de comptes de l'écran de l'application (une vue par objet, rangée dans le panneau de
+son calque) : une ligne `AFFICHAGE …` dans le journal signale ce que WPF refuserait ou ce qui ne s'afficherait pas —
+un objet dans deux calques, un objet en double, une liste de calque modifiée sans passer par `Ajoute`/`Retire`.
+`EYZI_AFFICHAGE=ancien` rejoue l'ordre d'avant la correction de novembre 2026 (un objet qui recule d'un calque
+figeait le jeu).
 Ce que le banc ne vérifie pas : l'affichage WPF lui-même, le son, et le vrai regard.

@@ -174,9 +174,20 @@ namespace MesPremiersJeux.Games
 
             // le temps de fixation réglé dans l'application vaut aussi pour les jeux qui attendent le regard eux-mêmes
             try { if (GazeStats.GetDwell != null) _moteur.Fixation = Math.Max(0.3, Math.Min(2.5, GazeStats.GetDwell() / 1000.0)); } catch { }
-            _moteur.Avance(dt);
-            Dessine();
+            // Une erreur ici ne doit jamais arrêter l'horloge : WPF ne relance pas un DispatcherTimer dont le Tick a levé
+            // une exception, et le jeu resterait figé sur la dernière image.
+            try
+            {
+                _moteur.Avance(dt);
+                Dessine();
+            }
+            catch (Exception ex)
+            {
+                if (_pannes++ < 3) Lib.Log.Write("jeu", _nom + " : " + ex);
+                for (int i = 0; i < _etats.Length; i++) _etats[i] = -1;      // tout sera reposé à la prochaine image
+            }
         }
+        private int _pannes;
 
         // ------------------------------------------------------------------
         //  Le dessin : chaque objet du moteur a sa « vue » WPF, qu'on déplace à chaque image
@@ -196,14 +207,23 @@ namespace MesPremiersJeux.Games
         {
             var calques = _moteur.Calques;
             bool change = false;
+            // En deux temps : on vide d'abord tous les calques qui ont changé, puis on les remplit. Un objet qui passe
+            // d'un calque à un autre (la boîte touchée qui part derrière la table) doit avoir quitté l'ancien avant
+            // d'entrer dans le nouveau, sinon WPF refuse (« déjà l'enfant d'un autre élément »).
             for (int i = 0; i < calques.Length; i++)
-            {
-                if (calques[i].Etat == _etats[i]) continue;
-                _etats[i] = calques[i].Etat;
-                change = true;
-                _calques[i].Children.Clear();
-                foreach (var o in calques[i].Objets) _calques[i].Children.Add(VueDe(o).Ui);
-            }
+                if (calques[i].Etat != _etats[i]) { change = true; _calques[i].Children.Clear(); }
+            if (change)
+                for (int i = 0; i < calques.Length; i++)
+                {
+                    if (calques[i].Etat == _etats[i]) continue;
+                    _etats[i] = calques[i].Etat;
+                    foreach (var o in calques[i].Objets)
+                    {
+                        var ui = VueDe(o).Ui;
+                        if (ui.Parent is Panel ancien) ancien.Children.Remove(ui);
+                        _calques[i].Children.Add(ui);
+                    }
+                }
             if (change)
             {
                 // on oublie les vues des objets que le moteur a retirés

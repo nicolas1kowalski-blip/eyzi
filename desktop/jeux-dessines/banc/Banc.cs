@@ -211,10 +211,68 @@ static class Banc
                 if (alea.NextDouble() < 0.004) ailleurs = 1.0;
             }
             m.Avance(1 / 30.0);
+            Ecran.Image(m, t, journal);
             if (i % chaque == 0) File.WriteAllText(Path.Combine(dossier, (image++).ToString("0000") + ".svg"), Svg(m));
         }
         File.WriteAllText(Path.Combine(dossier, "journal.txt"), journal.ToString());
         Console.WriteLine(image + " images ; " + m.Reussites + " réussites ; journal :\n" + journal);
+    }
+
+    // ───────────── L'écran de l'application, rejoué ─────────────
+    // Le banc redessine chaque image de zéro ; l'application, elle, garde une « vue » par objet et la range dans le
+    // panneau de son calque. WPF interdit qu'une vue ait deux parents : on rejoue ici la même tenue de comptes que
+    // VecToile.Dessine, pour voir sur le banc ce qui, sinon, ne se verrait que sur la tablette (un jeu qui se fige).
+    static class Ecran
+    {
+        static int[] _etats;
+        static readonly Dictionary<VecObjet, int> Parent = new Dictionary<VecObjet, int>();
+        static readonly bool Ancien = Environment.GetEnvironmentVariable("EYZI_AFFICHAGE") == "ancien";
+        static int _dits;
+
+        static void Dis(double t, StringBuilder journal, string quoi)
+        {
+            if (_dits++ >= 12) return;
+            journal.AppendLine(t.ToString("0.00", Inv) + "  AFFICHAGE " + quoi);
+        }
+
+        public static void Image(VecMoteur m, double t, StringBuilder journal)
+        {
+            var c = m.Calques;
+            if (_etats == null) { _etats = new int[c.Length]; for (int i = 0; i < c.Length; i++) _etats[i] = -1; }
+            void Vide(int i) { var pris = new List<VecObjet>(); foreach (var p in Parent) if (p.Value == i) pris.Add(p.Key); foreach (var o in pris) Parent.Remove(o); }
+            if (Ancien)
+            {
+                // l'ordre d'avant la correction : calque par calque, vidé puis rempli
+                for (int i = 0; i < c.Length; i++)
+                {
+                    if (c[i].Etat == _etats[i]) continue;
+                    _etats[i] = c[i].Etat; Vide(i);
+                    foreach (var o in c[i].Objets)
+                    {
+                        if (Parent.TryGetValue(o, out int ou)) { Dis(t, journal, "EXCEPTION : un objet entre dans le calque " + i + " alors qu'il est encore dans le calque " + ou + " — l'horloge du jeu s'arrête ici"); return; }
+                        Parent[o] = i;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < c.Length; i++) if (c[i].Etat != _etats[i]) Vide(i);
+                for (int i = 0; i < c.Length; i++)
+                {
+                    if (c[i].Etat == _etats[i]) continue;
+                    _etats[i] = c[i].Etat;
+                    foreach (var o in c[i].Objets)
+                    {
+                        if (Parent.TryGetValue(o, out int ou)) Dis(t, journal, ou == i ? "un objet est deux fois dans le calque " + i : "un objet est à la fois dans les calques " + ou + " et " + i);
+                        Parent[o] = i;
+                    }
+                }
+            }
+            // tout objet d'un calque doit avoir sa vue : sinon la liste a été changée sans passer par Ajoute/Retire
+            for (int i = 0; i < c.Length; i++)
+                foreach (var o in c[i].Objets)
+                    if (!Parent.TryGetValue(o, out int ou) || ou != i) { Dis(t, journal, "un objet du calque " + i + " n'a pas de vue (liste modifiée sans Ajoute/Retire ?)"); break; }
+        }
     }
 
     // ───────────── Le dessin d'une image, en SVG ─────────────
