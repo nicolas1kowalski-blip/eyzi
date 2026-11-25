@@ -108,14 +108,3 @@ Ces valeurs ne vont que dans les secrets GitHub : jamais dans le dépôt, ni dan
 Limites : la fiche (textes, images) se modifie toujours dans l'espace partenaires ; si une soumission
 est déjà en cours de validation, l'envoi suivant est refusé (relancer la promotion une fois la
 première validée).
-
-## 6. Point bloquant : le regard dans la version du Store (24 novembre 2026)
-
-Premier essai de la version du Store (2026.1123.261.0) sur une tablette à commande oculaire : aucun
-moteur Tobii ne voit le capteur. Le journal montre « Appareils trouvés : aucun » pour le Stream Engine
-de l'application comme pour celui de la tablette (4.23.0.3), et « Trackers trouvés : 0 » pour le Pro SDK.
-La cause n'est pas établie ; l'hypothèse est que l'emballage MSIX coupe Eyzi du logiciel Tobii.
-
-Tant que ce n'est pas réglé : pas de lien vers le Store sur le site ni dans le guide, pas de mail aux
-familles. À vérifier d'abord : la version de l'installeur, sur la même tablette, voit-elle le capteur ?
-
