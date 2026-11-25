@@ -30,5 +30,7 @@ Chamboule-tout (`../chamboule.js`, `ChambouleMoteur.cs`, `ChambouleGame.cs`) : `
 Les décors des activités de nombres (`../nombres.js`, `NombresArt.cs`) : `panier` (`PanierMoteur.cs`, pour `CompleteGame.cs`), `fil`, `gouter`, `train` (`FilMoteur.cs`, `GouterMoteur.cs`, `TrainMoteur.cs`, pour `MathGame.cs`). Ici c'est l'activité qui choisit les nombres et juge les réponses : le banc joue son rôle avec quelques questions écrites à l'avance. Les peluches partagées sont dans `../peluches.js`.
 
 Range la maison (`../maison.js`, `MaisonArt.cs`, `MaisonMoteur.cs`, pour `TidyHouseGame.cs`) : `maison`. Les objets à ranger sont des images de la banque d'images de l'application (`MesPremiersJeux/Images`), que `banc.sh` indique au banc par `EYZI_IMAGES`. Le paysage partagé est dans `../paysage.js`.
+
+La valise du voyageur (`../valise.js`, `ValiseArt.cs`, `ValiseMoteur.cs`, pour `SuitcaseGame.cs`) : `valise` (la neige, le désert, la pluie à la suite).
 Le journal (`journal.txt`) note la voix, les bruits et les réussites.
 Ce que le banc ne vérifie pas : l'affichage WPF lui-même, le son, et le vrai regard.

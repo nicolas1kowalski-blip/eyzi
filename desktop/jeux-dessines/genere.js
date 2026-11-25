@@ -6,6 +6,7 @@
 //   chamboule.js → ../MesPremiersJeux/Games/ChambouleArt.cs (Chamboule-tout)
 //   nombres.js → ../MesPremiersJeux/Games/NombresArt.cs  (les décors des activités de nombres)
 //   maison.js → ../MesPremiersJeux/Games/MaisonArt.cs    (Range la maison)
+//   valise.js → ../MesPremiersJeux/Games/ValiseArt.cs    (La valise du voyageur)
 // (les images des jeux, elles, se font avec le banc d'essai : voir banc/LISEZ-MOI.md)
 const fs = require('fs'), path = require('path');
 // les couleurs en #RRGGBB majuscules (la forme courte #fff est allongée)
@@ -15,7 +16,7 @@ const n = v => String(Math.round(v * 100) / 100);
 // un dégradé devient un texte : « L;x1;y1;x2;y2|position;couleur;opacité|… » ou « R;cx;cy;r|… »
 const degrade = g => (g.g === 'L' ? ['L', g.x1, g.y1, g.x2, g.y2] : ['R', g.cx, g.cy, g.r]).map(v => typeof v === 'number' ? n(v) : v).join(';') + '|' + g.s.map(a => [n(a[0]), coul(a[1]), n(a[2] ?? 1)].join(';')).join('|');
 
-for (const [source, classe, jeu] of [['jet', 'JetArt', "Le jet d'eau"], ['peche', 'PecheArt', 'La pêche'], ['patate', 'PatateArt', 'Patatou'], ['corps', 'CorpsArt', 'Dans mon corps'], ['chamboule', 'ChambouleArt', 'Chamboule-tout'], ['nombres', 'NombresArt', 'Les nombres (Apprendre)'], ['maison', 'MaisonArt', 'Range la maison']]) {
+for (const [source, classe, jeu] of [['jet', 'JetArt', "Le jet d'eau"], ['peche', 'PecheArt', 'La pêche'], ['patate', 'PatateArt', 'Patatou'], ['corps', 'CorpsArt', 'Dans mon corps'], ['chamboule', 'ChambouleArt', 'Chamboule-tout'], ['nombres', 'NombresArt', 'Les nombres (Apprendre)'], ['maison', 'MaisonArt', 'Range la maison'], ['valise', 'ValiseArt', 'La valise du voyageur']]) {
   if (!fs.existsSync(path.join(__dirname, source + '.js'))) continue;
   const { S, SCENES, CIELS, LISTES } = require('./' + source + '.js');
   let o = `// FICHIER FABRIQUÉ par desktop/jeux-dessines/genere.js à partir de desktop/jeux-dessines/${source}.js — ne pas le modifier à la main.
