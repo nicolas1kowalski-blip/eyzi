@@ -186,6 +186,10 @@ static class Banc
                             corps.Append($"<polyline points=\"{string.Join(" ", o.Points.Select(N))}\" fill=\"none\" stroke=\"{o.Couleur}\" stroke-width=\"{N(o.Epaisseur)}\" stroke-linecap=\"round\" stroke-linejoin=\"round\""
                                 + (o.Tiret > 0 ? $" stroke-dasharray=\"{N(o.Tiret * o.Epaisseur)} {N(o.Espace * o.Epaisseur)}\" stroke-dashoffset=\"{N(o.Decalage * o.Epaisseur)}\"" : "") + "/>");
                         break;
+                    case VecGenre.Image:
+                        // une image de la banque d'images de l'application (dossier donné par EYZI_IMAGES)
+                        corps.Append($"<image href=\"file://{Path.Combine(Environment.GetEnvironmentVariable("EYZI_IMAGES") ?? ".", o.Image + ".png")}\" x=\"-100\" y=\"-100\" width=\"200\" height=\"200\"/>");
+                        break;
                     case VecGenre.Texte:
                         corps.Append($"<text font-family=\"Arial Black,Arial\" font-weight=\"900\" font-size=\"{N(o.Taille)}\" text-anchor=\"middle\" dominant-baseline=\"middle\" fill=\"{o.Couleur}\" stroke=\"#2A1C4E\" stroke-width=\"10\" stroke-linejoin=\"round\" paint-order=\"stroke\">{o.Texte}</text>");
                         break;

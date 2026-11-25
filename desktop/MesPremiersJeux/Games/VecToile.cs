@@ -232,6 +232,8 @@ namespace MesPremiersJeux.Games
                         v.Etat = o.Etat;
                         ((Path)v.Ui).Data = Contour(o.Points, o.Genre == VecGenre.Plein);
                     }
+                    // un mot qui change (un compteur, le nombre d'un wagon) se redessine
+                    if (o.Genre == VecGenre.Texte && v.Etat != o.Etat) { v.Etat = o.Etat; EcrisMot((Canvas)v.Ui, o); }
                     if (o.Genre == VecGenre.Ligne && v.Decalage != o.Decalage) { v.Decalage = o.Decalage; ((Path)v.Ui).StrokeDashOffset = o.Decalage; }
                 }
 
@@ -312,7 +314,13 @@ namespace MesPremiersJeux.Games
                     if (o.Tiret > 0) { ligne.StrokeDashArray = new DoubleCollection { o.Tiret, o.Espace }; ligne.StrokeDashCap = PenLineCap.Round; }
                     v.Ui = ligne;
                     break;
-                default: v.Ui = DessineMot(o); break;
+                case VecGenre.Image:
+                    // une image de la banque d'images (ou son repli), dans un carré de 200 centré sur l'origine
+                    var cadre = new Canvas();
+                    try { var image = Art.Visual(o.Image, "📦", 200); Canvas.SetLeft(image, -100); Canvas.SetTop(image, -100); cadre.Children.Add(image); } catch { }
+                    v.Ui = cadre;
+                    break;
+                default: v.Ui = DessineMot(o); v.Etat = o.Etat; break;
             }
             v.Ui.IsHitTestVisible = false;
             var g = new TransformGroup();
@@ -341,6 +349,13 @@ namespace MesPremiersJeux.Games
         private static Canvas DessineMot(VecObjet o)
         {
             var c = new Canvas();
+            EcrisMot(c, o);
+            return c;
+        }
+
+        private static void EcrisMot(Canvas c, VecObjet o)
+        {
+            c.Children.Clear();
             try
             {
                 var ft = new FormattedText(o.Texte ?? "", CultureInfo.GetCultureInfo("fr-FR"), FlowDirection.LeftToRight,
@@ -351,7 +366,6 @@ namespace MesPremiersJeux.Games
                 c.Children.Add(new Path { Data = g, Fill = Brosse(o.Couleur) });
             }
             catch { }
-            return c;
         }
 
         private static Geometry Contour(double[] pts, bool ferme)

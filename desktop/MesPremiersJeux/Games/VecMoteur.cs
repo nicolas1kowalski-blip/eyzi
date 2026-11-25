@@ -19,9 +19,9 @@ namespace MesPremiersJeux.Games
     /// <summary>Un objet posé dans une scène : son nom, son dessin, sa place, sa taille, son angle, ses couleurs.</summary>
     internal struct VecPose { public string Nom, Dessin; public double X, Y, E, R; public string[] C; public VecPose(string nom, string dessin, double x, double y, double e, double r, string[] c) { Nom = nom; Dessin = dessin; X = x; Y = y; E = e; R = r; C = c; } }
 
-    internal enum VecGenre { Dessin, Plein, Ligne, Texte }
+    internal enum VecGenre { Dessin, Plein, Ligne, Texte, Image }
 
-    /// <summary>Un objet à dessiner : un dessin du jeu, une forme pleine, une ligne ou un mot.</summary>
+    /// <summary>Un objet à dessiner : un dessin du jeu, une forme pleine, une ligne, un mot, ou une image de la banque d'images.</summary>
     internal sealed class VecObjet
     {
         public VecGenre Genre;
@@ -35,6 +35,7 @@ namespace MesPremiersJeux.Games
         public double Epaisseur, Tiret, Espace, Decalage;   // Ligne (tirets en unités d'épaisseur)
         public string Decoupe;            // Plein : un dessin dont la première forme découpe l'objet (ex. l'eau dans l'aquarium)
         public string Texte; public double Taille;          // Texte : centré sur l'origine, cerné de sombre
+        public string Image;              // Image : le nom d'une image de la banque (« casserole »), dans un carré de 200 centré sur l'origine
         public VecObjet En(double x, double y, double e = 1, double r = 0) { X = x; Y = y; E = e; R = r; return this; }
     }
 
