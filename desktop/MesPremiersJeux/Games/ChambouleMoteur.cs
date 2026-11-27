@@ -394,24 +394,37 @@ namespace MesPremiersJeux.Games
         // ------------------------------------------------------------------
         //  Le regard : la boîte visée, le rond qui se remplit, le lancer
         // ------------------------------------------------------------------
+        /// <summary>La boîte debout la plus proche du pointeur, si elle est à portée.</summary>
+        private Boite BoiteVisee(double portee)
+        {
+            Boite cible = null; double mieux = portee;
+            foreach (var b in _boites)
+            {
+                if (b.Mode != Mode.Debout || b.Lache >= 0) continue;
+                double dx = (_rx - b.X) / (58 * _e), dy = (_ry - b.Y) / (66 * _e), d = Math.Sqrt(dx * dx + dy * dy);
+                if (d < mieux) { mieux = d; cible = b; }
+            }
+            return cible;
+        }
+
+        /// <summary>Au doigt ou à la souris, on n'attend pas : toucher une boîte lance la balle tout de suite.</summary>
+        public override void Touche(double x, double y)
+        {
+            Regard(x, y);
+            if (_etat != Etat.Jeu || _volT >= 0 || _recharge > 0) return;      // une balle vole déjà : le pointeur reste posé, elle partira ensuite
+            var b = BoiteVisee(Math.Max(1.5, Portees[_niveau]));
+            if (b != null) { _cible = null; _progres = 0; Lance(b); }
+        }
+
         private void AvanceVisee(double dt)
         {
             Boite cible = null;
             bool pret = _etat == Etat.Jeu && _volT < 0 && _recharge <= 0;
-            if (pret && _temps - _vu < 0.35)
-            {
-                double mieux = Portees[_niveau];
-                foreach (var b in _boites)
-                {
-                    if (b.Mode != Mode.Debout || b.Lache >= 0) continue;
-                    double dx = (_rx - b.X) / (58 * _e), dy = (_ry - b.Y) / (66 * _e), d = Math.Sqrt(dx * dx + dy * dy);
-                    if (d < mieux) { mieux = d; cible = b; }
-                }
-            }
+            if (pret && _temps - _vu < 0.35) cible = BoiteVisee(Portees[_niveau]);
             if (cible != _cible) { _cible = cible; _progres = 0; }
             if (_cible != null)
             {
-                _progres += dt / Math.Max(0.25, Fixation * 0.6);        // on vise vite : moins longtemps que la fixation habituelle
+                _progres += dt / Math.Max(0.25, Fixation);        // le temps de fixation réglé pour l'enfant, ni plus ni moins
                 if (_progres >= 1) { Lance(_cible); _progres = 0; _cible = null; }
             }
 

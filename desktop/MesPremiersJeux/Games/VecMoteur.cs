@@ -111,6 +111,9 @@ namespace MesPremiersJeux.Games
         // ------------------------------------------------------------------
         /// <summary>L'enfant regarde ce point de la scène (ou y pose le pointeur).</summary>
         public void Regard(double x, double y) { _rx = x; _ry = y; _vu = _temps; }
+        /// <summary>L'enfant a touché ce point du doigt, ou cliqué dessus. Par défaut, c'est comme y poser le regard
+        /// (l'application y laisse ensuite le pointeur un moment) ; un jeu peut agir tout de suite.</summary>
+        public virtual void Touche(double x, double y) { Regard(x, y); }
 
         // ------------------------------------------------------------------
         //  Petits outils

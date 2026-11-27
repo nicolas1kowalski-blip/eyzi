@@ -77,7 +77,6 @@ namespace MesPremiersJeux.Gaze
         private const double SnapRadius = 80;        // px : le regard proche d'un bouton est attiré dessus
         private const double PreciseSnapRadius = 10; // px : cible « de précision » : presque pas d'aimant
         private const double GraceSeconds = 0.35;    // un écart bref ne remet PAS la progression à zéro
-        private const double SaccadePxPerSec = 1100; // au-delà = mouvement brusque : progression en pause
 
         private List<GazeTargets.Target> _targets = new List<GazeTargets.Target>();
         private double _lastTargetScan = -10;
@@ -112,8 +111,16 @@ namespace MesPremiersJeux.Gaze
         private bool _hasPrevMed;
         private const double JitterCalmPx = 7;   // en deçà : aucun rallongement
 
-        /// <summary>Rallonge la fixation quand le regard tremble (activé par défaut).</summary>
-        public bool AdaptiveDwell { get; set; } = true;
+        /// <summary>Rallonge la fixation quand le regard tremble. ÉTEINT : le temps réglé par le parent est le temps
+        /// réel. Allumé, un regard agité allongeait la fixation jusqu'à +60 % sans que rien ne l'affiche — « 1 s »
+        /// en durait 1,6. Le réglage « ajuster tout seul » reste là pour allonger, et lui déplace le curseur.</summary>
+        public bool AdaptiveDwell { get; set; } = false;
+
+        // --- MESURE : ce que la dernière fixation a vraiment duré (journal + réglages) ---
+        private int _fillTicks;
+        private double _fillGapMax;
+        /// <summary>Durée réelle (ms) entre l'arrivée du regard sur la dernière cible cliquée et le clic ; 0 = pas encore de clic.</summary>
+        public double LastRealDwellMs { get; private set; }
 
         /// <summary>Agitation mesurée du regard (px par tic, lissée).</summary>
         public double JitterPx => _jitterEma;
@@ -179,7 +186,9 @@ namespace MesPremiersJeux.Gaze
 
         /// <summary>Résumé de l'état de précision (affiché dans les réglages).</summary>
         public string PrecisionInfo => FormattableString.Invariant(
-            $"bruit {_jitterEma:0.0} px · fixation {EffectiveDwellMs:0} ms · dérive ({_drift.X:0};{_drift.Y:0}) · éclair ({_quickOffset.X:0};{_quickOffset.Y:0})");
+            $"bruit {_jitterEma:0.0} px · fixation {EffectiveDwellMs:0} ms") +
+            (LastRealDwellMs > 0 ? FormattableString.Invariant($" (dernier clic : {LastRealDwellMs:0} ms)") : "") +
+            FormattableString.Invariant($" · dérive ({_drift.X:0};{_drift.Y:0}) · éclair ({_quickOffset.X:0};{_quickOffset.Y:0})");
 
         /// <summary>Vrai : le dwell ne se déclenche que sur des cibles (jeux d'exploration).</summary>
         public bool TargetsOnly { get; set; }
@@ -483,8 +492,13 @@ namespace MesPremiersJeux.Gaze
             }
 
             double t = _clock.Elapsed.TotalSeconds;
-            double dt = _lastTickTime < 0 ? 0.03 : Math.Min(0.1, t - _lastTickTime);
+            // Le temps RÉEL écoulé depuis le tic précédent. Plafonné à 0,25 s (et non 0,1 s) : quand l'affichage rame
+            // (scène lourde, tablette occupée), les tics s'espacent, et tout ce qui dépassait le plafond était perdu —
+            // le rond se remplissait alors moins vite que la montre.
+            double ecart = _lastTickTime < 0 ? 0.03 : t - _lastTickTime;
+            double dt = Math.Min(0.25, ecart);
             _lastTickTime = t;
+            if (ecart > _fillGapMax) _fillGapMax = ecart;
 
             // 0) Regard perdu (yeux invalides) : le curseur disparaît et rien n'est
             //    sélectionné tant que les yeux ne sont pas revenus. Le seuil s'adapte
@@ -563,12 +577,10 @@ namespace MesPremiersJeux.Gaze
             }
             var screen = _display;
 
-            // Vitesse du point affiché : un mouvement brusque (saccade, à-coup de
-            // tête) met la progression en PAUSE au lieu de la remettre à zéro.
-            double speed = 0;
-            if (_hasPrevScreen && dt > 0) speed = Distance(screen, _prevScreen) / dt;
+            // (Un mouvement brusque du point mettait autrefois la progression en pause : avec une grande zone morte,
+            // chaque petit déplacement du point comptait pour « brusque » et le rond s'arrêtait. Tant que le point
+            // est sur la cible, le temps compte.)
             _prevScreen = screen; _hasPrevScreen = true;
-            bool saccade = speed > SaccadePxPerSec;
 
             // Flux partagé : point affiché (jeux « cause à effet », bilan…).
             GazeFeed.Push(screen, true);
@@ -657,13 +669,13 @@ namespace MesPremiersJeux.Gaze
                         double kept = _memProgress - (t - _memAt) * MemDecayPerSec * (EffectiveDwellMs / 1000.0);
                         _progressSec = Math.Max(0, kept);
                     }
-                    else { _progressSec = 0; _acqT = t; }
+                    else { _progressSec = 0; _acqT = t; _fillTicks = 0; _fillGapMax = 0; }
                     if (_acqT < 0) _acqT = t;
                     _memTargetEl = null;
                 }
                 _curTargetRect = tgt.ScreenRect;
                 _outSince = -1;
-                if (!saccade) _progressSec += dt;
+                _progressSec += dt; _fillTicks++;
                 ShowTargetVisuals();
                 if (_progressSec * 1000.0 >= TargetDwellMs)
                 {
@@ -729,7 +741,7 @@ namespace MesPremiersJeux.Gaze
             else
             {
                 _outSince = -1;
-                if (!saccade) _progressSec += dt;
+                _progressSec += dt; _fillTicks++;
             }
 
             PlaceIndicator(_holdLocal);
@@ -827,7 +839,7 @@ namespace MesPremiersJeux.Gaze
         private void StartFreeHold(Point screen, Point local, double t)
         {
             _holdActive = true;
-            _acqT = t;
+            _acqT = t; _fillTicks = 0; _fillGapMax = 0;
             _holdScreen = screen;
             _holdLocal = local;
             _progressSec = 0;
@@ -860,6 +872,10 @@ namespace MesPremiersJeux.Gaze
         private void Click(Point screen, double t)
         {
             double took = _acqT >= 0 ? t - _acqT : EffectiveDwellMs / 1000.0;
+            LastRealDwellMs = took * 1000.0;
+            string mesure = FormattableString.Invariant(
+                $"fixation réglée {DwellTime} ms · visée {EffectiveDwellMs:0} ms · réelle {took * 1000:0} ms · {_fillTicks} tics · plus long écart entre deux tics {_fillGapMax * 1000:0} ms · bruit {_jitterEma:0.0} px");
+            _fillTicks = 0; _fillGapMax = 0;
             _acqT = -1;
             _progressSec = 0; // une sélection réussie n'est pas un abandon
             ResetHold();
@@ -876,7 +892,7 @@ namespace MesPremiersJeux.Gaze
             }
             catch { /* rien : le prochain dwell retentera */ }
 
-            Lib.Log.Write("dwell", FormattableString.Invariant($"CLIC injecté à ({screen.X:0};{screen.Y:0})"));
+            Lib.Log.Write("dwell", FormattableString.Invariant($"CLIC injecté à ({screen.X:0};{screen.Y:0}) — ") + mesure);
             Clicked?.Invoke(screen);
             try { Lib.GazeStats.RecordSelection(screen, took); } catch { }
         }

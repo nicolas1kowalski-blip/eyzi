@@ -44,6 +44,8 @@ static class Banc
         m.Dit = s => { journal.AppendLine(t.ToString("0.00", Inv) + "  VOIX  " + s); voixJusqua = t + 0.5 + s.Length * 0.055; };
         if (patate || corps || panier || fil || gouter || train || maison || valise || lit || ordre) m.VoixOccupee = () => t < voixJusqua;
         double pose = 0; bool trompe = false;
+        // EYZI_DOIGT=1 : les jeux qui suivent le pointeur (jet d'eau, pêche, chamboule-tout) sont joués au doigt
+        bool doigt = Environment.GetEnvironmentVariable("EYZI_DOIGT") == "1"; double tape = 0.8; double poseX = 0, poseY = 0, poseJusqua = -1;
         // « panier » : le banc joue le rôle de l'activité (elle choisit les nombres et juge les réponses)
         var pm = m as PanierMoteur; int tour = 0; double suite = -1;
         string[] fruits = { "fruit_pomme", "fruit_poire", "fruit_orange", "fruit_citron" };
@@ -203,6 +205,13 @@ static class Banc
                 m.Regard(gx, gy);
             }
             else if (ailleurs > 0) ailleurs -= 1 / 30.0;
+            else if (doigt)
+            {
+                // Personne devant le capteur : un doigt touche la prochaine cible de temps en temps, et rien d'autre.
+                // Comme dans l'application, le pointeur reste posé un moment là où le doigt a touché.
+                if ((tape -= 1 / 30.0) <= 0 && m.ProchaineCible(out double dx, out double dy)) { m.Touche(dx, dy); tape = 3.0; poseX = dx; poseY = dy; poseJusqua = t + Math.Max(2.0, m.Fixation + 1.0); journal.AppendLine(t.ToString("0.00", Inv) + "  DOIGT (" + N(dx) + ";" + N(dy) + ")"); }
+                else if (t < poseJusqua) m.Regard(poseX, poseY);
+            }
             else
             {
                 if (m.ProchaineCible(out double cx, out double cy)) { gx += (cx - gx) * 0.22; gy += (cy - gy) * 0.22; }

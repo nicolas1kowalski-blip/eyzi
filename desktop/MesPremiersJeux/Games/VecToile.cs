@@ -42,6 +42,13 @@ namespace MesPremiersJeux.Games
         private readonly DispatcherTimer _tic = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
         private readonly Stopwatch _montre = new Stopwatch();
         private double _dernier, _horloge, _flux = -10;
+        // Le doigt (ou la souris) : là où il a touché, s'il appuie encore, et jusqu'à quand le pointeur y reste posé.
+        private Point _doigt;
+        private bool _doigtAppuye;
+        private double _doigtJusqua = -1, _clicDuRegard = -10;
+        // La souris : où elle était, et quand elle a bougé pour la dernière fois ; le dernier regard valide.
+        private Point _sourisVue;
+        private double _sourisBouge = -10, _fluxValide = -10;
         private MediaPlayer _son;
         private DateTime _debut = DateTime.Now;
 
@@ -100,11 +107,31 @@ namespace MesPremiersJeux.Games
             };
             _moteur.Bravo = () => { if (!_incruste) RewardStore.Add(); try { _fete?.Invoke(); } catch { } try { ApresBravo?.Invoke(); } catch { } };
 
+            // Le doigt et la souris : toucher la scène, c'est y poser le pointeur (et un jeu peut agir tout de suite).
+            // Sans cela, dès qu'un capteur de regard est branché, c'est lui seul qui pilote — et s'il ne voit personne
+            // (un parent qui montre du doigt, de côté), rien ne répond.
+            _racine.MouseLeftButtonDown += (s, e) =>
+            {
+                if (GameControl.Paused) return;
+                if (_montre.Elapsed.TotalSeconds - _clicDuRegard < 0.3) return;      // ce clic-là vient du regard, pas d'un doigt
+                Point p; try { p = e.GetPosition(_monde); } catch { return; }
+                _doigt = p; _doigtAppuye = true; _doigtJusqua = _horloge + TenueDuDoigt;
+                try { _moteur.Touche(p.X, p.Y); } catch (Exception ex) { if (_pannes++ < 3) Lib.Log.Write("jeu", _nom + " (doigt) : " + ex); }
+            };
+            _racine.MouseMove += (s, e) =>
+            {
+                if (!_doigtAppuye) return;
+                if (e.LeftButton != System.Windows.Input.MouseButtonState.Pressed) { _doigtAppuye = false; return; }
+                try { _doigt = e.GetPosition(_monde); _doigtJusqua = _horloge + TenueDuDoigt; } catch { }
+            };
+            _racine.MouseLeftButtonUp += (s, e) => { _doigtAppuye = false; };
+
             _tic.Tick += (s, e) => Tic();
             _hote.Loaded += (s, e) =>
             {
                 if (!_incruste) GazeGate.PushTargetsOnly();      // le regard n'actionne que le bouton retour
                 GazeFeed.Sample += SurRegard;
+                if (DwellController.Instance != null) DwellController.Instance.Clicked += SurClicDuRegard;
                 if (!_incruste) Usage.GameStart(_nom);
                 _debut = DateTime.Now;
                 DemarreSon();
@@ -116,6 +143,7 @@ namespace MesPremiersJeux.Games
             {
                 _tic.Stop();
                 GazeFeed.Sample -= SurRegard;
+                if (DwellController.Instance != null) DwellController.Instance.Clicked -= SurClicDuRegard;
                 try { _son?.Stop(); _son?.Close(); } catch { }
                 _son = null;
                 if (_incruste) return;
@@ -148,17 +176,27 @@ namespace MesPremiersJeux.Games
             catch { _son = null; }
         }
 
+        /// <summary>Le temps pendant lequel le pointeur reste posé là où le doigt a touché : de quoi laisser un jeu
+        /// qui attend le regard (le poisson qui mord) aller au bout.</summary>
+        private double TenueDuDoigt => Math.Max(2.0, _moteur.Fixation + 1.0);
+        private bool DoigtPose => _doigtAppuye || _horloge < _doigtJusqua;
+        private void SurClicDuRegard(Point ecran) { _clicDuRegard = _montre.Elapsed.TotalSeconds; }
+
         private void SurRegard(Point ecran, bool valide)
         {
             _flux = _horloge;      // le moteur du regard tourne (même si l'enfant regarde ailleurs)
             if (!valide) return;
+            _fluxValide = _horloge;
+            if (DoigtPose) return;      // le doigt posé a la main
             try { var p = _monde.PointFromScreen(ecran); _moteur.Regard(p.X, p.Y); } catch { }
         }
 
         private void Tic()
         {
+            // Le temps réel écoulé : si l'affichage a pris du retard, le jeu le rattrape en plusieurs petits pas
+            // (au lieu de tourner au ralenti — une fixation d'une seconde doit durer une seconde).
             double maintenant = _montre.Elapsed.TotalSeconds;
-            double dt = Math.Min(0.1, maintenant - _dernier);
+            double dt = Math.Min(0.3, maintenant - _dernier);
             _dernier = maintenant;
             if (dt <= 0) return;
             bool pause = GameControl.Paused;      // une surcouche (Parler, écoute) est ouverte : tout attend
@@ -166,10 +204,26 @@ namespace MesPremiersJeux.Games
             if (pause) return;
             _horloge += dt;
 
-            // Sans moteur de regard (souris ou doigt seuls), l'eau suit le pointeur tant qu'il est sur le jeu, même immobile.
-            if (_horloge - _flux > 1 && _racine.IsMouseOver)
+            // Le doigt posé (ou qui vient de toucher) : le pointeur du jeu reste là, quoi que dise le regard.
+            if (_doigtAppuye && System.Windows.Input.Mouse.LeftButton != System.Windows.Input.MouseButtonState.Pressed) _doigtAppuye = false;
+            if (DoigtPose && !_doigtAppuye && _racine.IsMouseOver)
             {
-                try { var p = System.Windows.Input.Mouse.GetPosition(_monde); _moteur.Regard(p.X, p.Y); } catch { }
+                // une souris qui repart après le clic reprend la main tout de suite
+                try { var m = System.Windows.Input.Mouse.GetPosition(_monde); if (Math.Abs(m.X - _doigt.X) + Math.Abs(m.Y - _doigt.Y) > 30) _doigtJusqua = -1; } catch { }
+            }
+            if (DoigtPose) _moteur.Regard(_doigt.X, _doigt.Y);
+            else if (_racine.IsMouseOver)
+            {
+                try
+                {
+                    var p = System.Windows.Input.Mouse.GetPosition(_monde);
+                    if (Math.Abs(p.X - _sourisVue.X) + Math.Abs(p.Y - _sourisVue.Y) > 4) { _sourisVue = p; _sourisBouge = _horloge; }
+                    // Sans moteur de regard, l'eau suit le pointeur tant qu'il est sur le jeu, même immobile. Avec un
+                    // capteur branché qui ne voit personne, elle suit une souris qui BOUGE (un pointeur figé là où le
+                    // regard l'a laissé ne doit rien déclencher).
+                    if (_horloge - _flux > 1 || (_horloge - _fluxValide > 1 && _horloge - _sourisBouge < 1.5)) _moteur.Regard(p.X, p.Y);
+                }
+                catch { }
             }
 
             // le temps de fixation réglé dans l'application vaut aussi pour les jeux qui attendent le regard eux-mêmes
@@ -178,7 +232,7 @@ namespace MesPremiersJeux.Games
             // une exception, et le jeu resterait figé sur la dernière image.
             try
             {
-                _moteur.Avance(dt);
+                for (double reste = dt; reste > 0.0005; reste -= 0.05) _moteur.Avance(Math.Min(0.05, reste));
                 Dessine();
             }
             catch (Exception ex)
