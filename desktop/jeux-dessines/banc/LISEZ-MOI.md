@@ -41,6 +41,10 @@ Le journal (`journal.txt`) note la voix, les bruits et les réussites.
 Le banc rejoue aussi la tenue de comptes de l'écran de l'application (une vue par objet, rangée dans le panneau de
 son calque) : une ligne `AFFICHAGE …` dans le journal signale ce que WPF refuserait ou ce qui ne s'afficherait pas —
 un objet dans deux calques, un objet en double, une liste de calque modifiée sans passer par `Ajoute`/`Retire`.
+`EYZI_DOIGT=1` joue les jeux qui suivent le pointeur (jet d'eau, pêche, chamboule-tout) au doigt : personne devant
+le capteur, un toucher de temps en temps sur la prochaine cible, et le pointeur qui y reste posé comme dans
+l'application.
+
 `EYZI_AFFICHAGE=ancien` rejoue l'ordre d'avant la correction de novembre 2026 (un objet qui recule d'un calque
 figeait le jeu).
 Ce que le banc ne vérifie pas : l'affichage WPF lui-même, le son, et le vrai regard.
